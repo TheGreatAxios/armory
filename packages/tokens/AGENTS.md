@@ -53,7 +53,7 @@ interface TokenConfig {
 
 ```typescript
 import { TOKENS, getToken, getUSDCTokens } from "@armory/tokens";
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 // Access specific token
 const usdcBase = TOKENS.USDC_BASE;
@@ -110,7 +110,7 @@ const client = createX402Client({
 ### Registering Custom Tokens
 
 ```typescript
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 registerToken({
   symbol: "MYTOKEN",

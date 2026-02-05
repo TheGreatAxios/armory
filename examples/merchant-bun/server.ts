@@ -36,7 +36,7 @@ const FACILITATOR_URL = process.env.FACILITATOR_URL ?? "http://localhost:3000";
 const PAYMENT_TOKEN = USDC_BASE;
 
 // Alternatively, you can register a custom token:
-// import { registerToken } from "@armory/core";
+// import { registerToken } from "@armory/base";
 // const PAYMENT_TOKEN = registerToken({
 //   symbol: "USDC",
 //   name: "USD Coin",

@@ -14,7 +14,7 @@ Web3.js client implementation for X402 protocol (micropayments for HTTP APIs). S
 
 ## Dependencies
 
-- `@armory/core` - Core X402 protocol types and utilities
+- `@armory/base` - Core X402 protocol types and utilities
 - `web3` ^4.0.0 - Web3.js library for wallet/account management
 
 ## Protocol Versions
@@ -123,7 +123,7 @@ Full TypeScript support with exported types:
 - `X402Transport`
 - `PaymentSignOptions`
 - `PaymentSignatureResult`
-- And all core types re-exported from `@armory/core`
+- And all core types re-exported from `@armory/base`
 
 ---
 
@@ -153,7 +153,7 @@ const result = await client.signPayment({
 ### Registering Custom Tokens
 
 ```ts
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 registerToken({
   symbol: "MYTOKEN",

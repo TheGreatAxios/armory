@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import type {
   PaymentPayload,
   PaymentRequirements,
-} from "@armory/core";
+} from "@armory/base";
 import type { VerifyPaymentOptions } from "@armory/facilitator";
 import {
   getRequirementsVersion,

@@ -1,4 +1,4 @@
-# @armory/core
+# @armory/base
 
 Core protocol library for X-402. Types, encoding, EIP-712, network configs.
 
@@ -20,10 +20,10 @@ bun run test     # Run tests
 
 ```typescript
 // Unified types (v1 | v2)
-import type { PaymentPayload, PaymentRequirements, SettlementResponse } from "@armory/core"
+import type { PaymentPayload, PaymentRequirements, SettlementResponse } from "@armory/base"
 
 // Version-specific types
-import type { PaymentPayloadV1, PaymentPayloadV2 } from "@armory/core"
+import type { PaymentPayloadV1, PaymentPayloadV2 } from "@armory/base"
 ```
 
 ### Encoding/Decoding
@@ -36,7 +36,7 @@ import {
   decodePaymentV2,
   detectPaymentVersion,
   decodePayment,
-} from "@armory/core"
+} from "@armory/base"
 ```
 
 ### Type Guards
@@ -48,7 +48,7 @@ import {
   getPaymentVersion,
   getRequirementsVersion,
   isSettlementSuccessful,
-} from "@armory/core"
+} from "@armory/base"
 ```
 
 ### EIP-712
@@ -59,7 +59,7 @@ import {
   createTransferWithAuthorization,
   validateTransferWithAuthorization,
   EIP712_TYPES,
-} from "@armory/core"
+} from "@armory/base"
 ```
 
 ### Networks
@@ -71,7 +71,7 @@ import {
   getNetworkByChainId,
   getMainnets,
   getTestnets,
-} from "@armory/core"
+} from "@armory/base"
 ```
 
 ### Custom Token Registry
@@ -84,13 +84,13 @@ import {
   unregisterToken,
   isCustomToken,
   type CustomToken,
-} from "@armory/core"
+} from "@armory/base"
 ```
 
 ### ERC20 ABI
 
 ```typescript
-import { ERC20_ABI } from "@armory/core"
+import { ERC20_ABI } from "@armory/base"
 ```
 
 ---
@@ -159,7 +159,7 @@ src/
 ### Registering Custom Tokens
 
 ```typescript
-import { registerToken, type CustomToken } from "@armory/core";
+import { registerToken, type CustomToken } from "@armory/base";
 
 // Register a custom token
 const myToken: CustomToken = {
@@ -191,7 +191,7 @@ unregisterToken(8453, "0x1234567890123456789012345678901234567890");
 
 ```typescript
 import { TOKENS, registerToken } from "@armory/tokens";
-import { registerToken as registerCoreToken } from "@armory/core";
+import { registerToken as registerCoreToken } from "@armory/base";
 
 // Use pre-configured token
 const usdcBase = TOKENS.USDC_BASE;

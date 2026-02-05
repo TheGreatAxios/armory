@@ -8,7 +8,7 @@
  * with the X-402 standard.
  */
 
-import type { PaymentPayloadV2, PaymentRequirementsV2 } from "@armory/core";
+import type { PaymentPayloadV2, PaymentRequirementsV2 } from "@armory/base";
 
 const FACILITATOR_URL = process.env.FACILITATOR_URL ?? "http://localhost:3000";
 

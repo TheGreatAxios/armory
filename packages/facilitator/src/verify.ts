@@ -6,8 +6,8 @@ import type {
   PaymentPayloadV2,
   PaymentRequirements,
   CustomToken,
-} from "@armory/core";
-import { isV1, isV2, ERC20_ABI, EIP712_TYPES, NETWORKS, getCustomToken } from "@armory/core";
+} from "@armory/base";
+import { isV1, isV2, ERC20_ABI, EIP712_TYPES, NETWORKS, getCustomToken } from "@armory/base";
 import type { NonceTracker } from "./nonce/types.js";
 
 export class PaymentVerificationError extends Error {

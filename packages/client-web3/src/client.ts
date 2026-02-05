@@ -3,7 +3,7 @@ import {
   getNetworkConfig,
   encodePaymentV1,
   encodePaymentV2,
-} from "@armory/core";
+} from "@armory/base";
 import type {
   PaymentPayloadV1,
   PaymentPayloadV2,
@@ -11,7 +11,7 @@ import type {
   PaymentRequirementsV2,
   SettlementResponseV1,
   SettlementResponseV2,
-} from "@armory/core";
+} from "@armory/base";
 import type {
   Web3Account,
   Web3ClientConfig,

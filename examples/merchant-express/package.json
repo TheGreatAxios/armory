@@ -8,7 +8,7 @@
     "dev": "bun --hot run server.ts"
   },
   "dependencies": {
-    "@armory/core": "workspace:*",
+    "@armory/base": "workspace:*",
     "@armory/middleware": "workspace:*",
     "express": "^4.18.0"
   },

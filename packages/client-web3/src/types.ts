@@ -8,7 +8,7 @@ import type {
   SettlementResponseV2,
   NetworkConfig,
   CustomToken,
-} from "@armory/core";
+} from "@armory/base";
 
 export type Web3Account = Account | Web3BaseWallet;
 

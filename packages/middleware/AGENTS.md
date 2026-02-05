@@ -205,7 +205,7 @@ src/
 
 ## Dependencies
 
-- **@armory/core**: Protocol types and configs
+- **@armory/base**: Protocol types and configs
 - **hono** (peer): For Hono middleware
 - **express** (peer): For Express middleware
 - **elysia** (peer): For Elysia middleware
@@ -248,7 +248,7 @@ app.use(paymentMiddleware({
 ### Registering Custom Tokens
 
 ```typescript
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 registerToken({
   symbol: "MYTOKEN",

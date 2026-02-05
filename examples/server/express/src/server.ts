@@ -10,7 +10,7 @@
  */
 
 import express from "express";
-import type { PaymentRequirementsV2 } from "@armory/core";
+import type { PaymentRequirementsV2 } from "@armory/base";
 import { paymentMiddleware, type AugmentedRequest } from "@armory/middleware";
 
 // ============================================================================

@@ -1,8 +1,8 @@
 import type {
   PaymentPayload,
   SettlementResponse,
-} from "@armory/core";
-import { decodePayment, isV1, isV2 } from "@armory/core";
+} from "@armory/base";
+import { decodePayment, isV1, isV2 } from "@armory/base";
 import type { MiddlewareConfig, HttpRequest } from "./types.js";
 import {
   createPaymentRequirements,

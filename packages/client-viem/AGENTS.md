@@ -155,7 +155,7 @@ const response = await client.fetch("https://api.example.com/data", {
 ### Registering Custom Tokens
 
 ```ts
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 registerToken({
   symbol: "MYTOKEN",

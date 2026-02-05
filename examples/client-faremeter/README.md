@@ -127,7 +127,7 @@ const CURRENCY_ASSET_MAP: Record<string, { chainId: number; usdcAddress: string 
 
 ## Dependencies
 
-- `@armory/core`: Core X-402 protocol types and utilities
+- `@armory/base`: Core X-402 protocol types and utilities
 
 ## Extending the Adapter
 

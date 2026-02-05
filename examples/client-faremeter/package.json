@@ -6,7 +6,7 @@
     "faremeter-adapter": "bun run faremeter-adapter.ts"
   },
   "dependencies": {
-    "@armory/core": "workspace:*"
+    "@armory/base": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

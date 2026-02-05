@@ -26,7 +26,7 @@
     "directory": "packages/client-web3"
   },
   "dependencies": {
-    "@armory/core": "workspace:*",
+    "@armory/base": "workspace:*",
     "web3": "4.16.0"
   },
   "devDependencies": {
@@ -34,7 +34,7 @@
     "bun-types": "latest"
   },
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node --external @armory/core --external web3",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node --external @armory/base --external web3",
     "test": "bun test",
     "example": "bun run examples/"
   }

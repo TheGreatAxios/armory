@@ -85,7 +85,7 @@ The example interacts with the following facilitator endpoints:
 
 ## Dependencies
 
-- `@armory/core`: Core X-402 protocol types and utilities
+- `@armory/base`: Core X-402 protocol types and utilities
 - `@coinbase/wallet-sdk`: Coinbase Wallet SDK for browser integration
 
 ## Notes

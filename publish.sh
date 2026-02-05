@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -e
 
+# Temp files for portable storage
+DEPS_FILE=$(mktemp)
+DIRS_FILE=$(mktemp)
+
+# Cleanup temp files on exit
+cleanup() {
+  rm -f "$DEPS_FILE" "$DIRS_FILE" 2>/dev/null || true
+}
+trap cleanup EXIT
+
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -24,9 +34,6 @@ get_internal_deps() {
 }
 
 # ===== Build Dependency Graph Dynamically =====
-declare -A DEPS
-declare -A PKG_DIRS
-
 echo -e "${BLUE}Scanning packages...${NC}"
 
 for pkg_json in packages/*/package.json; do
@@ -35,10 +42,20 @@ for pkg_json in packages/*/package.json; do
 
   if [ -n "$pkg_name" ]; then
     deps=$(get_internal_deps "$pkg_dir")
-    DEPS["$pkg_name"]="$deps"
-    PKG_DIRS["$pkg_name"]="$pkg_dir"
+    echo "$pkg_name|$deps" >> "$DEPS_FILE"
+    echo "$pkg_name|$pkg_dir" >> "$DIRS_FILE"
   fi
 done
+
+# Helper: get deps for a package
+get_deps() {
+  grep "^$1|" "$DEPS_FILE" | cut -d'|' -f2
+}
+
+# Helper: get dir for a package
+get_dir() {
+  grep "^$1|" "$DIRS_FILE" | cut -d'|' -f2
+}
 
 # Get last tag or fallback to initial commit
 LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
@@ -59,8 +76,9 @@ echo "$CHANGED_DIRS"
 # Find packages that need publishing (changed + dependents)
 PUBLISH_LIST=()
 
-for pkg in "${!DEPS[@]}"; do
-  pkg_dir="${PKG_DIRS[$pkg]}"
+for line in $(cat "$DEPS_FILE" | cut -d'|' -f1); do
+  pkg="$line"
+  pkg_dir=$(get_dir "$pkg")
   pkg_dir_name=$(basename "$pkg_dir")
 
   # Check if this package changed
@@ -70,7 +88,7 @@ for pkg in "${!DEPS[@]}"; do
   fi
 
   # Check if any dependency changed
-  for dep in ${DEPS[$pkg]}; do
+  for dep in $(get_deps "$pkg"); do
     if [[ " ${PUBLISH_LIST[@]} " =~ " ${dep} " ]]; then
       PUBLISH_LIST+=("$pkg")
       break
@@ -82,7 +100,7 @@ done
 # Packages with no internal deps first, then dependents
 TO_PUBLISH=()
 
-max_iterations=$((${#DEPS[@]} + 1))
+max_iterations=$(($(wc -l < "$DEPS_FILE" | tr -d ' ') + 1))
 iteration=0
 
 while [ $iteration -lt $max_iterations ]; do
@@ -96,9 +114,10 @@ while [ $iteration -lt $max_iterations ]; do
 
     # Check if all deps are satisfied
     all_deps_satisfied=true
-    for dep in ${DEPS[$pkg]}; do
+    for dep in $(get_deps "$pkg"); do
       # If dep is internal and not yet in TO_PUBLISH, we can't publish yet
-      if [[ -n "${DEPS[$dep]}" ]] && ! [[ " ${TO_PUBLISH[@]} " =~ " ${dep} " ]]; then
+      dep_entry=$(grep "^$dep|" "$DEPS_FILE")
+      if [[ -n "$dep_entry" ]] && ! [[ " ${TO_PUBLISH[@]} " =~ " ${dep} " ]]; then
         all_deps_satisfied=false
         break
       fi
@@ -143,7 +162,7 @@ fi
 
 # ===== Publish Each Package =====
 for pkg in "${TO_PUBLISH[@]}"; do
-  pkg_dir="${PKG_DIRS[$pkg]}"
+  pkg_dir=$(get_dir "$pkg")
 
   echo -e "${GREEN}Publishing ${pkg}...${NC}"
 

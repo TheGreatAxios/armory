@@ -1,8 +1,8 @@
 import type {
   PaymentPayload,
   PaymentRequirements,
-} from "@armory/core";
-import { decodePayment, detectPaymentVersion, isPaymentV1 } from "@armory/core";
+} from "@armory/base";
+import { decodePayment, detectPaymentVersion, isPaymentV1 } from "@armory/base";
 import type { VerifyPaymentOptions } from "@armory/facilitator";
 import { verifyPayment } from "@armory/facilitator";
 

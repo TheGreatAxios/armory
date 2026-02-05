@@ -4,12 +4,12 @@ description: Core protocol logic and types
 
 # Core Package
 
-The `@armory/core` package contains the fundamental types, encoding, EIP-712 signing, network configurations, and token registry for the X-402 protocol.
+The `@armory/base` package contains the fundamental types, encoding, EIP-712 signing, network configurations, and token registry for the X-402 protocol.
 
 ## Installation
 
 ```bash
-bun add @armory/core
+bun add @armory/base
 ```
 
 ## Key Exports
@@ -23,7 +23,7 @@ import type {
   SettlementResponse,
   PaymentPayloadV1,
   PaymentPayloadV2,
-} from '@armory/core'
+} from '@armory/base'
 ```
 
 ### Encoding/Decoding
@@ -36,7 +36,7 @@ import {
   decodePaymentV2,
   detectPaymentVersion,
   decodePayment,
-} from '@armory/core'
+} from '@armory/base'
 ```
 
 ### Type Guards
@@ -48,7 +48,7 @@ import {
   getPaymentVersion,
   getRequirementsVersion,
   isSettlementSuccessful,
-} from '@armory/core'
+} from '@armory/base'
 ```
 
 ### EIP-712
@@ -59,7 +59,7 @@ import {
   createTransferWithAuthorization,
   validateTransferWithAuthorization,
   EIP712_TYPES,
-} from '@armory/core'
+} from '@armory/base'
 ```
 
 ### Networks
@@ -71,7 +71,7 @@ import {
   getNetworkByChainId,
   getMainnets,
   getTestnets,
-} from '@armory/core'
+} from '@armory/base'
 ```
 
 ### Token Registry
@@ -84,7 +84,7 @@ import {
   unregisterToken,
   isCustomToken,
   type CustomToken,
-} from '@armory/core'
+} from '@armory/base'
 ```
 
 ## Custom Tokens
@@ -92,7 +92,7 @@ import {
 Register your own tokens for use across Armory:
 
 ```typescript
-import { registerToken, type CustomToken } from '@armory/core';
+import { registerToken, type CustomToken } from '@armory/base';
 
 const myToken: CustomToken = {
   symbol: 'MYTOKEN',
@@ -121,7 +121,7 @@ import {
   getCustomToken,
   getAllCustomTokens,
   isCustomToken
-} from '@armory/core';
+} from '@armory/base';
 
 // Get token by chain and address
 const token = getCustomToken(8453, '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913');
@@ -147,7 +147,7 @@ Supported networks:
 - **Base**: Mainnet, Sepolia
 
 ```typescript
-import { getNetworkConfig } from '@armory/core';
+import { getNetworkConfig } from '@armory/base';
 
 const baseConfig = getNetworkConfig(8453);
 // { name: 'base', chainId: 8453, caip2Id: 'eip155:8453', ... }

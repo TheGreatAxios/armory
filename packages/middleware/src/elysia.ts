@@ -2,7 +2,7 @@ import type { Context } from "elysia";
 import type {
   PaymentPayload,
   PaymentRequirements,
-} from "@armory/core";
+} from "@armory/base";
 import type { VerifyPaymentOptions } from "@armory/facilitator";
 import {
   getRequirementsVersion,

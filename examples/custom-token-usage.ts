@@ -5,7 +5,7 @@
  * with the X-402 payment protocol.
  */
 
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 // ============================================================================
 // 1. Register a Custom Token
@@ -138,7 +138,7 @@ import {
   getAllCustomTokens,
   unregisterToken,
   isCustomToken,
-} from "@armory/core";
+} from "@armory/base";
 
 // Check if a token is registered
 const isCustom = isCustomToken(1, "0x1234567890123456789012345678901234567890");

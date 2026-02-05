@@ -9,7 +9,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import type { Address } from "viem";
 import { honoPaymentMiddleware, type PaymentInfo, type PaymentVariables } from "@armory/middleware";
-import type { PaymentRequirementsV2 } from "@armory/core";
+import type { PaymentRequirementsV2 } from "@armory/base";
 import { USDC_BASE } from "@armory/tokens";
 
 // ============================================================================

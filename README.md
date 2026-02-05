@@ -116,7 +116,7 @@ Pre-configured tokens include USDC, EURC, USDT, WBTC, and WETH across all suppor
 
 | Package | Description |
 |---------|-------------|
-| **@armory/core** | Protocol types, encoding, EIP-712, network configs, validation |
+| **@armory/base** | Protocol types, encoding, EIP-712, network configs, validation |
 | **@armory/middleware** | HTTP middleware for Bun, Express, Hono, Elysia |
 | **@armory/client-viem** | Viem v2 payment client |
 | **@armory/client-ethers** | Ethers.js v6 payment client |

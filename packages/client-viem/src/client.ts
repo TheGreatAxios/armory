@@ -20,7 +20,7 @@ import {
   createEIP712Domain,
   createTransferWithAuthorization,
   EIP712_TYPES,
-} from "@armory/core";
+} from "@armory/base";
 
 import type {
   X402Client,

@@ -1,7 +1,7 @@
 import { createX402Client } from "@armory/client-viem";
 import { privateKeyToAccount } from "viem/accounts";
 import axios, { type AxiosInstance } from "axios";
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY ?? "0x0000000000000000000000000000000000000000000000000000000000000001";
 const API_BASE_URL = "https://api.example.com";

@@ -53,7 +53,7 @@ export type {
   SettlementResponseV2,
   SettlementResponse,
   NetworkConfig,
-} from "@armory/core";
+} from "@armory/base";
 
 export {
   V1_HEADERS,
@@ -89,4 +89,4 @@ export {
   createEIP712Domain as createCoreEIP712Domain,
   createTransferWithAuthorization as createCoreTransferWithAuthorization,
   validateTransferWithAuthorization as validateCoreTransferWithAuthorization,
-} from "@armory/core";
+} from "@armory/base";

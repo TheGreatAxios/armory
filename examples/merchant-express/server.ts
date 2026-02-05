@@ -8,7 +8,7 @@
 import express from "express";
 import type { Address } from "viem";
 import { paymentMiddleware } from "@armory/middleware";
-import type { PaymentRequirementsV2 } from "@armory/core";
+import type { PaymentRequirementsV2 } from "@armory/base";
 import { USDC_BASE } from "@armory/tokens";
 
 // ============================================================================

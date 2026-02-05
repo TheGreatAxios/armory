@@ -9,7 +9,7 @@ import { Elysia, t } from "elysia";
 import { cors } from "@elysiajs/cors";
 import type { Address } from "viem";
 import { elysiaPaymentMiddleware, type PaymentInfo } from "@armory/middleware";
-import type { PaymentRequirementsV2 } from "@armory/core";
+import type { PaymentRequirementsV2 } from "@armory/base";
 import { USDC_BASE } from "@armory/tokens";
 
 // ============================================================================

@@ -6,8 +6,8 @@ import type {
   SettlementResponseV1,
   SettlementResponseV2,
   PayToV2,
-} from "@armory/core";
-import { getNetworkConfig, getNetworkByChainId } from "@armory/core";
+} from "@armory/base";
+import { getNetworkConfig, getNetworkByChainId } from "@armory/base";
 import type {
   MiddlewareConfig,
   FacilitatorConfig,

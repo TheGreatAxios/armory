@@ -126,7 +126,7 @@ The `@armory/tokens` package provides pre-configured token objects for common ER
 
 ```typescript
 import { TOKENS, registerToken } from "@armory/tokens";
-import { registerToken as registerCoreToken } from "@armory/core";
+import { registerToken as registerCoreToken } from "@armory/base";
 
 // Use pre-configured tokens
 const usdcBase = TOKENS.USDC_BASE;
@@ -145,7 +145,7 @@ const payment = await client.createPayment({
 ### Registering Custom Tokens
 
 ```typescript
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 registerToken({
   symbol: "MYTOKEN",
@@ -171,7 +171,7 @@ const payment = await client.createPayment(
 
 ## Network Support
 
-Supported networks (via `@armory/core`):
+Supported networks (via `@armory/base`):
 
 - **Ethereum**: Mainnet, Sepolia
 - **Polygon**: Mainnet, Amoy

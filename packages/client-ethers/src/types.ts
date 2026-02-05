@@ -1,5 +1,5 @@
 import type { Signer, Provider } from "ethers";
-import type { CustomToken } from "@armory/core";
+import type { CustomToken } from "@armory/base";
 
 /** Token configuration - can use pre-configured tokens from @armory/tokens */
 export type Token = CustomToken;

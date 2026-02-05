@@ -22,7 +22,7 @@ import {
   createMemoryQueue,
   createFacilitatorServer,
 } from "@armory/facilitator";
-import type { PaymentRequirementsV2 } from "@armory/core";
+import type { PaymentRequirementsV2 } from "@armory/base";
 
 // ============================================================================
 // Configuration

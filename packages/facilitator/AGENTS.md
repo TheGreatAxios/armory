@@ -138,7 +138,7 @@ queue.on('complete', (jobId, result) => {
 
 ```typescript
 import { TOKENS } from "@armory/tokens";
-import { getCustomToken } from "@armory/core";
+import { getCustomToken } from "@armory/base";
 
 // Use pre-configured token from @armory/tokens
 const usdcToken = TOKENS.USDC_BASE;
@@ -199,7 +199,7 @@ src/
 
 ## Dependencies
 
-- **@armory/core**: Protocol types, configs, and token registry
+- **@armory/base**: Protocol types, configs, and token registry
 - **@armory/tokens**: Pre-configured token objects (optional)
 - **viem**: Ethereum client, wallet, contract calls
 - **ioredis** (optional): Redis queue/nonce backend

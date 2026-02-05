@@ -2,8 +2,8 @@ import type {
   PaymentPayload,
   PaymentPayloadV1,
   PaymentPayloadV2,
-} from "@armory/core";
-import { ERC20_ABI, getNetworkByChainId, isPaymentV1 } from "@armory/core";
+} from "@armory/base";
+import { ERC20_ABI, getNetworkByChainId, isPaymentV1 } from "@armory/base";
 import type { WalletClient } from "viem";
 import {
   BaseError,

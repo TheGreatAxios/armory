@@ -10,7 +10,7 @@
 import {
   createTransferWithAuthorization,
   type PaymentPayloadV2,
-} from "@armory/core";
+} from "@armory/base";
 import { privateKeyToAccount } from "viem/accounts";
 import { toBytes } from "viem";
 

@@ -1,4 +1,4 @@
-import type { PaymentPayload, PaymentRequirements } from "@armory/core";
+import type { PaymentPayload, PaymentRequirements } from "@armory/base";
 
 export type SettleJobId = string;
 export type RetryCount = number;

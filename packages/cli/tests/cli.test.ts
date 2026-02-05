@@ -42,7 +42,7 @@ test("CLI template content includes required dependencies", () => {
   const content = readFileSync(cliPath, "utf-8");
 
   // Check facilitator template
-  expect(content).toContain("@armory/core");
+  expect(content).toContain("@armory/base");
   expect(content).toContain("@armory/facilitator");
   expect(content).toContain("@armory/tokens");
 

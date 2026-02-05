@@ -4,7 +4,7 @@ import type {
   WalletClient,
   Transport,
 } from "viem";
-import type { PaymentPayloadV1, PaymentPayloadV2, CustomToken } from "@armory/core";
+import type { PaymentPayloadV1, PaymentPayloadV2, CustomToken } from "@armory/base";
 
 export type X402Wallet =
   | { type: "account"; account: Account }

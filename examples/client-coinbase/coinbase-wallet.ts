@@ -9,11 +9,11 @@
  */
 
 import CoinbaseWalletSDK from "@coinbase/wallet-sdk";
-import type { PaymentPayloadV2 } from "@armory/core";
+import type { PaymentPayloadV2 } from "@armory/base";
 import {
   createEIP712Domain,
   createTransferWithAuthorization,
-} from "@armory/core";
+} from "@armory/base";
 
 const FACILITATOR_URL = process.env.FACILITATOR_URL ?? "http://localhost:3000";
 

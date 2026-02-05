@@ -1,18 +1,18 @@
-# @armory/core
+# @armory/base
 
 Core types and utilities for Armory payment protocol.
 
 ## Install
 
 ```bash
-bun add @armory/core
+bun add @armory/base
 ```
 
 ## Use
 
 ```typescript
-import type { PaymentRequest, PaymentResponse } from '@armory/core'
-import { calculateExpiry } from '@armory/core'
+import type { PaymentRequest, PaymentResponse } from '@armory/base'
+import { calculateExpiry } from '@armory/base'
 
 const payment: PaymentRequest = {
   to: '0x...',

@@ -52,7 +52,7 @@ const FACILITATOR_PACKAGE = (name: string) => `{
     "start": "bun run src/index.ts"
   },
   "dependencies": {
-    "@armory/core": "latest",
+    "@armory/base": "latest",
     "@armory/facilitator": "latest",
     "@armory/tokens": "latest"
   }
@@ -123,7 +123,7 @@ const SERVER_PACKAGE = (name: string) => `{
     "dev": "bun run src/index.ts"
   },
   "dependencies": {
-    "@armory/core": "latest",
+    "@armory/base": "latest",
     "@armory/middleware": "latest"
   }
 }`;

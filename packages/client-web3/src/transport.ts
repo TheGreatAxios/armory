@@ -1,5 +1,5 @@
 import type { Web3X402Client, X402Transport, X402TransportOptions } from "./types";
-import { V1_HEADERS, V2_HEADERS, encodePaymentV1, encodePaymentV2 } from "@armory/core";
+import { V1_HEADERS, V2_HEADERS, encodePaymentV1, encodePaymentV2 } from "@armory/base";
 
 const DEFAULT_MAX_RETRIES = 3;
 

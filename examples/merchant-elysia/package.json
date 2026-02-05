@@ -8,7 +8,7 @@
     "dev": "bun --hot run server.ts"
   },
   "dependencies": {
-    "@armory/core": "workspace:*",
+    "@armory/base": "workspace:*",
     "@armory/middleware": "workspace:*",
     "@elysiajs/cors": "^1.0.0",
     "elysia": "^1.0.0"

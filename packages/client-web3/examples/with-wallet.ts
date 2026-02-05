@@ -17,7 +17,7 @@
 
 import { createX402Client, createX402Transport } from "@armory/client-web3";
 import { Web3 } from "web3";
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 // Configuration
 const API_URL = "https://api.example.com/protected-endpoint";

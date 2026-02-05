@@ -23,7 +23,7 @@
     "directory": "packages/facilitator"
   },
   "dependencies": {
-    "@armory/core": "workspace:*",
+    "@armory/base": "workspace:*",
     "viem": "2.45.0"
   },
   "optionalDependencies": {

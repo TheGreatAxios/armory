@@ -13,7 +13,7 @@
 
 import { createX402Client } from "@armory/client-ethers";
 import { ethers } from "ethers";
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 // Configuration
 const PRIVATE_KEY = process.env.PRIVATE_KEY ?? "0x0000000000000000000000000000000000000000000000000000000000000001";

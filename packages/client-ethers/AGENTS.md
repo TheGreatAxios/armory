@@ -184,7 +184,7 @@ bun test
 
 ## Dependencies
 
-- `@armory/core` - Core types, utilities, and token registry
+- `@armory/base` - Core types, utilities, and token registry
 - `@armory/tokens` - Pre-configured token objects (optional)
 - `ethers` v6 - Ethereum library
 
@@ -212,7 +212,7 @@ const response = await client.get("https://api.example.com/protected", {
 ### Registering Custom Tokens
 
 ```ts
-import { registerToken } from "@armory/core";
+import { registerToken } from "@armory/base";
 
 registerToken({
   symbol: "MYTOKEN",

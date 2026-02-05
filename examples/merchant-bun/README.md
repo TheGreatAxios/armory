@@ -153,7 +153,7 @@ curl http://localhost:3003/api/user/profile \
 
 3. **Client creates and signs payment payload**
    ```typescript
-   import { createPayment, signPayment } from "@armory/core";
+   import { createPayment, signPayment } from "@armory/base";
 
    const payload = createPayment({
      to: "0x742d...",
