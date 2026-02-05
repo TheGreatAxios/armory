@@ -1,17 +1,17 @@
-# @armory/facilitator
+# @armory-sh/facilitator
 
 Payment verification and settlement server.
 
 ## Install
 
 ```bash
-bun add @armory/facilitator
+bun add @armory-sh/facilitator
 ```
 
 ## Use
 
 ```typescript
-import { FacilitatorServer } from '@armory/facilitator'
+import { FacilitatorServer } from '@armory-sh/facilitator'
 
 const server = new FacilitatorServer({
   privateKey: process.env.PRIVATE_KEY,

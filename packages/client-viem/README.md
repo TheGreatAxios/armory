@@ -1,18 +1,18 @@
-# @armory/client-viem
+# @armory-sh/client-viem
 
 Viem client for creating and signing Armory payments.
 
 ## Install
 
 ```bash
-bun add @armory/client-viem
+bun add @armory-sh/client-viem
 ```
 
 ## Use
 
 ```typescript
 import { createWalletClient, http } from 'viem'
-import { createArmoryPayment } from '@armory/client-viem'
+import { createArmoryPayment } from '@armory-sh/client-viem'
 
 const client = createWalletClient({ transport: http() })
 

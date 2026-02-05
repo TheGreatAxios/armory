@@ -15,9 +15,9 @@
  * ```
  */
 
-import { createX402Client } from "@armory/client-ethers";
+import { createX402Client } from "@armory-sh/client-ethers";
 import { ethers } from "ethers";
-import { registerToken } from "@armory/base";
+import { registerToken } from "@armory-sh/base";
 
 // Configuration
 const API_URL = "https://api.example.com/protected-endpoint";

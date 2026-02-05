@@ -29,4 +29,4 @@ export type {
   TokenId,
   ArmoryPaymentResult,
   FacilitatorConfig,
-} from "@armory/base";
+} from "@armory-sh/base";

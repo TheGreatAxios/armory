@@ -1,5 +1,5 @@
 {
-  "name": "@armory/client-viem",
+  "name": "@armory-sh/client-viem",
   "version": "0.1.0",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
@@ -8,6 +8,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "bun": "./src/index.ts",
       "default": "./dist/index.js"
     },
@@ -22,11 +23,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/thegreataxios/armory.git",
+    "url": "git+https://github.com/thegreataxios/armory.git",
     "directory": "packages/client-viem"
   },
   "dependencies": {
-    "@armory/base": "workspace:*",
+    "@armory-sh/base": "workspace:*",
     "viem": "2.45.0"
   },
   "devDependencies": {
@@ -34,7 +35,7 @@
     "bun-types": "latest"
   },
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node",
+    "build": "tsup",
     "test": "bun test",
     "example": "bun run examples/"
   }

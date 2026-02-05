@@ -1,18 +1,18 @@
-# @armory/middleware
+# @armory-sh/middleware
 
 Payment verification middleware for Express, Hono, Bun, Elysia.
 
 ## Install
 
 ```bash
-bun add @armory/middleware
+bun add @armory-sh/middleware
 ```
 
 ## Use
 
 ```typescript
 // Express
-import { paymentMiddleware } from '@armory/middleware'
+import { paymentMiddleware } from '@armory-sh/middleware'
 
 app.use(paymentMiddleware({
   requirements: {

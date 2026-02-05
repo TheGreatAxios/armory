@@ -116,7 +116,22 @@ export {
   validateTransferWithAuthorization,
 } from "./eip712";
 
-// Simple API types and validation
+export {
+  resolveNetwork,
+  resolveToken,
+  resolveFacilitator,
+  checkFacilitatorSupport,
+  validatePaymentConfig,
+  validateAcceptConfig,
+  getAvailableNetworks,
+  getAvailableTokens,
+  isValidationError,
+  isResolvedNetwork,
+  isResolvedToken,
+  createError,
+} from "./validation";
+
+// Re-export types from validation for TypeScript
 export type {
   NetworkId,
   TokenId,
@@ -131,19 +146,4 @@ export type {
   ResolvedFacilitator,
   ResolvedPaymentConfig,
   ValidationError,
-} from "./types/simple";
-
-export {
-  resolveNetwork,
-  resolveToken,
-  resolveFacilitator,
-  checkFacilitatorSupport,
-  validatePaymentConfig,
-  validateAcceptConfig,
-  getAvailableNetworks,
-  getAvailableTokens,
-  isValidationError,
-  isResolvedNetwork,
-  isResolvedToken,
-  createError,
 } from "./validation";

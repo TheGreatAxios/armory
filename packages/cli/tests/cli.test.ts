@@ -42,15 +42,15 @@ test("CLI template content includes required dependencies", () => {
   const content = readFileSync(cliPath, "utf-8");
 
   // Check facilitator template
-  expect(content).toContain("@armory/base");
-  expect(content).toContain("@armory/facilitator");
-  expect(content).toContain("@armory/tokens");
+  expect(content).toContain("@armory-sh/base");
+  expect(content).toContain("@armory-sh/facilitator");
+  expect(content).toContain("@armory-sh/tokens");
 
   // Check server template
-  expect(content).toContain("@armory/middleware");
+  expect(content).toContain("@armory-sh/middleware");
 
   // Check client template
-  expect(content).toContain("@armory/client-viem");
+  expect(content).toContain("@armory-sh/client-viem");
 });
 
 test("CLI includes proper help text", () => {

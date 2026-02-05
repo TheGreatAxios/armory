@@ -1,4 +1,4 @@
-# @armory/client-web3 - AI Agent Context
+# @armory-sh/client-web3 - AI Agent Context
 
 ## Overview
 
@@ -14,7 +14,7 @@ Web3.js client implementation for X402 protocol (micropayments for HTTP APIs). S
 
 ## Dependencies
 
-- `@armory/base` - Core X402 protocol types and utilities
+- `@armory-sh/base` - Core X402 protocol types and utilities
 - `web3` ^4.0.0 - Web3.js library for wallet/account management
 
 ## Protocol Versions
@@ -34,7 +34,7 @@ Web3.js client implementation for X402 protocol (micropayments for HTTP APIs). S
 ### Creating a Client
 
 ```ts
-import { createX402Client } from "@armory/client-web3";
+import { createX402Client } from "@armory-sh/client-web3";
 import { Web3 } from "web3";
 
 const web3 = new Web3();
@@ -50,7 +50,7 @@ const client = createX402Client({
 ### Using the Transport
 
 ```ts
-import { createX402Transport } from "@armory/client-web3";
+import { createX402Transport } from "@armory-sh/client-web3";
 
 const transport = createX402Transport({ client });
 
@@ -62,7 +62,7 @@ const response = await transport.fetch("https://api.example.com/data");
 
 ```ts
 // Using token object (recommended)
-import { TOKENS } from "@armory/tokens";
+import { TOKENS } from "@armory-sh/tokens";
 
 const result = await client.signPayment({
   token: TOKENS.USDC_BASE,
@@ -123,7 +123,7 @@ Full TypeScript support with exported types:
 - `X402Transport`
 - `PaymentSignOptions`
 - `PaymentSignatureResult`
-- And all core types re-exported from `@armory/base`
+- And all core types re-exported from `@armory-sh/base`
 
 ---
 
@@ -132,8 +132,8 @@ Full TypeScript support with exported types:
 ### Using Pre-configured Tokens
 
 ```ts
-import { createX402Client } from "@armory/client-web3";
-import { TOKENS } from "@armory/tokens";
+import { createX402Client } from "@armory-sh/client-web3";
+import { TOKENS } from "@armory-sh/tokens";
 
 const client = createX402Client({
   account,
@@ -153,7 +153,7 @@ const result = await client.signPayment({
 ### Registering Custom Tokens
 
 ```ts
-import { registerToken } from "@armory/base";
+import { registerToken } from "@armory-sh/base";
 
 registerToken({
   symbol: "MYTOKEN",

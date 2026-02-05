@@ -1,12 +1,12 @@
 import type {
   PaymentPayload,
   PaymentRequirements,
-} from "@armory/base";
+} from "@armory-sh/base";
 import {
   NETWORKS,
   getNetworkByChainId,
   isPaymentV1,
-} from "@armory/base";
+} from "@armory-sh/base";
 import type { NonceTracker } from "./nonce/types.js";
 import type { PaymentQueue, SettleJob, SettleResult } from "./queue/types.js";
 import { verifyPayment } from "./verify.js";

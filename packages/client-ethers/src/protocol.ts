@@ -10,7 +10,7 @@ import {
   type PaymentRequirements,
   type CAIP2ChainId,
   type CAIPAssetId,
-} from "@armory/base";
+} from "@armory-sh/base";
 import type { TransferWithAuthorizationParams } from "./types";
 import { signEIP3009 } from "./eip3009";
 

@@ -1,5 +1,5 @@
 /**
- * @armory/client-web3 Tests
+ * @armory-sh/client-web3 Tests
  */
 
 import { test, expect, mock } from "bun:test";
@@ -22,7 +22,7 @@ import type {
   PaymentRequirementsV2,
   SettlementResponseV1,
   SettlementResponseV2,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 // ============================================================================
 // Test Utilities

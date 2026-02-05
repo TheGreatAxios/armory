@@ -8,7 +8,7 @@ import type {
   PaymentRequirements,
   PaymentRequirementsV1,
   PaymentRequirementsV2,
-} from "@armory/base";
+} from "@armory-sh/base";
 import type {
   NetworkId,
   TokenId,
@@ -16,7 +16,7 @@ import type {
   AcceptPaymentOptions,
   ResolvedPaymentConfig,
   ValidationError,
-} from "@armory/base";
+} from "@armory-sh/base";
 import {
   resolveNetwork,
   resolveToken,
@@ -24,7 +24,7 @@ import {
   isValidationError,
   getNetworkConfig,
   getNetworkByChainId,
-} from "@armory/base";
+} from "@armory-sh/base";
 import {
   createPaymentRequirements,
   createPaymentRequiredHeaders,

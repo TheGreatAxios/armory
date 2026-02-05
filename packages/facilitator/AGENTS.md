@@ -1,4 +1,4 @@
-# @armory/facilitator
+# @armory-sh/facilitator
 
 Server-side payment settlement and verification library.
 
@@ -31,7 +31,7 @@ import {
   PaymentNotYetValidError,
   UnsupportedNetworkError,
   InvalidPayloadError,
-} from "@armory/facilitator"
+} from "@armory-sh/facilitator"
 ```
 
 ### Payment Settlement
@@ -44,7 +44,7 @@ import {
   SettlementError,
   ContractExecutionError,
   AuthorizationExpiredError,
-} from "@armory/facilitator"
+} from "@armory-sh/facilitator"
 ```
 
 ### Queue (Memory)
@@ -56,7 +56,7 @@ import {
   type PaymentQueue,
   type SettleJob,
   type SettleResult,
-} from "@armory/facilitator"
+} from "@armory-sh/facilitator"
 ```
 
 ### Nonce Tracker
@@ -68,7 +68,7 @@ import {
   type NonceTracker,
   type StoredNonce,
   NonceAlreadyUsedError,
-} from "@armory/facilitator"
+} from "@armory-sh/facilitator"
 ```
 
 ### HTTP Server
@@ -78,7 +78,7 @@ import {
   createFacilitatorServer,
   type FacilitatorServerOptions,
   type FacilitatorServer,
-} from "@armory/facilitator"
+} from "@armory-sh/facilitator"
 ```
 
 ---
@@ -137,10 +137,10 @@ queue.on('complete', (jobId, result) => {
 ### Using Token Objects
 
 ```typescript
-import { TOKENS } from "@armory/tokens";
-import { getCustomToken } from "@armory/base";
+import { TOKENS } from "@armory-sh/tokens";
+import { getCustomToken } from "@armory-sh/base";
 
-// Use pre-configured token from @armory/tokens
+// Use pre-configured token from @armory-sh/tokens
 const usdcToken = TOKENS.USDC_BASE;
 
 // Or retrieve registered token
@@ -199,8 +199,8 @@ src/
 
 ## Dependencies
 
-- **@armory/base**: Protocol types, configs, and token registry
-- **@armory/tokens**: Pre-configured token objects (optional)
+- **@armory-sh/base**: Protocol types, configs, and token registry
+- **@armory-sh/tokens**: Pre-configured token objects (optional)
 - **viem**: Ethereum client, wallet, contract calls
 - **ioredis** (optional): Redis queue/nonce backend
 

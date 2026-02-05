@@ -1,4 +1,4 @@
-# @armory/client-viem
+# @armory-sh/client-viem
 
 X-402 payment client for viem-based EVM wallets.
 
@@ -43,7 +43,7 @@ bun --hot ./src/index.ts
 ### Basic Usage with Account
 
 ```ts
-import { createX402Client } from "@armory/client-viem";
+import { createX402Client } from "@armory-sh/client-viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 const account = privateKeyToAccount("0x...");
@@ -59,7 +59,7 @@ const response = await client.fetch("https://api.example.com/data");
 ### Usage with WalletClient
 
 ```ts
-import { createX402Client } from "@armory/client-viem";
+import { createX402Client } from "@armory-sh/client-viem";
 import { createWalletClient, custom } from "viem";
 import { base } from "viem/chains";
 
@@ -79,7 +79,7 @@ const response = await client.fetch("https://api.example.com/data");
 
 ```ts
 // Using token object (recommended)
-import { TOKENS } from "@armory/tokens";
+import { TOKENS } from "@armory-sh/tokens";
 
 const payment = await client.createPayment({
   token: TOKENS.USDC_BASE,
@@ -99,7 +99,7 @@ const payment = await client.createPayment(
 ### Transport Wrapper
 
 ```ts
-import { createX402Transport } from "@armory/client-viem";
+import { createX402Transport } from "@armory-sh/client-viem";
 
 const fetchWithPayment = createX402Transport({
   transport: http(),
@@ -135,11 +135,11 @@ const client = createX402Client({
 
 ## Token Object Usage
 
-### Using Pre-configured Tokens from @armory/tokens
+### Using Pre-configured Tokens from @armory-sh/tokens
 
 ```ts
-import { createX402Client } from "@armory/client-viem";
-import { TOKENS } from "@armory/tokens";
+import { createX402Client } from "@armory-sh/client-viem";
+import { TOKENS } from "@armory-sh/tokens";
 
 const client = createX402Client({
   wallet: { type: "account", account },
@@ -155,7 +155,7 @@ const response = await client.fetch("https://api.example.com/data", {
 ### Registering Custom Tokens
 
 ```ts
-import { registerToken } from "@armory/base";
+import { registerToken } from "@armory-sh/base";
 
 registerToken({
   symbol: "MYTOKEN",

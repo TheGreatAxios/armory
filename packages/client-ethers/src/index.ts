@@ -1,9 +1,9 @@
-// Re-export types from @armory/base
+// Re-export types from @armory-sh/base
 export type {
   PaymentPayloadV1,
   PaymentRequirementsV1,
   SettlementResponseV1,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 export {
   V1_HEADERS,
@@ -11,7 +11,7 @@ export {
   decodePaymentPayload,
   encodeSettlementResponse,
   decodeSettlementResponse,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 export type {
   CAIP2ChainId,
@@ -23,20 +23,20 @@ export type {
   PaymentPayloadV2,
   PaymentRequirementsV2,
   SettlementResponseV2,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 export {
   V2_HEADERS,
   isCAIP2ChainId,
   isCAIPAssetId,
   isAddress,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 export type {
   PaymentPayload,
   PaymentRequirements,
   SettlementResponse,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 export {
   isV1,
@@ -49,9 +49,9 @@ export {
   getPaymentRequiredHeaderName,
   isSettlementSuccessful,
   getTxHash,
-} from "@armory/base";
+} from "@armory-sh/base";
 
-export type { NetworkConfig } from "@armory/base";
+export type { NetworkConfig } from "@armory-sh/base";
 
 export {
   NETWORKS,
@@ -59,14 +59,14 @@ export {
   getNetworkByChainId,
   getMainnets,
   getTestnets,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 export type {
   TransferWithAuthorizationParams,
   BalanceOfParams,
-} from "@armory/base";
+} from "@armory-sh/base";
 
-export { ERC20_ABI } from "@armory/base";
+export { ERC20_ABI } from "@armory-sh/base";
 
 export {
   encodePaymentV1,
@@ -84,14 +84,14 @@ export {
   isPaymentV2,
   isSettlementV1,
   isSettlementV2,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 export {
   EIP712_TYPES,
   createEIP712Domain,
   createTransferWithAuthorization,
   validateTransferWithAuthorization,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 // Ethers-specific exports
 export {

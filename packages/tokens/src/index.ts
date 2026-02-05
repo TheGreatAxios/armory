@@ -1,4 +1,4 @@
-import type { CustomToken } from "@armory/base";
+import type { CustomToken } from "@armory-sh/base";
 
 export type TokenConfig = CustomToken;
 

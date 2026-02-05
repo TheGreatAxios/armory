@@ -1,5 +1,5 @@
 {
-  "name": "@armory/middleware",
+  "name": "@armory-sh/middleware",
   "version": "0.1.0",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
@@ -8,6 +8,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "bun": "./src/index.ts",
       "default": "./dist/index.js"
     },
@@ -22,19 +23,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/thegreataxios/armory.git",
+    "url": "git+https://github.com/thegreataxios/armory.git",
     "directory": "packages/middleware"
   },
   "dependencies": {
-    "@armory/base": "workspace:*",
-    "@armory/facilitator": "workspace:*"
+    "@armory-sh/base": "workspace:*",
+    "@armory-sh/facilitator": "workspace:*"
   },
   "devDependencies": {
     "typescript": "5.9.3",
     "bun-types": "latest"
   },
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node && tsc --emitDeclarationOnly",
+    "build": "tsup",
     "test": "bun test"
   }
 }

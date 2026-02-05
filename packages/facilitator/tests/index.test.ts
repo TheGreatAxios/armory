@@ -28,7 +28,7 @@ import type {
   PaymentRequirementsV1,
   PaymentRequirementsV2,
   WalletClient,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 const mockV1Payment: PaymentPayloadV1 = {
   from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",

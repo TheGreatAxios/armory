@@ -4,7 +4,7 @@ import type {
   WalletClient,
   Transport,
 } from "viem";
-import type { PaymentPayloadV1, PaymentPayloadV2, CustomToken } from "@armory/base";
+import type { PaymentPayloadV1, PaymentPayloadV2, CustomToken } from "@armory-sh/base";
 
 export type X402Wallet =
   | { type: "account"; account: Account }
@@ -12,7 +12,7 @@ export type X402Wallet =
 
 export type X402ProtocolVersion = 1 | 2 | "auto";
 
-/** Token configuration - can use pre-configured tokens from @armory/tokens */
+/** Token configuration - can use pre-configured tokens from @armory-sh/tokens */
 export type Token = CustomToken;
 
 export interface X402ClientConfig {

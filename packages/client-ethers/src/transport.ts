@@ -2,7 +2,7 @@ import type { Signer } from "ethers";
 import {
   decodeSettlement,
   type SettlementResponse,
-} from "@armory/base";
+} from "@armory-sh/base";
 import type { X402TransportConfig, X402RequestInit } from "./types";
 import { createPaymentPayload, parsePaymentRequirements } from "./protocol";
 import { SignerRequiredError } from "./types";

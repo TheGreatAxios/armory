@@ -1,4 +1,4 @@
-# @armory/client-ethers
+# @armory-sh/client-ethers
 
 X-402 protocol client implementation for ethers.js v6.
 
@@ -43,7 +43,7 @@ This package provides an X-402 client that works with ethers.js Signers and Prov
 ### Basic Setup
 
 ```ts
-import { createX402Client } from "@armory/client-ethers";
+import { createX402Client } from "@armory-sh/client-ethers";
 import { BrowserProvider } from "ethers";
 
 // Get signer from wallet
@@ -61,7 +61,7 @@ const data = await response.json();
 ### Transport-Only Usage
 
 ```ts
-import { createX402Transport } from "@armory/client-ethers";
+import { createX402Transport } from "@armory-sh/client-ethers";
 
 const transport = createX402Transport({
   baseURL: "https://api.example.com",
@@ -78,10 +78,10 @@ const response = await transport.get("/protected-resource");
 ### Manual Payment Signing
 
 ```ts
-import { signPayment } from "@armory/client-ethers";
+import { signPayment } from "@armory-sh/client-ethers";
 
 // Using token object (recommended)
-import { TOKENS } from "@armory/tokens";
+import { TOKENS } from "@armory-sh/tokens";
 
 const signature = await signPayment(
   signer,
@@ -184,8 +184,8 @@ bun test
 
 ## Dependencies
 
-- `@armory/base` - Core types, utilities, and token registry
-- `@armory/tokens` - Pre-configured token objects (optional)
+- `@armory-sh/base` - Core types, utilities, and token registry
+- `@armory-sh/tokens` - Pre-configured token objects (optional)
 - `ethers` v6 - Ethereum library
 
 ---
@@ -195,8 +195,8 @@ bun test
 ### Using Pre-configured Tokens
 
 ```ts
-import { createX402Client } from "@armory/client-ethers";
-import { TOKENS } from "@armory/tokens";
+import { createX402Client } from "@armory-sh/client-ethers";
+import { TOKENS } from "@armory-sh/tokens";
 
 const client = createX402Client({
   signer,
@@ -212,7 +212,7 @@ const response = await client.get("https://api.example.com/protected", {
 ### Registering Custom Tokens
 
 ```ts
-import { registerToken } from "@armory/base";
+import { registerToken } from "@armory-sh/base";
 
 registerToken({
   symbol: "MYTOKEN",

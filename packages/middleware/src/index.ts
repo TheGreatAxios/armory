@@ -64,4 +64,4 @@ export type {
   TokenId,
   FacilitatorConfig as SimpleFacilitatorConfig,
   AcceptPaymentOptions,
-} from "@armory/base";
+} from "@armory-sh/base";

@@ -1,4 +1,4 @@
-import type { Address, CAIP2ChainId, CAIPAssetId } from "@armory/base";
+import type { Address, CAIP2ChainId, CAIPAssetId } from "@armory-sh/base";
 
 export interface FacilitatorConfig {
   url: string;

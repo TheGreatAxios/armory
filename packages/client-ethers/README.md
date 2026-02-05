@@ -1,18 +1,18 @@
-# @armory/client-ethers
+# @armory-sh/client-ethers
 
 Ethers v6 client for creating and signing Armory payments.
 
 ## Install
 
 ```bash
-bun add @armory/client-ethers
+bun add @armory-sh/client-ethers
 ```
 
 ## Use
 
 ```typescript
 import { ethers } from 'ethers'
-import { createArmoryPayment } from '@armory/client-ethers'
+import { createArmoryPayment } from '@armory-sh/client-ethers'
 
 const provider = new ethers.JsonRpcProvider('https://mainnet.base.org')
 const signer = await provider.getSigner()

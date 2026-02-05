@@ -1,7 +1,7 @@
 import type { Signer, Provider } from "ethers";
-import type { CustomToken } from "@armory/base";
+import type { CustomToken } from "@armory-sh/base";
 
-/** Token configuration - can use pre-configured tokens from @armory/tokens */
+/** Token configuration - can use pre-configured tokens from @armory-sh/tokens */
 export type Token = CustomToken;
 
 export interface X402ClientConfig {

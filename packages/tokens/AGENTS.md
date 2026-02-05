@@ -1,4 +1,4 @@
-# @armory/tokens
+# @armory-sh/tokens
 
 Pre-configured token objects for X-402 Protocol.
 
@@ -52,8 +52,8 @@ interface TokenConfig {
 ## Usage
 
 ```typescript
-import { TOKENS, getToken, getUSDCTokens } from "@armory/tokens";
-import { registerToken } from "@armory/base";
+import { TOKENS, getToken, getUSDCTokens } from "@armory-sh/tokens";
+import { registerToken } from "@armory-sh/base";
 
 // Access specific token
 const usdcBase = TOKENS.USDC_BASE;
@@ -73,8 +73,8 @@ const allUsdc = getUSDCTokens();
 ### client-viem
 
 ```typescript
-import { createX402Client } from "@armory/client-viem";
-import { TOKENS } from "@armory/tokens";
+import { createX402Client } from "@armory-sh/client-viem";
+import { TOKENS } from "@armory-sh/tokens";
 
 const client = createX402Client({
   wallet: { type: "account", account },
@@ -85,8 +85,8 @@ const client = createX402Client({
 ### client-ethers
 
 ```typescript
-import { createX402Client } from "@armory/client-ethers";
-import { TOKENS } from "@armory/tokens";
+import { createX402Client } from "@armory-sh/client-ethers";
+import { TOKENS } from "@armory-sh/tokens";
 
 const client = createX402Client({
   signer,
@@ -97,8 +97,8 @@ const client = createX402Client({
 ### client-web3
 
 ```typescript
-import { createX402Client } from "@armory/client-web3";
-import { TOKENS } from "@armory/tokens";
+import { createX402Client } from "@armory-sh/client-web3";
+import { TOKENS } from "@armory-sh/tokens";
 
 const client = createX402Client({
   account,
@@ -110,7 +110,7 @@ const client = createX402Client({
 ### Registering Custom Tokens
 
 ```typescript
-import { registerToken } from "@armory/base";
+import { registerToken } from "@armory-sh/base";
 
 registerToken({
   symbol: "MYTOKEN",

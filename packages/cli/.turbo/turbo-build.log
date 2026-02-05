@@ -1,0 +1,10 @@
+$ tsup
+CLI Building entry: src/cli.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: /Users/thegreataxios/projects/armory/packages/cli/tsup.config.ts
+CLI Target: esnext
+CLI Cleaning output folder
+ESM Build start
+ESM dist/cli.js 8.83 KB
+ESM ⚡️ Build success in 4ms

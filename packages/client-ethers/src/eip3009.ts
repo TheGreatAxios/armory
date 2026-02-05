@@ -2,7 +2,7 @@ import type { Signer } from "ethers";
 import {
   createEIP712Domain,
   type TransferWithAuthorization,
-} from "@armory/base";
+} from "@armory-sh/base";
 import type {
   TransferWithAuthorizationParams,
   EIP712Domain as EIP712DomainType,

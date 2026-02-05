@@ -1,5 +1,5 @@
 {
-  "name": "@armory/client-web3",
+  "name": "@armory-sh/client-web3",
   "version": "0.1.0",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
@@ -8,6 +8,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "bun": "./src/index.ts",
       "default": "./dist/index.js"
     },
@@ -22,11 +23,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/thegreataxios/armory.git",
+    "url": "git+https://github.com/thegreataxios/armory.git",
     "directory": "packages/client-web3"
   },
   "dependencies": {
-    "@armory/base": "workspace:*",
+    "@armory-sh/base": "workspace:*",
     "web3": "4.16.0"
   },
   "devDependencies": {
@@ -34,7 +35,7 @@
     "bun-types": "latest"
   },
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node --external @armory/base --external web3",
+    "build": "tsup",
     "test": "bun test",
     "example": "bun run examples/"
   }

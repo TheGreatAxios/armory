@@ -11,10 +11,10 @@
  * ```
  */
 
-import { createX402Client } from "@armory/client-ethers";
+import { createX402Client } from "@armory-sh/client-ethers";
 import { ethers } from "ethers";
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse } from "axios";
-import { registerToken } from "@armory/base";
+import { registerToken } from "@armory-sh/base";
 
 // Configuration
 const PRIVATE_KEY = process.env.PRIVATE_KEY ?? "0x0000000000000000000000000000000000000000000000000000000000000001";

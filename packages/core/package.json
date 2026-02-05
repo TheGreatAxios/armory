@@ -1,5 +1,5 @@
 {
-  "name": "@armory/base",
+  "name": "@armory-sh/base",
   "version": "0.1.0",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
@@ -8,6 +8,7 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "bun": "./src/index.ts",
       "default": "./dist/index.js"
     },
@@ -22,18 +23,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/thegreataxios/armory.git",
+    "url": "git+https://github.com/thegreataxios/armory.git",
     "directory": "packages/core"
   },
   "dependencies": {
     "viem": "2.45.0"
   },
   "devDependencies": {
-    "typescript": "5.9.3",
-    "bun-types": "latest"
+    "@types/node": "^25.2.1",
+    "bun-types": "latest",
+    "typescript": "5.9.3"
   },
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target node && tsc --emitDeclarationOnly",
+    "build": "tsup",
     "test": "bun test"
   }
 }

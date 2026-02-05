@@ -52,15 +52,15 @@ const FACILITATOR_PACKAGE = (name: string) => `{
     "start": "bun run src/index.ts"
   },
   "dependencies": {
-    "@armory/base": "latest",
-    "@armory/facilitator": "latest",
-    "@armory/tokens": "latest"
+    "@armory-sh/base": "latest",
+    "@armory-sh/facilitator": "latest",
+    "@armory-sh/tokens": "latest"
   }
 }`;
 
-const FACILITATOR_INDEX = `import { createFacilitatorServer } from "@armory/facilitator";
-import { createMemoryQueue } from "@armory/facilitator/queue/memory";
-import { MemoryNonceTracker } from "@armory/facilitator/nonce/memory";
+const FACILITATOR_INDEX = `import { createFacilitatorServer } from "@armory-sh/facilitator";
+import { createMemoryQueue } from "@armory-sh/facilitator/queue/memory";
+import { MemoryNonceTracker } from "@armory-sh/facilitator/nonce/memory";
 
 const server = createFacilitatorServer({
   port: Number(process.env.PORT ?? 3000),
@@ -123,14 +123,14 @@ const SERVER_PACKAGE = (name: string) => `{
     "dev": "bun run src/index.ts"
   },
   "dependencies": {
-    "@armory/base": "latest",
-    "@armory/middleware": "latest"
+    "@armory-sh/base": "latest",
+    "@armory-sh/middleware": "latest"
   }
 }`;
 
 const SERVER_INDEX = `import { Bun } from "bun";
-import { paymentMiddleware } from "@armory/middleware/bun";
-import { USDC_BASE } from "@armory/tokens";
+import { paymentMiddleware } from "@armory-sh/middleware/bun";
+import { USDC_BASE } from "@armory-sh/tokens";
 
 const app = Bun.serve({
   port: 3000,
@@ -171,14 +171,14 @@ const CLIENT_PACKAGE = (name: string) => `{
     "dev": "bun run src/index.ts"
   },
   "dependencies": {
-    "@armory/client-viem": "latest",
-    "@armory/tokens": "latest"
+    "@armory-sh/client-viem": "latest",
+    "@armory-sh/tokens": "latest"
   }
 }`;
 
-const CLIENT_INDEX = `import { createX402Client } from "@armory/client-viem";
+const CLIENT_INDEX = `import { createX402Client } from "@armory-sh/client-viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { USDC_BASE } from "@armory/tokens";
+import { USDC_BASE } from "@armory-sh/tokens";
 import { client } from "./client.js";
 
 const account = privateKeyToAccount(process.env.PRIVATE_KEY ?? "0x" + "1".repeat(64));
@@ -198,7 +198,7 @@ async function main() {
 main().catch(console.error);
 `;
 
-const CLIENT_IMPL = `import type { X402Client } from "@armory/client-viem";
+const CLIENT_IMPL = `import type { X402Client } from "@armory-sh/client-viem";
 
 export async function fetchData(client: X402Client) {
   const response = await client.fetch("http://localhost:3000/api/data");

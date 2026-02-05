@@ -1,8 +1,8 @@
-import { createX402Client } from "@armory/client-viem";
+import { createX402Client } from "@armory-sh/client-viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { createWalletClient, custom } from "viem";
 import { base } from "viem/chains";
-import { registerToken } from "@armory/base";
+import { registerToken } from "@armory-sh/base";
 
 const API_URL = "https://api.example.com/protected-endpoint";
 

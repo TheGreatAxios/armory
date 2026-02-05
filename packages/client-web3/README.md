@@ -1,18 +1,18 @@
-# @armory/client-web3
+# @armory-sh/client-web3
 
 Web3.js client for creating and signing Armory payments.
 
 ## Install
 
 ```bash
-bun add @armory/client-web3
+bun add @armory-sh/client-web3
 ```
 
 ## Use
 
 ```typescript
 import { Web3 } from 'web3'
-import { createArmoryPayment } from '@armory/client-web3'
+import { createArmoryPayment } from '@armory-sh/client-web3'
 
 const web3 = new Web3('https://mainnet.base.org')
 

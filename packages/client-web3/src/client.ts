@@ -3,7 +3,7 @@ import {
   getNetworkConfig,
   encodePaymentV1,
   encodePaymentV2,
-} from "@armory/base";
+} from "@armory-sh/base";
 import type {
   PaymentPayloadV1,
   PaymentPayloadV2,
@@ -11,7 +11,7 @@ import type {
   PaymentRequirementsV2,
   SettlementResponseV1,
   SettlementResponseV2,
-} from "@armory/base";
+} from "@armory-sh/base";
 import type {
   Web3Account,
   Web3ClientConfig,
@@ -19,7 +19,7 @@ import type {
   PaymentSignatureResult,
   Web3X402Client,
 } from "./types";
-import { createEIP712Domain, createTransferWithAuthorization, parseSignature } from "./eip3009";
+import { createEIP712Domain, createTransferWithAuthorization } from "./eip3009";
 
 const DEFAULT_EXPIRY_SECONDS = 3600;
 const DEFAULT_VALID_AFTER = 0;
@@ -72,8 +72,8 @@ const parseSignature = (signature: string): { v: number; r: string; s: string } 
 
 const signTypedDataWrapper = async (
   account: Web3Account,
-  domain: Record<string, string>,
-  message: Record<string, string>
+  domain: Record<string, string> | { [key: string]: string | number | boolean },
+  message: Record<string, string> | { [key: string]: string | number | boolean }
 ): Promise<{ v: number; r: string; s: string }> => {
   const acc = account as unknown as Record<string, unknown>;
 

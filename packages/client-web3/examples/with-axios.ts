@@ -11,10 +11,10 @@
  * ```
  */
 
-import { createX402Client, createX402Transport } from "@armory/client-web3";
+import { createX402Client, createX402Transport } from "@armory-sh/client-web3";
 import { Web3 } from "web3";
 import axios, { type AxiosInstance } from "axios";
-import { registerToken } from "@armory/base";
+import { registerToken } from "@armory-sh/base";
 
 // Configuration
 const PRIVATE_KEY = process.env.PRIVATE_KEY ?? "0x0000000000000000000000000000000000000000000000000000000000000001";

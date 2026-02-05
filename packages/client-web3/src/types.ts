@@ -8,11 +8,11 @@ import type {
   SettlementResponseV2,
   NetworkConfig,
   CustomToken,
-} from "@armory/base";
+} from "@armory-sh/base";
 
 export type Web3Account = Account | Web3BaseWallet;
 
-/** Token configuration - can use pre-configured tokens from @armory/tokens */
+/** Token configuration - can use pre-configured tokens from @armory-sh/tokens */
 export type Token = CustomToken;
 
 export interface Web3ClientConfig {

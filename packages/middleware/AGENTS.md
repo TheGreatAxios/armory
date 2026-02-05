@@ -1,4 +1,4 @@
-# @armory/middleware
+# @armory-sh/middleware
 
 HTTP middleware for X-402 payment protocol. Express, Hono, Bun, Elysia.
 
@@ -25,7 +25,7 @@ import {
   settleWithFacilitator,
   createPaymentRequiredHeaders,
   createSettlementHeaders,
-} from "@armory/middleware"
+} from "@armory-sh/middleware"
 ```
 
 ### Types
@@ -40,7 +40,7 @@ import type {
   HttpResponse,
   FacilitatorVerifyResult,
   FacilitatorSettleResult,
-} from "@armory/middleware"
+} from "@armory-sh/middleware"
 ```
 
 ### Express Middleware
@@ -50,7 +50,7 @@ import {
   paymentMiddleware,
   type AugmentedRequest,
   type PaymentMiddlewareConfig,
-} from "@armory/middleware"
+} from "@armory-sh/middleware"
 ```
 
 ### Hono Middleware
@@ -61,7 +61,7 @@ import {
   type PaymentMiddlewareConfig as HonoPaymentMiddlewareConfig,
   type PaymentInfo,
   type PaymentVariables,
-} from "@armory/middleware"
+} from "@armory-sh/middleware"
 ```
 
 ### Bun Middleware
@@ -71,7 +71,7 @@ import {
   createBunMiddleware,
   type BunMiddleware,
   type BunMiddlewareConfig,
-} from "@armory/middleware"
+} from "@armory-sh/middleware"
 ```
 
 ### Elysia Middleware
@@ -82,7 +82,7 @@ import {
   type PaymentMiddlewareConfig as ElysiaPaymentMiddlewareConfig,
   type PaymentInfo as ElysiaPaymentInfo,
   type PaymentContext,
-} from "@armory/middleware"
+} from "@armory-sh/middleware"
 ```
 
 ---
@@ -93,8 +93,8 @@ import {
 
 ```typescript
 import express from 'express'
-import { paymentMiddleware } from '@armory/middleware'
-import { TOKENS } from '@armory/tokens'
+import { paymentMiddleware } from '@armory-sh/middleware'
+import { TOKENS } from '@armory-sh/tokens'
 
 const app = express()
 
@@ -117,8 +117,8 @@ app.listen(3000)
 
 ```typescript
 import { Hono } from 'hono'
-import { honoPaymentMiddleware } from '@armory/middleware'
-import { TOKENS } from '@armory/tokens'
+import { honoPaymentMiddleware } from '@armory-sh/middleware'
+import { TOKENS } from '@armory-sh/tokens'
 
 const app = new Hono()
 
@@ -137,8 +137,8 @@ app.get('/protected', (c) => {
 ### Bun
 
 ```typescript
-import { createBunMiddleware } from '@armory/middleware'
-import { TOKENS } from '@armory/tokens'
+import { createBunMiddleware } from '@armory-sh/middleware'
+import { TOKENS } from '@armory-sh/tokens'
 
 const middleware = createBunMiddleware({
   token: TOKENS.USDC_BASE,
@@ -158,8 +158,8 @@ Bun.serve({
 
 ```typescript
 import { Elysia } from 'elysia'
-import { elysiaPaymentMiddleware } from '@armory/middleware'
-import { TOKENS } from '@armory/tokens'
+import { elysiaPaymentMiddleware } from '@armory-sh/middleware'
+import { TOKENS } from '@armory-sh/tokens'
 
 const app = new Elysia()
   .use(elysiaPaymentMiddleware({
@@ -205,7 +205,7 @@ src/
 
 ## Dependencies
 
-- **@armory/base**: Protocol types and configs
+- **@armory-sh/base**: Protocol types and configs
 - **hono** (peer): For Hono middleware
 - **express** (peer): For Express middleware
 - **elysia** (peer): For Elysia middleware
@@ -226,8 +226,8 @@ src/
 ### Using Pre-configured Tokens
 
 ```typescript
-import { TOKENS } from "@armory/tokens";
-import { paymentMiddleware } from "@armory/middleware";
+import { TOKENS } from "@armory-sh/tokens";
+import { paymentMiddleware } from "@armory-sh/middleware";
 
 app.use(paymentMiddleware({
   facilitatorUrl: 'http://localhost:3000',
@@ -248,7 +248,7 @@ app.use(paymentMiddleware({
 ### Registering Custom Tokens
 
 ```typescript
-import { registerToken } from "@armory/base";
+import { registerToken } from "@armory-sh/base";
 
 registerToken({
   symbol: "MYTOKEN",

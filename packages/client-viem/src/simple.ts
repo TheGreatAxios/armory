@@ -15,7 +15,7 @@ import type {
   PaymentResult,
   PaymentError,
   ValidationError,
-} from "@armory/base";
+} from "@armory-sh/base";
 import type { X402Wallet } from "./types";
 import {
   resolveNetwork,
@@ -23,7 +23,7 @@ import {
   validatePaymentConfig,
   isValidationError,
   createError,
-} from "@armory/base";
+} from "@armory-sh/base";
 import { createX402Client } from "./client";
 
 // ═══════════════════════════════════════════════════════════════
@@ -238,7 +238,7 @@ export const validateToken = (
  * Get list of available networks
  */
 export const getNetworks = (): string[] => {
-  const { getAvailableNetworks } = require("@armory/base");
+  const { getAvailableNetworks } = require("@armory-sh/base");
   return getAvailableNetworks();
 };
 
@@ -246,6 +246,6 @@ export const getNetworks = (): string[] => {
  * Get list of available tokens
  */
 export const getTokens = (): string[] => {
-  const { getAvailableTokens } = require("@armory/base");
+  const { getAvailableTokens } = require("@armory-sh/base");
   return getAvailableTokens();
 };
