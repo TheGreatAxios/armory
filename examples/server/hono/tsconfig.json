@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun-types"],
+    "moduleResolution": "bundler",
+    "paths": {
+      "@armory/middleware": ["../../../packages/middleware/dist"],
+      "@armory/facilitator": ["../../../packages/facilitator/dist"],
+      "@armory/core": ["../../../packages/core/dist"]
+    }
+  },
+  "include": ["*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

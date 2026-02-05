@@ -1,0 +1,15 @@
+{
+  "name": "@armory/example-client-faremeter",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "faremeter-adapter": "bun run faremeter-adapter.ts"
+  },
+  "dependencies": {
+    "@armory/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "bun-types": "^1.0.0"
+  }
+}

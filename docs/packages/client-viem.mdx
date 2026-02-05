@@ -1,0 +1,195 @@
+---
+description: Viem client for Armory
+---
+
+# Client Viem Package
+
+The `@armory/client-viem` package provides X-402 payment client integration for Viem.
+
+## Installation
+
+```bash
+bun add @armory/client-viem viem
+```
+
+## Key Exports
+
+### Main Functions
+
+```typescript
+import {
+  createX402Client,
+  createX402Transport,
+} from '@armory/client-viem'
+```
+
+### Types
+
+```typescript
+import type {
+  X402Client,
+  X402ClientConfig,
+  X402Wallet,
+  X402ProtocolVersion,
+  Token,
+  PaymentResult,
+  X402TransportConfig,
+} from '@armory/client-viem'
+```
+
+### Errors
+
+```typescript
+import {
+  X402ClientError,
+  SigningError,
+  PaymentError,
+} from '@armory/client-viem'
+```
+
+## Setup
+
+### With Account
+
+```typescript
+import { createX402Client } from '@armory/client-viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { TOKENS } from '@armory/tokens';
+
+const account = privateKeyToAccount('0x...');
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  defaultToken: TOKENS.USDC_BASE,
+});
+```
+
+### With WalletClient
+
+```typescript
+import { createX402Client } from '@armory/client-viem';
+import { createWalletClient, custom } from 'viem';
+import { base } from 'viem/chains';
+import { TOKENS } from '@armory/tokens';
+
+const walletClient = createWalletClient({
+  chain: base,
+  transport: custom(window.ethereum),
+});
+
+const client = createX402Client({
+  wallet: { type: 'walletClient', walletClient },
+  defaultToken: TOKENS.USDC_BASE,
+});
+```
+
+## Making Requests
+
+### Automatic Payment Handling
+
+```typescript
+// Automatic 402 handling
+const response = await client.fetch('https://api.example.com/data');
+const data = await response.json();
+```
+
+### Manual Payment Creation
+
+```typescript
+// Using token object (recommended)
+import { TOKENS } from '@armory/tokens';
+
+const payment = await client.createPayment({
+  token: TOKENS.USDC_BASE,
+  amount: '1.5',
+  payTo: '0x...',
+});
+
+// Legacy approach (still supported)
+const payment = await client.createPayment(
+  '1.5',        // amount in USDC
+  '0x...',      // payTo address
+  '0x...',      // USDC contract address
+  8453          // chain ID (Base)
+);
+```
+
+### Transport Wrapper
+
+```typescript
+import { createX402Transport } from '@armory/client-viem';
+import { TOKENS } from '@armory/tokens';
+
+const fetchWithPayment = createX402Transport({
+  wallet: { type: 'account', account },
+  defaultToken: TOKENS.USDC_BASE,
+});
+
+// Use as drop-in replacement for fetch
+const response = await fetchWithPayment('https://api.example.com/data');
+```
+
+## Configuration Options
+
+```typescript
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  defaultToken: TOKENS.USDC_BASE,
+  version: 'auto',           // 'auto' | 1 | 2
+  defaultExpiry: 3600,       // seconds (default: 1 hour)
+  nonceGenerator: () => `${Date.now()}`,
+  debug: true,               // enable logging
+});
+```
+
+## Protocol Support
+
+- **v1 (X-PAYMENT)**: Base64-encoded JSON with v, r, s signature
+- **v2 (PAYMENT-SIGNATURE)**: JSON with structured signature object
+- **Auto-detection**: Automatically detects server protocol version
+
+## Token Objects
+
+### Using Pre-configured Tokens
+
+```typescript
+import { TOKENS } from '@armory/tokens';
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  defaultToken: TOKENS.USDC_BASE,
+});
+
+// Override per-request
+const response = await client.fetch('https://api.example.com/data', {
+  token: TOKENS.USDC_POLYGON,
+});
+```
+
+### Registering Custom Tokens
+
+```typescript
+import { registerToken } from '@armory/core';
+
+registerToken({
+  symbol: 'MYTOKEN',
+  name: 'My Custom Token',
+  version: '1',
+  contractAddress: '0x...',
+  chainId: 8453,
+  decimals: 18,
+});
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  defaultToken: {
+    symbol: 'MYTOKEN',
+    name: 'My Custom Token',
+    version: '1',
+    contractAddress: '0x...',
+    chainId: 8453,
+  },
+});
+```
+
+For available tokens, see the [`@armory/tokens`](/packages/tokens) package.

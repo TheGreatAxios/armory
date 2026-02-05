@@ -1,0 +1,20 @@
+{
+  "name": "@armory/merchant-elysia",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "X-402 Merchant example using ElysiaJS middleware",
+  "scripts": {
+    "start": "bun run server.ts",
+    "dev": "bun --hot run server.ts"
+  },
+  "dependencies": {
+    "@armory/core": "workspace:*",
+    "@armory/middleware": "workspace:*",
+    "@elysiajs/cors": "^1.0.0",
+    "elysia": "^1.0.0"
+  },
+  "devDependencies": {
+    "bun-types": "^1.0.0",
+    "typescript": "^5.0.0"
+  }
+}

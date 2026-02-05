@@ -1,0 +1,18 @@
+{
+  "name": "@armory/merchant-bun",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "X-402 Merchant example using native Bun.serve",
+  "scripts": {
+    "start": "bun run server.ts",
+    "dev": "bun --hot run server.ts"
+  },
+  "dependencies": {
+    "@armory/core": "workspace:*",
+    "@armory/middleware": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "^1.0.0",
+    "typescript": "^5.0.0"
+  }
+}

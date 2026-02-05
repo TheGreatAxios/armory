@@ -1,0 +1,23 @@
+import type { PaymentPayloadV1, SettlementResponseV1 } from "./types/v1";
+import { V1_HEADERS } from "./types/v1";
+import type { PaymentPayloadV2, SettlementResponseV2 } from "./types/v2";
+import { V2_HEADERS } from "./types/v2";
+export { V1_HEADERS, V2_HEADERS };
+export type PaymentPayload = PaymentPayloadV1 | PaymentPayloadV2;
+export type SettlementResponse = SettlementResponseV1 | SettlementResponseV2;
+export declare const encodePaymentV1: (payload: PaymentPayloadV1) => string;
+export declare const decodePaymentV1: (encoded: string) => PaymentPayloadV1;
+export declare const encodeSettlementV1: (response: SettlementResponseV1) => string;
+export declare const decodeSettlementV1: (encoded: string) => SettlementResponseV1;
+export declare const encodePaymentV2: (payload: PaymentPayloadV2) => string;
+export declare const decodePaymentV2: (encoded: string) => PaymentPayloadV2;
+export declare const encodeSettlementV2: (response: SettlementResponseV2) => string;
+export declare const decodeSettlementV2: (encoded: string) => SettlementResponseV2;
+export declare const detectPaymentVersion: (headers: Headers) => 1 | 2 | null;
+export declare const decodePayment: (headers: Headers) => PaymentPayload;
+export declare const decodeSettlement: (headers: Headers) => SettlementResponse;
+export declare const isPaymentV1: (payload: PaymentPayload) => payload is PaymentPayloadV1;
+export declare const isPaymentV2: (payload: PaymentPayload) => payload is PaymentPayloadV2;
+export declare const isSettlementV1: (response: SettlementResponse) => response is SettlementResponseV1;
+export declare const isSettlementV2: (response: SettlementResponse) => response is SettlementResponseV2;
+//# sourceMappingURL=encoding.d.ts.map

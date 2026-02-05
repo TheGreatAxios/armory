@@ -1,0 +1,185 @@
+---
+description: Core protocol logic and types
+---
+
+# Core Package
+
+The `@armory/core` package contains the fundamental types, encoding, EIP-712 signing, network configurations, and token registry for the X-402 protocol.
+
+## Installation
+
+```bash
+bun add @armory/core
+```
+
+## Key Exports
+
+### Protocol Types
+
+```typescript
+import type {
+  PaymentPayload,
+  PaymentRequirements,
+  SettlementResponse,
+  PaymentPayloadV1,
+  PaymentPayloadV2,
+} from '@armory/core'
+```
+
+### Encoding/Decoding
+
+```typescript
+import {
+  encodePaymentV1,
+  decodePaymentV1,
+  encodePaymentV2,
+  decodePaymentV2,
+  detectPaymentVersion,
+  decodePayment,
+} from '@armory/core'
+```
+
+### Type Guards
+
+```typescript
+import {
+  isV1,
+  isV2,
+  getPaymentVersion,
+  getRequirementsVersion,
+  isSettlementSuccessful,
+} from '@armory/core'
+```
+
+### EIP-712
+
+```typescript
+import {
+  createEIP712Domain,
+  createTransferWithAuthorization,
+  validateTransferWithAuthorization,
+  EIP712_TYPES,
+} from '@armory/core'
+```
+
+### Networks
+
+```typescript
+import {
+  NETWORKS,
+  getNetworkConfig,
+  getNetworkByChainId,
+  getMainnets,
+  getTestnets,
+} from '@armory/core'
+```
+
+### Token Registry
+
+```typescript
+import {
+  registerToken,
+  getCustomToken,
+  getAllCustomTokens,
+  unregisterToken,
+  isCustomToken,
+  type CustomToken,
+} from '@armory/core'
+```
+
+## Custom Tokens
+
+Register your own tokens for use across Armory:
+
+```typescript
+import { registerToken, type CustomToken } from '@armory/core';
+
+const myToken: CustomToken = {
+  symbol: 'MYTOKEN',
+  name: 'My Custom Token',
+  version: '1',
+  contractAddress: '0x...',
+  chainId: 8453,
+  decimals: 18,
+};
+
+registerToken(myToken);
+
+// Use with facilitator
+const result = await verifyPayment(payload, {
+  token: myToken,
+  // ... other options
+});
+```
+
+## Token Registry
+
+Query registered tokens:
+
+```typescript
+import {
+  getCustomToken,
+  getAllCustomTokens,
+  isCustomToken
+} from '@armory/core';
+
+// Get token by chain and address
+const token = getCustomToken(8453, '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913');
+
+// Check if token is registered
+const isRegistered = isCustomToken(8453, '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913');
+
+// Get all registered tokens
+const allTokens = getAllCustomTokens();
+
+// Unregister a token
+unregisterToken(8453, '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913');
+```
+
+## Network Support
+
+Supported networks:
+
+- **Ethereum**: Mainnet, Sepolia
+- **Polygon**: Mainnet, Amoy
+- **Optimism**: Mainnet, Sepolia
+- **Arbitrum**: Mainnet, Sepolia
+- **Base**: Mainnet, Sepolia
+
+```typescript
+import { getNetworkConfig } from '@armory/core';
+
+const baseConfig = getNetworkConfig(8453);
+// { name: 'base', chainId: 8453, caip2Id: 'eip155:8453', ... }
+```
+
+## Protocol Versions
+
+### V1 (Legacy)
+
+```typescript
+interface PaymentPayloadV1 {
+  contractAddress: Address
+  network: Network
+  amount: string
+  nonce: string
+  validAfter: number
+  validBefore: number
+  signature: Signature
+  v: number
+}
+```
+
+### V2 (CAIP Compliant)
+
+```typescript
+interface PaymentPayloadV2 {
+  chainId: CAIP2ChainId
+  assetId: CAIPAssetId
+  payTo: PayToV2
+  signature: Signature
+  extensions?: Extensions
+}
+```
+
+For pre-configured tokens, use the [`@armory/tokens`](/packages/tokens) package.

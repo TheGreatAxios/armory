@@ -1,0 +1,9 @@
+# Environment
+.env
+
+# Build output
+dist/
+node_modules/
+
+# Bun
+*.bun:

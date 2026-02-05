@@ -1,0 +1,179 @@
+---
+description: Get started with Armory in minutes using our simple 1-line APIs
+---
+
+# Quick Start
+
+Get up and running with Armory in just a few lines of code.
+
+## Installation
+
+```bash
+# For clients (making payments)
+bun add @armory/client-viem
+
+# For merchants (accepting payments)
+bun add @armory/middleware
+```
+
+## Simple One-Line API
+
+Armory provides a **simple 1-line API** that handles everything automatically:
+
+### For Buyers (Making Payments)
+
+```typescript
+import { armoryPay } from '@armory/client-viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0x...');
+
+// One line - handles everything!
+const result = await armoryPay(
+  { account },                      // wallet
+  'https://api.example.com/data',   // API endpoint
+  'base',                           // network (name, chain ID, or CAIP-2)
+  'usdc'                            // token (symbol, address, or CAIP asset ID)
+);
+
+if (result.success) {
+  console.log(result.data);      // API response
+  console.log(result.txHash);    // Settlement transaction hash
+} else {
+  console.error(result.code, result.message);
+}
+```
+
+### For Merchants (Accepting Payments)
+
+```typescript
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+// Simple - single network, single token
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xMerchantAddress...',
+  amount: '1.0'
+}));
+
+// Advanced - multi-network, multi-token, multi-facilitator
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xMerchantAddress...',
+  amount: '1.0',
+  accept: {
+    networks: ['base', 'ethereum', 'skale-base'],
+    tokens: ['usdc', 'eurc'],
+    facilitators: [
+      { url: 'https://facilitator1.com' },
+      { url: 'https://facilitator2.com' }
+    ]
+  }
+}));
+```
+
+## All Supported Input Formats
+
+### Network Input Formats
+
+You can specify networks in **any** format:
+
+```typescript
+// By name (case-insensitive)
+'base'
+'ethereum'
+'skale-base'
+
+// By chain ID
+8453
+1
+1187947933
+
+// By CAIP-2
+'eip155:8453'
+'eip155:1'
+
+// All of these work identically:
+await armoryPay(wallet, url, 'base', 'usdc');
+await armoryPay(wallet, url, 8453, 'usdc');
+await armoryPay(wallet, url, 'eip155:8453', 'usdc');
+```
+
+### Token Input Formats
+
+You can specify tokens in **any** format:
+
+```typescript
+// By symbol (case-insensitive)
+'usdc'
+'USDC'
+'UsDc'
+
+// By EVM address
+'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+
+// By CAIP Asset ID
+'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+
+// All of these work identically:
+await armoryPay(wallet, url, 'base', 'usdc');
+await armoryPay(wallet, url, 'base', '0x833589fC...');
+await armoryPay(wallet, url, 'base', 'eip155:8453/erc20:0x8335...');
+```
+
+## Automatic Validation
+
+Armory validates everything upfront and gives **clear error messages**:
+
+```typescript
+// Error: Token on wrong network
+await armoryPay(wallet, url, 'ethereum', 'usdc');
+// Error: TOKEN_NOT_ON_NETWORK
+// "Token USDC is on chain 8453, but expected chain 1"
+
+// Error: Facilitator doesn't support network
+await acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '1.0',
+  accept: {
+    networks: ['polygon'],
+    facilitators: [{
+      url: 'https://facilitator.com',
+      networks: ['base'] // Only supports base!
+    }]
+  }
+});
+// Error: FACILITATOR_NO_NETWORK_SUPPORT
+// "Facilitator does not support network Polygon (chain 137). Supported: Base"
+
+// Error: Facilitator doesn't support token
+// Error: FACILITATOR_NO_TOKEN_SUPPORT
+// "Facilitator does not support token EURC on Base. Supported: USDC"
+```
+
+## Available Networks
+
+| Network | Chain ID | Name | CAIP-2 |
+|---------|----------|------|--------|
+| Ethereum | 1 | ethereum | eip155:1 |
+| Base | 8453 | base | eip155:8453 |
+| Base Sepolia | 84532 | base-sepolia | eip155:84532 |
+| SKALE Base | 1187947933 | skale-base | eip155:1187947933 |
+| SKALE Base Sepolia | 324705682 | skale-base-sepolia | eip155:324705682 |
+
+## Available Tokens
+
+Pre-configured tokens (see [Token Registry](./tokens) for full list):
+
+| Symbol | Networks |
+|--------|----------|
+| USDC | Base, Ethereum, SKALE Base, SKALE Base Sepolia |
+| EURC | Base |
+| USDT | SKALE Base, SKALE Base Sepolia |
+| WBTC | SKALE Base, SKALE Base Sepolia |
+| WETH | SKALE Base, SKALE Base Sepolia |
+
+## Next Steps
+
+- [Token Registry](./tokens) - See all available tokens and how to add your own
+- [Examples](/examples/) - Complete working examples
+- [API Reference](/packages/) - Full API documentation
+- [Deployment Guide](../../DEPLOYMENT.md) - Deploy your own facilitator

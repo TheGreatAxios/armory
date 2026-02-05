@@ -1,0 +1,40 @@
+{
+  "name": "@armory/facilitator",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./dist/*": "./dist/*.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thegreataxios/armory.git",
+    "directory": "packages/facilitator"
+  },
+  "dependencies": {
+    "@armory/core": "workspace:*",
+    "viem": "2.45.0"
+  },
+  "optionalDependencies": {
+    "ioredis": "5.9.2"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "bun-types": "latest"
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target node && tsc --emitDeclarationOnly",
+    "test": "bun test"
+  }
+}

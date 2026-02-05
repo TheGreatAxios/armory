@@ -1,0 +1,226 @@
+---
+description: Payment verification and settlement
+---
+
+# Facilitator Package
+
+The `@armory/facilitator` package handles payment verification and on-chain settlement for the X-402 protocol.
+
+## Installation
+
+```bash
+bun add @armory/facilitator
+```
+
+## Key Exports
+
+### Payment Verification
+
+```typescript
+import {
+  verifyPayment,
+  type VerifyPaymentOptions,
+  type VerificationResult,
+  PaymentVerificationError,
+  InvalidSignatureError,
+  InsufficientBalanceError,
+  NonceUsedError,
+  PaymentExpiredError,
+  PaymentNotYetValidError,
+  UnsupportedNetworkError,
+  InvalidPayloadError,
+} from '@armory/facilitator'
+```
+
+### Payment Settlement
+
+```typescript
+import {
+  settlePayment,
+  type SettlePaymentParams,
+  type SettlementResult,
+  SettlementError,
+  ContractExecutionError,
+  AuthorizationExpiredError,
+} from '@armory/facilitator'
+```
+
+### Queue
+
+```typescript
+import {
+  MemoryQueue,
+  createMemoryQueue,
+  type PaymentQueue,
+  type SettleJob,
+  type SettleResult,
+} from '@armory/facilitator'
+```
+
+### Nonce Tracker
+
+```typescript
+import {
+  MemoryNonceTracker,
+  createNonceTracker,
+  type NonceTracker,
+  type StoredNonce,
+  NonceAlreadyUsedError,
+} from '@armory/facilitator'
+```
+
+### HTTP Server
+
+```typescript
+import {
+  createFacilitatorServer,
+  type FacilitatorServerOptions,
+  type FacilitatorServer,
+} from '@armory/facilitator'
+```
+
+## Payment Verification
+
+### With Token Objects (Recommended)
+
+```typescript
+import { verifyPayment } from '@armory/facilitator';
+import { TOKENS } from '@armory/tokens';
+
+const result = await verifyPayment(payload, {
+  walletClient,
+  publicClient,
+  nonceTracker,
+  acceptedNetworks: ['ethereum', 'polygon'],
+  token: TOKENS.USDC_BASE, // Use token object
+});
+
+if (result.success) {
+  console.log('Payment valid:', result.data);
+}
+```
+
+### Legacy Approach (Still Supported)
+
+```typescript
+const result = await verifyPayment(payload, {
+  walletClient,
+  publicClient,
+  nonceTracker,
+  acceptedNetworks: ['ethereum', 'polygon'],
+  contractAddress: '0x...',
+  network: 'base',
+});
+```
+
+## Payment Settlement
+
+```typescript
+import { settlePayment } from '@armory/facilitator';
+
+const receipt = await settlePayment({
+  walletClient,
+  publicClient,
+  payload: result.data,
+  contractAddress: '0x...',
+  gasPrice: 20_000_000_000n,
+});
+
+console.log('Transaction hash:', receipt.transactionHash);
+```
+
+## Queue Management
+
+```typescript
+import { createMemoryQueue } from '@armory/facilitator';
+
+const queue = createMemoryQueue({
+  maxConcurrent: 5,
+  maxRetries: 3,
+});
+
+const jobId = await queue.add({
+  payload,
+  facilitatorAddress,
+  network,
+});
+
+queue.on('complete', (jobId, result) => {
+  console.log('Settled:', result.txHash);
+});
+
+queue.on('failed', (jobId, error) => {
+  console.error('Failed:', error.message);
+});
+```
+
+## Nonce Tracking
+
+```typescript
+import { createNonceTracker } from '@armory/facilitator';
+
+const tracker = createNonceTracker();
+
+// Check and reserve
+await tracker.checkAndReserve(nonce, contractAddress, from);
+
+// Mark used
+await tracker.markUsed(nonce, contractAddress, from, txHash);
+
+// Check if used
+const isUsed = await tracker.isUsed(nonce, contractAddress, from);
+```
+
+## HTTP Server
+
+```typescript
+import { createFacilitatorServer } from '@armory/facilitator';
+
+const server = createFacilitatorServer({
+  port: 3000,
+  walletClient,
+  publicClient,
+  nonceTracker,
+});
+
+server.on('verification', (result) => {
+  console.log('Payment verified:', result);
+});
+
+server.on('settlement', (result) => {
+  console.log('Payment settled:', result.txHash);
+});
+
+await server.start();
+```
+
+## Error Handling
+
+```typescript
+import {
+  PaymentVerificationError,
+  InvalidSignatureError,
+  InsufficientBalanceError,
+  NonceUsedError,
+  PaymentExpiredError,
+  PaymentNotYetValidError,
+} from '@armory/facilitator';
+
+try {
+  const result = await verifyPayment(payload, options);
+} catch (error) {
+  if (error instanceof InvalidSignatureError) {
+    console.error('Invalid signature');
+  } else if (error instanceof InsufficientBalanceError) {
+    console.error('Insufficient balance');
+  } else if (error instanceof NonceUsedError) {
+    console.error('Nonce already used');
+  } else if (error instanceof PaymentExpiredError) {
+    console.error('Payment expired');
+  } else if (error instanceof PaymentNotYetValidError) {
+    console.error('Payment not yet valid');
+  }
+}
+```
+
+For available tokens, see the [`@armory/tokens`](/packages/tokens) package.

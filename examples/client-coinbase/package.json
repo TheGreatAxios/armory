@@ -1,0 +1,16 @@
+{
+  "name": "@armory/example-client-coinbase",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "coinbase-wallet": "bun run coinbase-wallet.ts"
+  },
+  "dependencies": {
+    "@armory/core": "workspace:*",
+    "@coinbase/wallet-sdk": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "bun-types": "^1.0.0"
+  }
+}

@@ -1,0 +1,115 @@
+---
+description: Overview of the Armory protocol and architecture
+---
+
+# Overview
+
+Armory is a modular payment protocol for decentralized commerce, built on EIP-3009 (transferWithAuthorization).
+
+## What is X-402?
+
+X-402 is a payment protocol that enables server-to-client payments via HTTP headers. It allows clients to pay for API access using ERC-20 tokens (like USDC) without gas fees for the payer.
+
+## How It Works
+
+1. **Client** creates an EIP-3009 authorization (off-chain signature)
+2. **Client** sends request with payment header (`PAYMENT-SIGNATURE` or `X-PAYMENT`)
+3. **Server** verifies the signature and payment details
+4. **Server** settles the payment on-chain (via `transferWithAuthorization`)
+5. **Server** responds with settlement confirmation
+
+## Architecture
+
+Armory consists of several packages that work together:
+
+### Core Packages
+
+- **@armory/core** - Protocol types, encoding, EIP-712, network configs, and token registry
+- **@armory/tokens** - Pre-configured token objects for common ERC-20 tokens
+
+### Server Packages
+
+- **@armory/facilitator** - Payment verification and on-chain settlement
+- **@armory/middleware** - HTTP middleware for Express, Hono, Bun, and Elysia
+
+### Client Packages
+
+- **@armory/client-viem** - Viem-based payment client
+- **@armory/client-ethers** - Ethers.js v6 payment client
+- **@armory/client-web3** - Web3.js payment client
+
+## Protocol Versions
+
+### V1 (Legacy)
+
+- Header: `X-PAYMENT`
+- Format: Base64-encoded JSON
+- Uses custom network names
+- Response: `X-PAYMENT-RESPONSE`
+
+### V2 (Current Standard)
+
+- Header: `PAYMENT-SIGNATURE`
+- Format: JSON with CAIP-2 chain IDs and CAIP asset IDs
+- Standards-compliant
+- Response: `PAYMENT-RESPONSE`
+
+## Key Concepts
+
+### Payment Payload
+
+```typescript
+interface PaymentPayload {
+  from: Address           // Payer address
+  to: Address             // Payee address
+  amount: bigint          // Payment amount
+  validAfter: number      // Authorization start time
+  validBefore: number     // Authorization end time
+  nonce: string           // Unique nonce
+  signature: Signature    // EIP-712 signature
+}
+```
+
+### Token Objects
+
+Armory uses token objects for type-safe token configuration:
+
+```typescript
+interface TokenConfig {
+  symbol: string
+  name: string
+  version: string
+  contractAddress: `0x${string}`
+  chainId: number
+  decimals: number
+  domainName: string
+  domainVersion: string
+}
+```
+
+### Settlement Modes
+
+- **verify** - Verify only, no on-chain settlement (for testing)
+- **settle** - Verify and settle on-chain (production)
+- **async** - Return immediately, settle in background
+
+## Supported Networks
+
+- **Ethereum**: Mainnet, Sepolia
+- **Base**: Mainnet, Sepolia
+- **Polygon**: Mainnet, Amoy
+- **Optimism**: Mainnet, Sepolia
+- **Arbitrum**: Mainnet, Sepolia
+
+## Supported Tokens
+
+Pre-configured tokens include:
+- **USDC** (USD Coin) - All major networks
+- **USDT** (Tether USD) - All major networks
+- **DAI** (Dai Stablecoin) - Ethereum, Base
+- **WBTC** (Wrapped BTC) - Ethereum, Base
+- **WETH** (Wrapped Ether) - Ethereum
+
+## Getting Started
+
+See the [Quick Start](./quickstart) guide to get started with Armory in minutes.

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Armory",
+  "logo": {
+    "dark": "/logo-dark.svg",
+    "light": "/logo-light.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0D9373",
+    "light": "#0D9373",
+    "dark": "#0D9373",
+    "anchors": {
+      "from": "#0D9373",
+      "to": "#0D9373"
+    }
+  },
+  "topbarCtaButton": {
+    "type": "github",
+    "url": "https://github.com/thegreataxios/armory"
+  },
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "overview",
+        "quickstart"
+      ]
+    },
+    {
+      "group": "Packages",
+      "pages": [
+        "packages/core",
+        "packages/facilitator",
+        "packages/middleware",
+        "packages/client-viem",
+        "packages/client-ethers",
+        "packages/client-web3"
+      ]
+    },
+    {
+      "group": "Examples",
+      "pages": [
+        "examples/merchants",
+        "examples/clients"
+      ]
+    }
+  ]
+}

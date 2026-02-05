@@ -1,0 +1,41 @@
+{
+  "name": "@armory/client-ethers",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "bun": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./dist/*": "./dist/*.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thegreataxios/armory.git",
+    "directory": "packages/client-ethers"
+  },
+  "dependencies": {
+    "@armory/core": "workspace:*",
+    "ethers": "6.16.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "bun-types": "latest"
+  },
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target node",
+    "test": "bun test",
+    "example": "bun run examples/"
+  }
+}

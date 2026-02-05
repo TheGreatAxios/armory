@@ -1,0 +1,316 @@
+---
+description: Cross-reference examples showing the same API call with different input formats
+---
+
+# API Examples & Cross-Reference
+
+This page demonstrates the flexibility of Armory's API by showing the same operation using different input formats.
+
+## Network Input Formats
+
+All of these are **equivalent** - use whichever format you have:
+
+```typescript
+import { armoryPay } from '@armory/client-viem';
+
+const wallet = { account };
+const url = 'https://api.example.com/data';
+
+// By network name (recommended)
+await armoryPay(wallet, url, 'base', 'usdc');
+
+// By chain ID number
+await armoryPay(wallet, url, 8453, 'usdc');
+
+// By CAIP-2 string
+await armoryPay(wallet, url, 'eip155:8453', 'usdc');
+
+// Case-insensitive names
+await armoryPay(wallet, url, 'Base', 'usdc');
+await armoryPay(wallet, url, 'BASE', 'usdc');
+await armoryPay(wallet, url, 'BaSe', 'usdc');
+
+// Normalized names (spaces, mainnet, sepolia handled)
+await armoryPay(wallet, url, 'Base Mainnet', 'usdc');
+await armoryPay(wallet, url, 'base sepolia', 'usdc');
+```
+
+## Token Input Formats
+
+All of these are **equivalent** - use whichever format you have:
+
+```typescript
+// By symbol (case-insensitive)
+await armoryPay(wallet, url, 'base', 'usdc');
+await armoryPay(wallet, url, 'base', 'USDC');
+await armoryPay(wallet, url, 'base', 'UsDc');
+
+// By EVM contract address
+await armoryPay(wallet, url, 'base', '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913');
+
+// By CAIP Asset ID
+await armoryPay(wallet, url, 'base', 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913');
+
+// By token object
+await armoryPay(wallet, url, 'base', {
+  symbol: 'USDC',
+  name: 'USD Coin',
+  version: '2',
+  contractAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  chainId: 8453,
+  decimals: 6,
+});
+```
+
+## Client Examples by Library
+
+### Viem (Recommended)
+
+```typescript
+import { armoryPay } from '@armory/client-viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0x...');
+const result = await armoryPay({ account }, url, 'base', 'usdc');
+```
+
+### Ethers.js
+
+```typescript
+import { armoryPay } from '@armory/client-ethers';
+import { Wallet } from 'ethers';
+
+const wallet = Wallet.fromPhrase('mnemonic...');
+const result = await armoryPay({ signer: wallet }, url, 'base', 'usdc');
+```
+
+### Web3.js
+
+```typescript
+import { armoryPay } from '@armory/client-web3';
+import { Web3 } from 'web3';
+
+const web3 = new Web3();
+const account = web3.eth.accounts.create();
+const result = await armoryPay({ account }, url, 'base', 'usdc');
+```
+
+## Merchant Examples by Framework
+
+### Bun (Native Runtime)
+
+```typescript
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+const middleware = acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '1.0'
+});
+
+Bun.serve({ fetch: middleware });
+```
+
+### Express
+
+```typescript
+import express from 'express';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+const app = express();
+app.use(acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '1.0'
+}));
+```
+
+### Hono
+
+```typescript
+import { Hono } from 'hono';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+const app = new Hono();
+app.use('*', acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '1.0'
+}));
+```
+
+### Elysia
+
+```typescript
+import { Elysia } from 'elysia';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+const app = new Elysia();
+app.use(acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '1.0'
+}));
+```
+
+## Complete Payment Flow
+
+### Client-Side
+
+```typescript
+import { armoryPay } from '@armory/client-viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+// Setup
+const account = privateKeyToAccount(process.env.PRIVATE_KEY);
+const wallet = { account };
+
+// Make payment-protected request
+const result = await armoryPay(
+  wallet,
+  'https://api.example.com/premium',
+  'base',    // Network
+  'usdc'     // Token
+);
+
+// Handle result
+if (result.success) {
+  console.log('Data:', result.data);
+  console.log('Transaction:', result.txHash);
+} else {
+  console.error('Error:', result.code, result.message);
+}
+```
+
+### Server-Side
+
+```typescript
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+// Setup middleware (one line!)
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xYourAddress...',
+  amount: '1.0',
+  accept: {
+    networks: ['base', 'ethereum'],
+    tokens: ['usdc', 'eurc'],
+    facilitators: [{ url: 'https://facilitator.com' }]
+  }
+}));
+
+// Access verified payment in routes
+app.get('/api/premium', (req, res) => {
+  const { payerAddress, verified, settlement } = req.payment;
+  res.json({ data: 'Premium content', payer: payerAddress });
+});
+```
+
+## Multi-Network / Multi-Token Configuration
+
+### Server Accepting Multiple Networks/Tokens
+
+```typescript
+app.use(acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '1.0',
+  accept: {
+    networks: ['base', 'ethereum', 'skale-base'],
+    tokens: ['usdc', 'eurc', 'usdt'],
+    facilitators: [
+      { url: 'https://facilitator1.com', networks: ['base'], tokens: ['usdc'] },
+      { url: 'https://facilitator2.com', networks: ['ethereum'], tokens: ['usdc', 'eurc'] },
+    ]
+  }
+}));
+```
+
+### Client Choosing Network/Token
+
+```typescript
+// Client can specify which network/token to use
+await armoryPay(wallet, url, 'ethereum', 'usdc');
+await armoryPay(wallet, url, 'base', 'eurc');
+await armoryPay(wallet, url, 8453, '0x8335...'); // Base with specific address
+```
+
+## Error Handling Examples
+
+### Token Not On Network
+
+```typescript
+// Error: Base USDC on Ethereum
+const result = await armoryPay(wallet, url, 'ethereum', 'usdc');
+
+// Error response:
+{
+  success: false,
+  code: 'TOKEN_NOT_ON_NETWORK',
+  message: 'Token USDC is on chain 8453, but expected chain 1'
+}
+```
+
+### Facilitator Doesn't Support Network
+
+```typescript
+// Error: Facilitator only supports Base
+app.use(acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '1.0',
+  accept: {
+    networks: ['polygon'],
+    facilitators: [{
+      url: 'https://facilitator.com',
+      networks: ['base'] // Only Base!
+    }]
+  }
+}));
+
+// Error response:
+{
+  success: false,
+  code: 'FACILITATOR_NO_NETWORK_SUPPORT',
+  message: 'Facilitator does not support network Polygon (chain 137). Supported: Base'
+}
+```
+
+## Utility Functions
+
+```typescript
+import {
+  validateNetwork,
+  validateToken,
+  getNetworks,
+  getTokens
+} from '@armory/client-viem';
+
+// Check if network is supported
+const networkCheck = validateNetwork('base');
+if (networkCheck.success) {
+  console.log('Network:', networkCheck.network);
+}
+
+// Check if token is supported on network
+const tokenCheck = validateToken('usdc', 'base');
+if (tokenCheck.success) {
+  console.log('Token:', tokenCheck.token, 'on', tokenCheck.network);
+}
+
+// Get all available options
+console.log('Networks:', getNetworks());
+console.log('Tokens:', getTokens());
+```
+
+## Best Practices
+
+1. **Use names for readability** - `'base'` is clearer than `8453`
+2. **Let validation catch errors** - API validates upfront with clear messages
+3. **Specify facilitator constraints** - Declare what networks/tokens your facilitator supports
+4. **Handle errors gracefully** - Check `result.success` and handle error codes
+5. **Use debug mode** - Pass `debug: true` during development
+
+## Quick Reference
+
+| What | Format | Example |
+|------|--------|---------|
+| **Network name** | string | `'base'`, `'ethereum'` |
+| **Network chain ID** | number | `8453`, `1` |
+| **Network CAIP-2** | string | `'eip155:8453'` |
+| **Token symbol** | string | `'usdc'`, `'USDC'` |
+| **Token address** | string | `'0x8335...'` |
+| **Token CAIP Asset ID** | string | `'eip155:8453/erc20:0x8335...'` |
