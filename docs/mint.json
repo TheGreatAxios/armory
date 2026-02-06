@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "name": "Armory",
-  "theme": "linden",
+  "theme": "aspen",
   "favicon": "/favicon.svg",
   "colors": {
     "primary": "#DC2626",
