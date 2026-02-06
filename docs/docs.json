@@ -16,10 +16,6 @@
     "type": "github",
     "url": "https://github.com/thegreataxios/armory"
   },
-  "banner": {
-    "content": "⚠️ **Experimental & Unaudited** - This project is highly experimental and has not been audited. Use at your own risk.",
-    "dismissible": false
-  },
   "navigation": {
     "groups": [
       {
@@ -53,13 +49,13 @@
       {
         "group": "Packages",
         "pages": [
-          { "title": "@armory-sh/base", "page": "packages/base" },
-          { "title": "@armory-sh/facilitator", "page": "packages/facilitator" },
-          { "title": "@armory-sh/middleware", "page": "packages/middleware" },
-          { "title": "@armory-sh/client-viem", "page": "packages/client-viem" },
-          { "title": "@armory-sh/client-ethers", "page": "packages/client-ethers" },
-          { "title": "@armory-sh/client-web3", "page": "packages/client-web3" },
-          { "title": "@armory-sh/tokens", "page": "packages/tokens" }
+          "packages/base",
+          "packages/facilitator",
+          "packages/middleware",
+          "packages/client-viem",
+          "packages/client-ethers",
+          "packages/client-web3",
+          "packages/tokens"
         ]
       }
     ]
