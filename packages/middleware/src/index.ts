@@ -31,20 +31,8 @@ export type { PaymentVersion, PaymentVerificationResult } from "./payment-utils.
 
 export { createBunMiddleware, acceptPaymentsViaArmory, type BunMiddleware, type BunMiddlewareConfig } from "./bun.js";
 
-// Framework-specific exports (optional - requires framework dependencies)
-export { paymentMiddleware, type AugmentedRequest, type PaymentMiddlewareConfig } from "./express.js";
-export {
-  paymentMiddleware as honoPaymentMiddleware,
-  type PaymentMiddlewareConfig as HonoPaymentMiddlewareConfig,
-  type PaymentInfo,
-  type PaymentVariables,
-} from "./hono.js";
-export {
-  paymentMiddleware as elysiaPaymentMiddleware,
-  type PaymentMiddlewareConfig as ElysiaPaymentMiddlewareConfig,
-  type PaymentInfo as ElysiaPaymentInfo,
-  type PaymentContext,
-} from "./elysia.js";
+// Framework-specific exports are available in the integrations directory
+// These require additional dependencies: express, hono, or elysia
 
 // Simple one-line API for merchants
 export {

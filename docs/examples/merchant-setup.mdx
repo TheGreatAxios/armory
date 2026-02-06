@@ -1,0 +1,92 @@
+---
+description: Complete merchant integration examples
+---
+
+# Merchant Setup
+
+Complete example of accepting Armory payments in your API.
+
+## Express
+
+```typescript
+import express from 'express';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+const app = express();
+
+// Accept 1 USDC per request
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0'
+}));
+
+app.get('/api/data', (req, res) => {
+  res.json({ message: 'Payment successful!', data: [...] });
+});
+
+app.listen(3000);
+```
+
+## Hono
+
+```typescript
+import { Hono } from 'hono';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+const app = new Hono();
+
+app.use('*', acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0'
+}));
+
+app.get('/api/data', (c) => {
+  return c.json({ message: 'Payment successful!', data: [...] });
+});
+
+app.listen(3000);
+```
+
+## Bun
+
+```typescript
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+const middleware = acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0'
+});
+
+Bun.serve({
+  port: 3000,
+  fetch: (req) => {
+    const payment = middleware(req);
+
+    if (!payment.valid) {
+      return new Response('Payment required', {
+        status: 402,
+        headers: payment.headers
+      });
+    }
+
+    return new Response(JSON.stringify({ data: [...] }));
+  }
+});
+```
+
+## Multi-Network/Multi-Token
+
+```typescript
+acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0',
+  accept: {
+    networks: ['base', 'ethereum', 'polygon'],
+    tokens: ['usdc', 'usdt'],
+    facilitators: [
+      { url: 'https://facilitator1.com' },
+      { url: 'https://facilitator2.com' }
+    ]
+  }
+});
+```

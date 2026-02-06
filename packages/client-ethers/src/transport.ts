@@ -99,7 +99,7 @@ const x402Fetch = async (
 
   for (let attempt = 1; attempt <= state.config.maxRetries; attempt++) {
     try {
-      const response = await fetchWithTimeout(fullUrl, { ...init, headers });
+      const response = await fetchWithTimeout(fullUrl, { ...init, headers }, state.config.timeout);
 
       if (response.status === 402 && !init.skipAutoPay && await shouldRetryPayment(state, response)) {
         const paymentResult = await handlePaymentRequired(state, response);

@@ -102,5 +102,6 @@ export {
   detectProtocolVersion,
 } from "./protocol";
 
-export type { Signer, EthersSignerOptions } from "./types";
+export type { Signer } from "./types";
+export type { X402ClientConfig, ClientConfig } from "./types";
 export { createX402Transport } from "./transport";

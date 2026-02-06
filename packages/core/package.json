@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/base",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -35,7 +35,7 @@
     "typescript": "5.9.3"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsc --emitDeclarationOnly",
     "test": "bun test"
   }
 }

@@ -50,14 +50,21 @@ const signTypedData = (
   wallet: X402Wallet,
   domain: TypedDataDomain,
   types: TypedData,
-  value: Record<string, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  message: any
 ): Promise<Hash> => {
   if (wallet.type === "account" && !wallet.account.signTypedData) {
     throw new SigningError("Account does not support signTypedData");
   }
+  const params = {
+    domain,
+    types,
+    primaryType: 'TransferWithAuthorization' as const,
+    message,
+  };
   return wallet.type === "account"
-    ? wallet.account.signTypedData({ domain, types, value })
-    : wallet.walletClient.signTypedData({ domain, types, value });
+    ? wallet.account.signTypedData(params)
+    : wallet.walletClient.signTypedData({ ...params, account: wallet.walletClient.account });
 };
 
 // Payment creation
@@ -90,7 +97,7 @@ const createPaymentV1 = async (
     nonce: BigInt(nonce),
   });
 
-  const signature = await signTypedData(wallet, withCustomDomain(domain, domainName, domainVersion), EIP712_TYPES, { TransferWithAuthorization: value });
+  const signature = await signTypedData(wallet, withCustomDomain(domain, domainName, domainVersion), EIP712_TYPES, value);
   const { v, r, s } = parseSignature(signature);
 
   return { from, to, amount, nonce, expiry, v, r, s, chainId, contractAddress, network: toNetworkName(chainId) };
@@ -118,7 +125,7 @@ const createPaymentV2 = async (
     nonce: BigInt(nonce),
   });
 
-  const signature = await signTypedData(wallet, withCustomDomain(domain, domainName, domainVersion), EIP712_TYPES, { TransferWithAuthorization: value });
+  const signature = await signTypedData(wallet, withCustomDomain(domain, domainName, domainVersion), EIP712_TYPES, value);
   const { v, r, s } = parseSignature(signature);
 
   return {
@@ -150,7 +157,7 @@ const parseRequirements = (
     const text = response.headers.get("X-PAYMENT-REQUIRED");
     if (text) {
       try {
-        const json = Buffer.from(text, "base64").toString("utf-8");
+        const json = atob(text);
         return JSON.parse(json) as PaymentRequirementsV1;
       } catch {
         throw new PaymentError("Failed to decode v1 payment requirements");
@@ -243,7 +250,7 @@ const checkSettlement = (response: Response, version: 1 | 2): void => {
 
   if (version === 1 && v1Header) {
     try {
-      const json = Buffer.from(v1Header, "base64").toString("utf-8");
+      const json = atob(v1Header);
       settlement = JSON.parse(json) as SettlementResponseV1;
     } catch {
       // Ignore
@@ -359,21 +366,19 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
       const chainId = typeof payload.chainId === "number"
         ? payload.chainId
         : parseInt(payload.chainId.split(":")[1], 10);
-      const contractAddress = "contractAddress" in payload
-        ? payload.contractAddress
-        : (payload.assetId as string).split(":")[2];
       const to = (payload as { to: Address | string }).to as Address;
       const expiry = payload.expiry;
       const nonce = nonceGenerator();
 
       if ("contractAddress" in payload) {
+        const input = payload as unknown as Omit<PaymentPayloadV1, "signature" | "v" | "r" | "s">;
         return createPaymentV1(
           wallet,
           from,
           to,
-          payload.amount,
+          input.amount,
           chainId,
-          contractAddress as Address,
+          input.contractAddress as Address,
           nonce,
           expiry,
           domainName,
@@ -381,13 +386,15 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
         ) as any;
       }
 
+      // V2 payload
+      const input = payload as unknown as Omit<PaymentPayloadV2, "signature" | "v" | "r" | "s">;
       return createPaymentV2(
         wallet,
         from,
         to,
-        payload.amount,
+        input.amount,
         chainId,
-        payload.assetId,
+        input.assetId,
         nonce,
         expiry,
         domainName,
@@ -398,5 +405,6 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
 };
 
 export const createX402Transport = (config: X402TransportConfig): typeof fetch => {
-  return createFetch(config.payment.wallet as X402Wallet, config.payment);
+  const { wallet, transport, version, defaultExpiry, nonceGenerator, debug, token, domainName, domainVersion } = config;
+  return createFetch(wallet, { version, defaultExpiry, nonceGenerator, debug, token, domainName, domainVersion });
 };

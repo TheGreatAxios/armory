@@ -18,6 +18,7 @@ import type {
   PaymentSignOptions,
   PaymentSignatureResult,
   Web3X402Client,
+  Web3EIP712Domain,
 } from "./types";
 import { createEIP712Domain, createTransferWithAuthorization } from "./eip3009";
 
@@ -72,7 +73,7 @@ const parseSignature = (signature: string): { v: number; r: string; s: string } 
 
 const signTypedDataWrapper = async (
   account: Web3Account,
-  domain: Record<string, string> | { [key: string]: string | number | boolean },
+  domain: Record<string, string> | { [key: string]: string | number | boolean } | Web3EIP712Domain,
   message: Record<string, string> | { [key: string]: string | number | boolean }
 ): Promise<{ v: number; r: string; s: string }> => {
   const acc = account as unknown as Record<string, unknown>;

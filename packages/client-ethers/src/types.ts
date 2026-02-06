@@ -1,6 +1,9 @@
 import type { Signer, Provider } from "ethers";
 import type { CustomToken } from "@armory-sh/base";
 
+// Re-export ethers types
+export type { Signer, Provider };
+
 /** Token configuration - can use pre-configured tokens from @armory-sh/tokens */
 export type Token = CustomToken;
 

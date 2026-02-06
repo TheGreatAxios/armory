@@ -1,0 +1,41 @@
+---
+description: Ethers.js client payment examples
+---
+
+# Ethers Client
+
+Making payments with Ethers.js wallets.
+
+## Basic Payment
+
+```typescript
+import { armoryPay } from '@armory/client-ethers';
+import { ethers } from 'ethers';
+
+const signer = new ethers.Wallet('0x...');
+
+const result = await armoryPay(
+  { signer },
+  'https://api.example.com/data',
+  'base',
+  'usdc'
+);
+
+console.log(result.data);
+```
+
+## With Provider
+
+```typescript
+import { ethers } from 'ethers';
+
+const provider = new ethers.JsonRpcProvider('https://...');
+const signer = new ethers.Wallet('0x...', provider);
+
+const result = await armoryPay(
+  { signer },
+  'https://api.example.com/data',
+  'base',
+  'usdc'
+);
+```

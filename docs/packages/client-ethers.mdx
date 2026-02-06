@@ -1,178 +1,52 @@
 ---
-description: Ethers client for Armory
+description: Ethers.js v6 payment client
 ---
 
-# Client Ethers Package
+# @armory/client-ethers
 
-The `@armory/client-ethers` package provides X-402 payment client integration for Ethers.js v6.
+Make payments using Ethers.js v6 wallets.
 
 ## Installation
 
 ```bash
-bun add @armory/client-ethers ethers
+bun add @armory/client-ethers
 ```
 
-## Key Exports
-
-### Main Functions
+## armoryPay
 
 ```typescript
-import {
-  createX402Client,
-  createX402Transport,
-} from '@armory/client-ethers'
-```
+import { armoryPay } from '@armory/client-ethers';
+import { ethers } from 'ethers';
 
-### EIP-3009 Functions
+const signer = new ethers.Wallet('0x...');
 
-```typescript
-import {
-  signPayment,
-  signEIP3009,
-  recoverEIP3009Signer,
-} from '@armory/client-ethers'
-```
-
-## Setup
-
-### With Signer
-
-```typescript
-import { createX402Client } from '@armory/client-ethers';
-import { BrowserProvider } from 'ethers';
-import { TOKENS } from '@armory/tokens';
-
-const provider = new BrowserProvider(window.ethereum);
-const signer = await provider.getSigner();
-
-const client = createX402Client({
-  signer,
-  defaultToken: TOKENS.USDC_BASE,
-});
-```
-
-## Making Requests
-
-### Automatic Payment Handling
-
-```typescript
-// Automatic 402 handling
-const response = await client.get('https://api.example.com/protected');
-const data = await response.json();
-```
-
-### Manual Payment Signing
-
-```typescript
-// Using token object (recommended)
-import { TOKENS } from '@armory/tokens';
-
-const signature = await signPayment(
-  signer,
-  {
-    token: TOKENS.USDC_BASE,
-    amount: '1000000', // 1 USDC (6 decimals)
-    to: '0x...',
-  }
+const result = await armoryPay(
+  { signer },
+  'https://api.example.com/data',
+  'base',
+  'usdc'
 );
 
-// Legacy approach (still supported)
-const signature = await signPayment(
-  signer,
-  '0x...', // from
-  '0x...', // to
-  1000000n, // 1 USDC (6 decimals)
-  8453, // Base chain ID
-  '0x...' // USDC address
-);
+if (result.success) {
+  console.log(result.data);
+} else {
+  console.error(result.code, result.message);
+}
 ```
 
-### Transport-Only Usage
+## createArmoryClient
 
 ```typescript
-import { createX402Transport } from '@armory/client-ethers';
-import { TOKENS } from '@armory/tokens';
+import { createArmoryClient } from '@armory/client-ethers';
 
-const transport = createX402Transport({
-  baseURL: 'https://api.example.com',
-  autoPay: true,
-  defaultToken: TOKENS.USDC_BASE,
-  onPaymentSuccess: (settlement) => {
-    console.log('Payment successful:', settlement);
-  },
-});
-
-transport.setSigner(signer);
-const response = await transport.get('/protected-resource');
-```
-
-## Configuration
-
-```typescript
-const client = createX402Client({
+const armory = createArmoryClient({
+  provider,
   signer,
-  defaultToken: TOKENS.USDC_BASE,
-  protocolVersion: 'auto', // 1, 2, or 'auto'
-  defaultExpiry: 3600, // Authorization expiry in seconds
+});
+
+const result = await armory.pay({
+  to: '0x...',
+  amount: '1000000000',
+  token: TOKENS.USDC_BASE,
 });
 ```
-
-## Protocol Support
-
-### V1 Protocol
-
-- Header: `X-PAYMENT`
-- Format: Base64-encoded JSON
-- Fields: `from`, `to`, `amount`, `nonce`, `expiry`, `v`, `r`, `s`, `chainId`, `contractAddress`, `network`
-
-### V2 Protocol
-
-- Header: `PAYMENT-SIGNATURE`
-- Format: Raw JSON
-- Fields: `from`, `to`, `amount`, `nonce`, `expiry`, `signature`, `chainId`, `assetId`, `extensions`
-
-## Token Objects
-
-### Using Pre-configured Tokens
-
-```typescript
-import { TOKENS } from '@armory/tokens';
-
-const client = createX402Client({
-  signer,
-  defaultToken: TOKENS.USDC_BASE,
-});
-
-// Override per-request
-const response = await client.get('https://api.example.com/protected', {
-  token: TOKENS.USDC_POLYGON,
-});
-```
-
-### Registering Custom Tokens
-
-```typescript
-import { registerToken } from '@armory/base';
-
-registerToken({
-  symbol: 'MYTOKEN',
-  name: 'My Custom Token',
-  version: '1',
-  contractAddress: '0x...',
-  chainId: 8453,
-  decimals: 18,
-});
-
-const client = createX402Client({
-  signer,
-  defaultToken: {
-    symbol: 'MYTOKEN',
-    name: 'My Custom Token',
-    version: '1',
-    contractAddress: '0x...',
-    chainId: 8453,
-  },
-});
-```
-
-For available tokens, see the [`@armory/tokens`](/packages/tokens) package.

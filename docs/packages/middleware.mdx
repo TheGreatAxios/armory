@@ -1,10 +1,10 @@
 ---
-description: HTTP middleware for payment processing
+description: HTTP middleware for Express, Hono, Bun, and Elysia
 ---
 
-# Middleware Package
+# @armory/middleware
 
-The `@armory/middleware` package provides HTTP middleware for Express, Hono, Bun, and Elysia to handle X-402 payment verification.
+Accept payments in your HTTP API with middleware for major frameworks.
 
 ## Installation
 
@@ -12,187 +12,73 @@ The `@armory/middleware` package provides HTTP middleware for Express, Hono, Bun
 bun add @armory/middleware
 ```
 
-## Key Exports
-
-### Core Functions
-
-```typescript
-import {
-  createPaymentRequirements,
-  verifyWithFacilitator,
-  settleWithFacilitator,
-  createPaymentRequiredHeaders,
-  createSettlementHeaders,
-} from '@armory/middleware'
-```
-
-### Types
-
-```typescript
-import type {
-  FacilitatorConfig,
-  MiddlewareConfig,
-  SettlementMode,
-  PayToAddress,
-  HttpRequest,
-  HttpResponse,
-  FacilitatorVerifyResult,
-  FacilitatorSettleResult,
-} from '@armory/middleware'
-```
-
-### Express Middleware
-
-```typescript
-import {
-  paymentMiddleware,
-  type AugmentedRequest,
-  type PaymentMiddlewareConfig,
-} from '@armory/middleware'
-```
-
-### Hono Middleware
-
-```typescript
-import {
-  honoPaymentMiddleware,
-  type PaymentMiddlewareConfig as HonoPaymentMiddlewareConfig,
-  type PaymentInfo,
-  type PaymentVariables,
-} from '@armory/middleware'
-```
-
-### Bun Middleware
-
-```typescript
-import {
-  createBunMiddleware,
-  type BunMiddleware,
-  type BunMiddlewareConfig,
-} from '@armory/middleware'
-```
-
-### Elysia Middleware
-
-```typescript
-import {
-  elysiaPaymentMiddleware,
-  type PaymentMiddlewareConfig as ElysiaPaymentMiddlewareConfig,
-  type PaymentInfo as ElysiaPaymentInfo,
-  type PaymentContext,
-} from '@armory/middleware'
-```
-
 ## Express
 
 ```typescript
-import express from 'express';
-import { paymentMiddleware } from '@armory/middleware';
-import { TOKENS } from '@armory/tokens';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
 
-const app = express();
-
-app.use(paymentMiddleware({
-  facilitatorUrl: 'http://localhost:3000',
-  settlementMode: 'async',
-  token: TOKENS.USDC_BASE,
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xYourWallet...',
+  amount: '1.0'
 }));
-
-app.get('/protected', (req, res) => {
-  const { version, amount, fromAddress } = req.payment;
-  res.json({ data: 'protected resource' });
-});
-
-app.listen(3000);
 ```
 
 ## Hono
 
 ```typescript
-import { Hono } from 'hono';
-import { honoPaymentMiddleware } from '@armory/middleware';
-import { TOKENS } from '@armory/tokens';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
 
-const app = new Hono();
-
-app.use('*', honoPaymentMiddleware({
-  facilitatorUrl: 'http://localhost:3000',
-  settlementMode: 'async',
-  token: TOKENS.USDC_BASE,
+app.use('*', acceptPaymentsViaArmory({
+  payTo: '0xYourWallet...',
+  amount: '1.0'
 }));
-
-app.get('/protected', (c) => {
-  const payment = c.get('payment');
-  return c.json({ data: 'protected resource' });
-});
 ```
 
 ## Bun
 
 ```typescript
-import { createBunMiddleware } from '@armory/middleware';
-import { TOKENS } from '@armory/tokens';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
 
-const middleware = createBunMiddleware({
-  token: TOKENS.USDC_BASE,
-  settlementMode: 'verify',
-  facilitator: {
-    url: 'http://localhost:3000'
-  }
+const middleware = acceptPaymentsViaArmory({
+  payTo: '0xYourWallet...',
+  amount: '1.0'
 });
 
 Bun.serve({
-  port: 3000,
-  fetch: (req) => middleware(req)
+  fetch: middleware
 });
 ```
 
 ## Elysia
 
 ```typescript
-import { Elysia } from 'elysia';
-import { elysiaPaymentMiddleware } from '@armory/middleware';
-import { TOKENS } from '@armory/tokens';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
 
-const app = new Elysia()
-  .use(elysiaPaymentMiddleware({
-    facilitatorUrl: 'http://localhost:3000',
-    settlementMode: 'async',
-    token: TOKENS.USDC_BASE,
-  }))
-  .listen(3000);
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xYourWallet...',
+  amount: '1.0'
+}));
 ```
 
 ## Settlement Modes
 
-- **`sync`**: Wait for on-chain settlement before responding
-- **`async`**: Return immediately, settle in background
-- **`verify`**: Only verify, don't settle
+- **`verify`** - Verify only, no settlement (testing)
+- **`settle`** - Verify and settle synchronously
+- **`async`** - Return immediately, settle in background
 
-## Token Objects vs Legacy
-
-### Token Objects (Recommended)
+## Multi-Network/Multi-Token
 
 ```typescript
-import { TOKENS } from '@armory/tokens';
-
-app.use(paymentMiddleware({
-  facilitatorUrl: 'http://localhost:3000',
-  settlementMode: 'async',
-  token: TOKENS.USDC_BASE,
-}));
+acceptPaymentsViaArmory({
+  payTo: '0xYourWallet...',
+  amount: '1.0',
+  accept: {
+    networks: ['base', 'ethereum'],
+    tokens: ['usdc', 'usdt'],
+    facilitators: [
+      { url: 'https://facilitator1.com' },
+      { url: 'https://facilitator2.com' }
+    ]
+  }
+});
 ```
-
-### Legacy Approach (Still Supported)
-
-```typescript
-app.use(paymentMiddleware({
-  facilitatorUrl: 'http://localhost:3000',
-  settlementMode: 'async',
-  payToAddress: '0x...',
-  contractAddress: '0x...',
-  network: 'base',
-}));
-```
-
-For available tokens, see the [`@armory/tokens`](/packages/tokens) package.

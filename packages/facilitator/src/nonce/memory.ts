@@ -13,20 +13,10 @@ interface NonceEntry {
 export class MemoryNonceTracker implements NonceTracker {
   private nonces: Map<string, NonceEntry>;
   private ttl?: number;
-  private cleanupTimer?: ReturnType<typeof setInterval>;
 
   constructor(options?: NonceTrackerOptions) {
     this.nonces = new Map();
     this.ttl = options?.ttl;
-
-    if (this.ttl) {
-      const interval = options?.cleanupInterval ?? 60000;
-      this.cleanupTimer = setInterval(() => this.cleanup(), interval);
-
-      if (typeof this.cleanupTimer.unref === "function") {
-        this.cleanupTimer.unref();
-      }
-    }
   }
 
   isUsed(nonce: string | number | bigint): boolean {
@@ -55,26 +45,19 @@ export class MemoryNonceTracker implements NonceTracker {
     });
   }
 
-  cleanup(): void {
+  size(): number {
+    // Lazy cleanup - only when size is checked
     const now = Date.now();
-
     for (const [key, entry] of this.nonces.entries()) {
       if (entry.expiresAt && now > entry.expiresAt) {
         this.nonces.delete(key);
       }
     }
-  }
-
-  size(): number {
-    this.cleanup();
     return this.nonces.size;
   }
 
   close(): void {
-    if (this.cleanupTimer) {
-      clearInterval(this.cleanupTimer);
-      this.cleanupTimer = undefined;
-    }
+    this.clear();
   }
 
   clear(): void {

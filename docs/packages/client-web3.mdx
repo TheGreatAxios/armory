@@ -1,185 +1,53 @@
 ---
-description: Web3.js client for Armory
+description: Web3.js payment client
 ---
 
-# Client Web3 Package
+# @armory/client-web3
 
-The `@armory/client-web3` package provides X-402 payment client integration for Web3.js v4.
+Make payments using Web3.js wallets.
 
 ## Installation
 
 ```bash
-bun add @armory/client-web3 web3
+bun add @armory/client-web3
 ```
 
-## Key Exports
-
-### Main Functions
+## armoryPay
 
 ```typescript
-import {
-  createX402Client,
-  createX402Transport,
-} from '@armory/client-web3'
-```
-
-## Setup
-
-```typescript
-import { createX402Client } from '@armory/client-web3';
+import { armoryPay } from '@armory/client-web3';
 import { Web3 } from 'web3';
-import { TOKENS } from '@armory/tokens';
 
-const web3 = new Web3();
-const account = web3.eth.accounts.create();
+const web3 = new Web3('https://...');
+const account = web3.eth.accounts.wallet.add('0x...')[0];
 
-const client = createX402Client({
+const result = await armoryPay(
+  { web3, account },
+  'https://api.example.com/data',
+  'base',
+  'usdc'
+);
+
+if (result.success) {
+  console.log(result.data);
+} else {
+  console.error(result.code, result.message);
+}
+```
+
+## createArmoryClient
+
+```typescript
+import { createArmoryClient } from '@armory/client-web3';
+
+const armory = createArmoryClient({
+  web3,
   account,
-  network: 'base',
-  version: 2,
-  defaultToken: TOKENS.USDC_BASE,
-});
-```
-
-## Using the Transport
-
-```typescript
-import { createX402Transport } from '@armory/client-web3';
-import { TOKENS } from '@armory/tokens';
-
-const transport = createX402Transport({
-  client,
-  defaultToken: TOKENS.USDC_BASE,
 });
 
-// Automatic 402 handling
-const response = await transport.fetch('https://api.example.com/data');
-```
-
-## Manual Payment Signing
-
-```typescript
-// Using token object (recommended)
-import { TOKENS } from '@armory/tokens';
-
-const result = await client.signPayment({
+const result = await armory.pay({
+  to: '0x...',
+  amount: '1000000000',
   token: TOKENS.USDC_BASE,
-  amount: '1000000', // 1 USDC (6 decimals)
-  to: '0x...',
-});
-
-// Get headers
-const headers = await client.createPaymentHeaders({
-  token: TOKENS.USDC_BASE,
-  amount: '1000000',
-  to: '0x...',
-});
-
-// Legacy approach (still supported)
-const result = await client.signPayment({
-  amount: '1000000', // 1 USDC (6 decimals)
-  to: '0x...',
-});
-
-// Get headers
-const headers = await client.createPaymentHeaders({
-  amount: '1000000',
-  to: '0x...',
 });
 ```
-
-## Supported Networks
-
-- **Ethereum Mainnet** (`ethereum`)
-- **Base Mainnet** (`base`)
-- **Base Sepolia** (`base-sepolia`)
-- **Ethereum Sepolia** (`ethereum-sepolia`)
-
-## Configuration
-
-```typescript
-const client = createX402Client({
-  account,
-  network: 'base', // Network name
-  version: 2, // Protocol version (1 or 2)
-  defaultToken: TOKENS.USDC_BASE,
-});
-```
-
-## Token Objects
-
-### Using Pre-configured Tokens
-
-```typescript
-import { TOKENS } from '@armory/tokens';
-
-const client = createX402Client({
-  account,
-  network: 'base',
-  version: 2,
-  defaultToken: TOKENS.USDC_BASE,
-});
-
-// Override per-request
-const result = await client.signPayment({
-  token: TOKENS.USDC_POLYGON,
-  amount: '1000000',
-  to: '0x...',
-});
-```
-
-### Registering Custom Tokens
-
-```typescript
-import { registerToken } from '@armory/base';
-
-registerToken({
-  symbol: 'MYTOKEN',
-  name: 'My Custom Token',
-  version: '1',
-  contractAddress: '0x...',
-  chainId: 8453,
-  decimals: 18,
-});
-
-const client = createX402Client({
-  account,
-  network: 'base',
-  version: 2,
-  defaultToken: {
-    symbol: 'MYTOKEN',
-    name: 'My Custom Token',
-    version: '1',
-    contractAddress: '0x...',
-    chainId: 8453,
-  },
-});
-```
-
-## Protocol Support
-
-### V1 (X-PAYMENT header)
-
-- Base64-encoded JSON in `X-PAYMENT` header
-- EIP-3009 TransferWithAuthorization with v, r, s signature components
-- Response in `X-PAYMENT-RESPONSE` header
-
-### V2 (PAYMENT-SIGNATURE header)
-
-- Raw JSON in `PAYMENT-SIGNATURE` header
-- CAIP-2 chain IDs, CAIP asset IDs
-- Response in `PAYMENT-RESPONSE` header
-
-## EIP-3009 Signing
-
-Web3.js v4 has limited EIP-712 support. The client provides:
-
-1. Type-safe message creation
-2. Domain separator generation
-3. Signature parsing utilities
-
-For actual signing, the client expects:
-- Wallet provider with `signTypedData()` method
-- Or account with `privateKey` for fallback
-
-For available tokens, see the [`@armory/tokens`](/packages/tokens) package.

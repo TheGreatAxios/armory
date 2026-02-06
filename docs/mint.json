@@ -1,30 +1,38 @@
 {
-  "$schema": "https://mintlify.com/schema.json",
+  "$schema": "https://mintlify.com/docs.json",
   "name": "Armory",
-  "logo": {
-    "dark": "/logo-dark.svg",
-    "light": "/logo-light.svg"
-  },
+  "theme": "linden",
   "favicon": "/favicon.svg",
   "colors": {
-    "primary": "#0D9373",
-    "light": "#0D9373",
-    "dark": "#0D9373",
+    "primary": "#DC2626",
+    "light": "#DC2626",
+    "dark": "#DC2626",
     "anchors": {
-      "from": "#0D9373",
-      "to": "#0D9373"
+      "from": "#DC2626",
+      "to": "#DC2626"
     }
+  },
+  "appearance": {
+    "default": "light",
+    "strict": true
   },
   "topbarCtaButton": {
     "type": "github",
     "url": "https://github.com/thegreataxios/armory"
+  },
+  "banner": {
+    "content": "⚠️ **Experimental & Unaudited** - This project is highly experimental and has not been audited. Use at your own risk.",
+    "dismissible": false
   },
   "navigation": [
     {
       "group": "Getting Started",
       "pages": [
         "overview",
-        "quickstart"
+        "quickstart/merchants",
+        "quickstart/agent-buyers",
+        "quickstart/human-buyers",
+        "quickstart/facilitators"
       ]
     },
     {
@@ -35,14 +43,17 @@
         "packages/middleware",
         "packages/client-viem",
         "packages/client-ethers",
-        "packages/client-web3"
+        "packages/client-web3",
+        "packages/tokens"
       ]
     },
     {
       "group": "Examples",
       "pages": [
-        "examples/merchants",
-        "examples/clients"
+        "examples/merchant-setup",
+        "examples/viem-client",
+        "examples/ethers-client",
+        "examples/web3-client"
       ]
     }
   ]

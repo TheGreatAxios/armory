@@ -45,8 +45,18 @@ export interface X402Client {
 }
 
 export interface X402TransportConfig {
-  transport: Transport;
-  payment: Omit<X402ClientConfig, "wallet">;
+  wallet: X402Wallet;
+  transport?: Transport;
+  version?: X402ProtocolVersion;
+  defaultExpiry?: number;
+  nonceGenerator?: () => string;
+  debug?: boolean;
+  /** Pre-configured token object */
+  token?: Token;
+  /** Override EIP-712 domain name */
+  domainName?: string;
+  /** Override EIP-712 domain version */
+  domainVersion?: string;
 }
 
 export interface PaymentResult {

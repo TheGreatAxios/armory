@@ -1,4 +1,4 @@
-import type { Account, Web3BaseWallet } from "web3";
+import type { Web3BaseWallet, Web3BaseWalletAccount } from "web3-types";
 import type { Web3TransferWithAuthorization, Web3EIP712Domain } from "./types";
 
 export const EIP712_TYPES = {
@@ -137,7 +137,7 @@ export const adjustVForChainId = (v: number, chainId: number): number => {
 };
 
 export const signTypedData = async (
-  _account: Account | Web3BaseWallet,
+  _account: Web3BaseWalletAccount | Web3BaseWallet<Web3BaseWalletAccount>,
   _domain: Web3EIP712Domain,
   _message: Record<string, string>
 ): Promise<{ v: number; r: string; s: string }> => {

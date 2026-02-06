@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/client-web3",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -28,7 +28,8 @@
   },
   "dependencies": {
     "@armory-sh/base": "workspace:*",
-    "web3": "4.16.0"
+    "web3": "4.16.0",
+    "web3-types": "1.10.0"
   },
   "devDependencies": {
     "typescript": "5.9.3",

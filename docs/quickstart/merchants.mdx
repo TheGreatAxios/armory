@@ -1,0 +1,56 @@
+---
+description: Accept crypto payments in your API with zero gas fees for your customers
+---
+
+# Quickstart for Merchants
+
+Accept payments for your API with USDC and other ERC-20 tokens. Your customers pay zero gas fees.
+
+## Installation
+
+```bash
+bun add @armory/middleware
+```
+
+## Basic Setup
+
+```typescript
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+// Accept 1 USDC per request
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0'
+}));
+```
+
+## Advanced Setup
+
+```typescript
+// Accept multiple tokens across multiple networks
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0',
+  accept: {
+    networks: ['base', 'ethereum', 'polygon'],
+    tokens: ['usdc', 'usdt'],
+    facilitators: [
+      { url: 'https://facilitator1.com' },
+      { url: 'https://facilitator2.com' }
+    ]
+  }
+}));
+```
+
+## How It Works
+
+1. Customer creates an EIP-3009 authorization (off-chain signature)
+2. Customer sends request with `PAYMENT-SIGNATURE` header
+3. You verify the signature via a facilitator
+4. Facilitator settles the payment on-chain
+5. You respond with the settlement confirmation
+
+## Next Steps
+
+- [Deployment Guide](../../DEPLOYMENT.md) - Run your own facilitator
+- [Examples](/examples/) - Complete working examples

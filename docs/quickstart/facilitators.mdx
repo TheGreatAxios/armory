@@ -1,0 +1,63 @@
+---
+description: Run a payment facilitator to verify and settle payments
+---
+
+# Quickstart for Facilitators
+
+Run a facilitator to verify payments and settle them on-chain.
+
+## Installation
+
+```bash
+bun add @armory/facilitator
+```
+
+## Basic Setup
+
+```typescript
+import { createFacilitatorServer } from '@armory/facilitator';
+
+const server = createFacilitatorServer({
+  port: 3000,
+  walletClient,  // Your wallet for paying gas
+  publicClient,  // Viem public client
+});
+
+await server.start();
+```
+
+## Configuration
+
+```typescript
+const server = createFacilitatorServer({
+  port: 3000,
+  walletClient,
+  publicClient,
+  acceptedNetworks: ['base', 'ethereum'],
+  acceptedTokens: ['usdc', 'usdt'],
+});
+```
+
+## How It Works
+
+1. Receive payment verification requests from merchants
+2. Verify the EIP-3009 signature
+3. Check nonce hasn't been used
+4. Settle payment on-chain via `transferWithAuthorization`
+5. Return settlement confirmation
+
+## Running a Production Facilitator
+
+For production, you'll need:
+
+- Nonce tracking (prevent replay attacks)
+- Queue management (handle concurrent settlements)
+- Rate limiting
+- Monitoring and alerting
+
+See [Deployment Guide](../../DEPLOYMENT.md) for full details.
+
+## Next Steps
+
+- [Deployment Guide](../../DEPLOYMENT.md) - Full production setup
+- [Facilitator Package](/packages/facilitator) - Complete API reference

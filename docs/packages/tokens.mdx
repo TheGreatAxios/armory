@@ -1,10 +1,10 @@
 ---
-description: Pre-configured token objects for X-402 Protocol
+description: Pre-configured token objects for common ERC-20 tokens
 ---
 
-# Tokens Package
+# @armory/tokens
 
-The `@armory/tokens` package provides pre-configured token objects for common stablecoins and tokens across multiple chains.
+Pre-configured token objects for USDC, USDT, DAI, and more across major chains.
 
 ## Installation
 
@@ -12,212 +12,53 @@ The `@armory/tokens` package provides pre-configured token objects for common st
 bun add @armory/tokens
 ```
 
-## Key Exports
-
-### Token Objects
-
-```typescript
-import {
-  TOKENS,
-  getToken,
-  getAllTokens,
-  getTokensBySymbol,
-  getTokensByChain,
-  getUSDCTokens,
-  getUSDTTokens,
-  getDAITokens,
-  getWBTCTokens,
-} from '@armory/tokens'
-```
-
-### Types
-
-```typescript
-import type {
-  TokenConfig,
-  CustomToken,
-} from '@armory/tokens'
-```
-
-## Available Tokens
-
-### USDC (USD Coin)
-
-- **Ethereum**: `TOKENS.USDC_ETHEREUM`
-- **Base**: `TOKENS.USDC_BASE`
-- **Optimism**: `TOKENS.USDC_OPTIMISM`
-- **Arbitrum**: `TOKENS.USDC_ARBITRUM`
-- **Polygon**: `TOKENS.USDC_POLYGON`
-
-### USDT (Tether USD)
-
-- **Ethereum**: `TOKENS.USDT_ETHEREUM`
-- **Base**: `TOKENS.USDT_BASE`
-- **Optimism**: `TOKENS.USDT_OPTIMISM`
-- **Arbitrum**: `TOKENS.USDT_ARBITRUM`
-- **Polygon**: `TOKENS.USDT_POLYGON`
-
-### DAI (Dai Stablecoin)
-
-- **Ethereum**: `TOKENS.DAI_ETHEREUM`
-- **Base**: `TOKENS.DAI_BASE`
-
-### WBTC (Wrapped BTC)
-
-- **Ethereum**: `TOKENS.WBTC_ETHEREUM`
-- **Base**: `TOKENS.WBTC_BASE`
-
-### WETH (Wrapped Ether)
-
-- **Ethereum**: `TOKENS.WETH_ETHEREUM`
-
 ## Usage
 
-### Import Individual Tokens
-
 ```typescript
 import { TOKENS } from '@armory/tokens';
 
-// Use with facilitator
-const result = await verifyPayment(payload, {
-  token: TOKENS.USDC_BASE,
-  // ... other options
-});
-```
+// Use with any package
+import { acceptPaymentsViaArmory } from '@armory/middleware';
 
-### Import All Tokens
-
-```typescript
-import { TOKENS } from '@armory/tokens';
-
-// Access any token
-const token = TOKENS.USDC_ARBITRUM;
-```
-
-### Query Tokens
-
-```typescript
-import {
-  getToken,
-  getTokensBySymbol,
-  getTokensByChain,
-  getUSDCTokens,
-} from '@armory/tokens';
-
-// Get token by chain and address
-const token = getToken(8453, '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913');
-
-// Get all tokens for a symbol
-const allUsdc = getTokensBySymbol('USDC');
-// Returns: [USDC_ETHEREUM, USDC_BASE, USDC_OPTIMISM, ...]
-
-// Get all tokens on a chain
-const baseTokens = getTokensByChain(8453);
-// Returns: [USDC_BASE, USDT_BASE, DAI_BASE, WBTC_BASE]
-
-// Get USDC tokens
-const usdcTokens = getUSDCTokens();
-```
-
-### Token Configuration
-
-Each token object includes:
-
-```typescript
-interface TokenConfig {
-  symbol: string;              // Token symbol (e.g., "USDC")
-  name: string;                // Token name (e.g., "USD Coin")
-  version: string;             // EIP-3009 version
-  contractAddress: `0x${string}`; // Contract address
-  chainId: number;             // Chain ID
-  decimals?: number;           // Token decimals
-  rpcUrl?: string;             // RPC URL for the chain
-  domainName: string;          // EIP-712 domain name
-  domainVersion: string;       // EIP-712 domain version
-}
-```
-
-## Integration Examples
-
-### With Viem Client
-
-```typescript
-import { createX402Client } from '@armory/client-viem';
-import { TOKENS } from '@armory/tokens';
-
-const client = createX402Client({
-  wallet: { type: 'account', account },
-  defaultToken: TOKENS.USDC_BASE,
-});
-```
-
-### With Ethers Client
-
-```typescript
-import { createX402Client } from '@armory/client-ethers';
-import { TOKENS } from '@armory/tokens';
-
-const client = createX402Client({
-  signer,
-  defaultToken: TOKENS.USDC_ETHEREUM,
-});
-```
-
-### With Middleware
-
-```typescript
-import { paymentMiddleware } from '@armory/middleware';
-import { TOKENS } from '@armory/tokens';
-
-app.use(paymentMiddleware({
-  facilitatorUrl: 'http://localhost:3000',
-  settlementMode: 'async',
+app.use(acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '1.0',
   token: TOKENS.USDC_BASE,
 }));
 ```
 
-### With Facilitator
+## Available Tokens
 
 ```typescript
-import { verifyPayment } from '@armory/facilitator';
-import { TOKENS } from '@armory/tokens';
+TOKENS.USDC_BASE        // USDC on Base
+TOKENS.USDC_ETHEREUM    // USDC on Ethereum
+TOKENS.USDC_POLYGON     // USDC on Polygon
 
-const result = await verifyPayment(payload, {
-  walletClient,
-  publicClient,
-  nonceTracker,
-  token: TOKENS.USDC_BASE,
-});
+TOKENS.USDT_BASE        // USDT on Base
+TOKENS.USDT_ETHEREUM    // USDT on Ethereum
+
+TOKENS.DAI_BASE         // DAI on Base
+TOKENS.DAI_ETHEREUM     // DAI on Ethereum
+
+TOKENS.WBTC_BASE        // WBTC on Base
+TOKENS.WBTC_ETHEREUM    // WBTC on Ethereum
 ```
 
-## Multi-Chain Support
+## Query Tokens
 
 ```typescript
-import { getUSDCTokens } from '@armory/tokens';
+import {
+  getToken,
+  getTokensBySymbol,
+  getTokensByChain,
+} from '@armory/tokens';
 
-const usdcTokens = getUSDCTokens();
+// By chain and address
+const token = getToken(8453, '0x8335...');
 
-// Accept payments across all chains
-for (const token of usdcTokens) {
-  console.log(`Accepting ${token.symbol} on chain ${token.chainId}`);
-}
-```
+// By symbol
+const allUsdc = getTokensBySymbol('USDC');
 
-## Custom Token Registration
-
-You can also register custom tokens alongside the pre-configured ones:
-
-```typescript
-import { registerToken } from '@armory/base';
-
-const myToken = {
-  symbol: 'MYTOKEN',
-  name: 'My Custom Token',
-  version: '1',
-  contractAddress: '0x...',
-  chainId: 8453,
-  decimals: 18,
-};
-
-registerToken(myToken);
+// By chain
+const baseTokens = getTokensByChain(8453);
 ```

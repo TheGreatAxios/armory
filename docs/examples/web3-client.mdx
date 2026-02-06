@@ -1,0 +1,40 @@
+---
+description: Web3.js client payment examples
+---
+
+# Web3 Client
+
+Making payments with Web3.js wallets.
+
+## Basic Payment
+
+```typescript
+import { armoryPay } from '@armory/client-web3';
+import { Web3 } from 'web3';
+
+const web3 = new Web3('https://...');
+const account = web3.eth.accounts.wallet.add('0x...')[0];
+
+const result = await armoryPay(
+  { web3, account },
+  'https://api.example.com/data',
+  'base',
+  'usdc'
+);
+
+console.log(result.data);
+```
+
+## With Browser Wallet
+
+```typescript
+const web3 = new Web3(window.ethereum);
+const accounts = await web3.eth.requestAccounts();
+
+const result = await armoryPay(
+  { web3, account: accounts[0] },
+  'https://api.example.com/data',
+  'base',
+  'usdc'
+);
+```

@@ -3,7 +3,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"],
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
@@ -18,5 +18,5 @@
     "noEmit": false
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "src/elysia.ts", "src/express.ts", "src/hono.ts"]
+  "exclude": ["node_modules", "dist", "tests", "integrations"]
 }

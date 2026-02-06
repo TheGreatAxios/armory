@@ -1,195 +1,64 @@
 ---
-description: Viem client for Armory
+description: Viem-based payment client
 ---
 
-# Client Viem Package
+# @armory/client-viem
 
-The `@armory/client-viem` package provides X-402 payment client integration for Viem.
+Make payments using Viem wallets.
 
 ## Installation
 
 ```bash
-bun add @armory/client-viem viem
+bun add @armory/client-viem
 ```
 
-## Key Exports
-
-### Main Functions
+## armoryPay
 
 ```typescript
-import {
-  createX402Client,
-  createX402Transport,
-} from '@armory/client-viem'
-```
-
-### Types
-
-```typescript
-import type {
-  X402Client,
-  X402ClientConfig,
-  X402Wallet,
-  X402ProtocolVersion,
-  Token,
-  PaymentResult,
-  X402TransportConfig,
-} from '@armory/client-viem'
-```
-
-### Errors
-
-```typescript
-import {
-  X402ClientError,
-  SigningError,
-  PaymentError,
-} from '@armory/client-viem'
-```
-
-## Setup
-
-### With Account
-
-```typescript
-import { createX402Client } from '@armory/client-viem';
+import { armoryPay } from '@armory/client-viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { TOKENS } from '@armory/tokens';
 
 const account = privateKeyToAccount('0x...');
 
-const client = createX402Client({
-  wallet: { type: 'account', account },
-  defaultToken: TOKENS.USDC_BASE,
-});
+const result = await armoryPay(
+  { account },
+  'https://api.example.com/data',
+  'base',
+  'usdc'
+);
+
+if (result.success) {
+  console.log(result.data);
+} else {
+  console.error(result.code, result.message);
+}
 ```
 
-### With WalletClient
+## With Custom Amount
 
 ```typescript
-import { createX402Client } from '@armory/client-viem';
-import { createWalletClient, custom } from 'viem';
-import { base } from 'viem/chains';
-import { TOKENS } from '@armory/tokens';
-
-const walletClient = createWalletClient({
-  chain: base,
-  transport: custom(window.ethereum),
-});
-
-const client = createX402Client({
-  wallet: { type: 'walletClient', walletClient },
-  defaultToken: TOKENS.USDC_BASE,
-});
-```
-
-## Making Requests
-
-### Automatic Payment Handling
-
-```typescript
-// Automatic 402 handling
-const response = await client.fetch('https://api.example.com/data');
-const data = await response.json();
-```
-
-### Manual Payment Creation
-
-```typescript
-// Using token object (recommended)
-import { TOKENS } from '@armory/tokens';
-
-const payment = await client.createPayment({
-  token: TOKENS.USDC_BASE,
-  amount: '1.5',
-  payTo: '0x...',
-});
-
-// Legacy approach (still supported)
-const payment = await client.createPayment(
-  '1.5',        // amount in USDC
-  '0x...',      // payTo address
-  '0x...',      // USDC contract address
-  8453          // chain ID (Base)
+await armoryPay(
+  { account },
+  'https://api.example.com/premium',
+  'base',
+  'usdc',
+  { amount: '5.0' }
 );
 ```
 
-### Transport Wrapper
+## createArmoryClient
 
 ```typescript
-import { createX402Transport } from '@armory/client-viem';
-import { TOKENS } from '@armory/tokens';
+import { createArmoryClient } from '@armory/client-viem';
 
-const fetchWithPayment = createX402Transport({
-  wallet: { type: 'account', account },
-  defaultToken: TOKENS.USDC_BASE,
+const armory = createArmoryClient({
+  walletClient,
+  publicClient,
 });
 
-// Use as drop-in replacement for fetch
-const response = await fetchWithPayment('https://api.example.com/data');
-```
-
-## Configuration Options
-
-```typescript
-const client = createX402Client({
-  wallet: { type: 'account', account },
-  defaultToken: TOKENS.USDC_BASE,
-  version: 'auto',           // 'auto' | 1 | 2
-  defaultExpiry: 3600,       // seconds (default: 1 hour)
-  nonceGenerator: () => `${Date.now()}`,
-  debug: true,               // enable logging
+const result = await armory.pay({
+  to: '0x...',
+  amount: 1000000000n,
+  token: TOKENS.USDC_BASE,
 });
 ```
-
-## Protocol Support
-
-- **v1 (X-PAYMENT)**: Base64-encoded JSON with v, r, s signature
-- **v2 (PAYMENT-SIGNATURE)**: JSON with structured signature object
-- **Auto-detection**: Automatically detects server protocol version
-
-## Token Objects
-
-### Using Pre-configured Tokens
-
-```typescript
-import { TOKENS } from '@armory/tokens';
-
-const client = createX402Client({
-  wallet: { type: 'account', account },
-  defaultToken: TOKENS.USDC_BASE,
-});
-
-// Override per-request
-const response = await client.fetch('https://api.example.com/data', {
-  token: TOKENS.USDC_POLYGON,
-});
-```
-
-### Registering Custom Tokens
-
-```typescript
-import { registerToken } from '@armory/base';
-
-registerToken({
-  symbol: 'MYTOKEN',
-  name: 'My Custom Token',
-  version: '1',
-  contractAddress: '0x...',
-  chainId: 8453,
-  decimals: 18,
-});
-
-const client = createX402Client({
-  wallet: { type: 'account', account },
-  defaultToken: {
-    symbol: 'MYTOKEN',
-    name: 'My Custom Token',
-    version: '1',
-    contractAddress: '0x...',
-    chainId: 8453,
-  },
-});
-```
-
-For available tokens, see the [`@armory/tokens`](/packages/tokens) package.

@@ -131,7 +131,7 @@ export {
   createError,
 } from "./validation";
 
-// Re-export types from validation for TypeScript
+// Re-export types from simple for TypeScript
 export type {
   NetworkId,
   TokenId,
@@ -146,4 +146,4 @@ export type {
   ResolvedFacilitator,
   ResolvedPaymentConfig,
   ValidationError,
-} from "./validation";
+} from "./types/simple";

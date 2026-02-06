@@ -1,4 +1,4 @@
-import type { Account, Web3BaseWallet } from "web3";
+import type { Web3BaseWallet, Web3BaseWalletAccount } from "web3-types";
 import type {
   PaymentPayloadV1,
   PaymentPayloadV2,
@@ -10,7 +10,7 @@ import type {
   CustomToken,
 } from "@armory-sh/base";
 
-export type Web3Account = Account | Web3BaseWallet;
+export type Web3Account = Web3BaseWalletAccount | Web3BaseWallet<Web3BaseWalletAccount>;
 
 /** Token configuration - can use pre-configured tokens from @armory-sh/tokens */
 export type Token = CustomToken;
@@ -47,8 +47,8 @@ export interface PaymentSignOptions {
 export interface X402RequestContext {
   url: string;
   method: string;
-  headers: HeadersInit;
-  body?: BodyInit | null;
+  headers: Record<string, string> | Headers;
+  body?: string | Record<string, unknown> | null;
   version: 1 | 2;
 }
 
@@ -91,6 +91,7 @@ export interface Web3EIP712Domain {
   version: string;
   chainId: string | number;
   verifyingContract: string;
+  [key: string]: string | number;
 }
 
 export const isV1Requirements = (

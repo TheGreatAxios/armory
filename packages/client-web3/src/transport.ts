@@ -33,9 +33,9 @@ const parsePaymentRequirements = async (
 const createPaymentHeaders = (payload: unknown, version: 1 | 2): Headers => {
   const headers = new Headers();
   if (version === 1) {
-    headers.set(V1_HEADERS.PAYMENT, encodePaymentV1(payload));
+    headers.set(V1_HEADERS.PAYMENT, encodePaymentV1(payload as import("@armory-sh/base").PaymentPayloadV1));
   } else {
-    headers.set(V2_HEADERS.PAYMENT_SIGNATURE, encodePaymentV2(payload));
+    headers.set(V2_HEADERS.PAYMENT_SIGNATURE, encodePaymentV2(payload as import("@armory-sh/base").PaymentPayloadV2));
   }
   return headers;
 };

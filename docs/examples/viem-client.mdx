@@ -1,0 +1,56 @@
+---
+description: Viem client payment examples
+---
+
+# Viem Client
+
+Making payments with Viem wallets.
+
+## Basic Payment
+
+```typescript
+import { armoryPay } from '@armory/client-viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0x...');
+
+const result = await armoryPay(
+  { account },
+  'https://api.example.com/data',
+  'base',
+  'usdc'
+);
+
+console.log(result.data);
+```
+
+## With Custom Amount
+
+```typescript
+const result = await armoryPay(
+  { account },
+  'https://api.example.com/premium',
+  'base',
+  'usdc',
+  { amount: '5.0' }
+);
+```
+
+## Using Public Client
+
+```typescript
+import { createPublicClient, http } from 'viem';
+import { base } from 'viem/chains';
+
+const publicClient = createPublicClient({
+  chain: base,
+  transport: http()
+});
+
+const result = await armoryPay(
+  { account, publicClient },
+  'https://api.example.com/data',
+  'base',
+  'usdc'
+);
+```
