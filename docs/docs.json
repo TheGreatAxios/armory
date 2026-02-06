@@ -21,59 +21,37 @@
     "dismissible": false
   },
   "navigation": {
-    "tabs": [
+    "groups": [
       {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": [
-              "index"
-            ]
-          },
-          {
-            "group": "Accept Payments",
-            "pages": [
-              "accept-payments/express",
-              "accept-payments/hono",
-              "accept-payments/bun"
-            ]
-          },
-          {
-            "group": "Make Payments",
-            "pages": [
-              "make-payments/viem",
-              "make-payments/ethers",
-              "make-payments/web3"
-            ]
-          }
+        "group": "Overview",
+        "pages": ["index"]
+      },
+      {
+        "group": "Accept Payments",
+        "pages": [
+          "accept-payments/express",
+          "accept-payments/hono",
+          "accept-payments/bun"
         ]
       },
       {
-        "tab": "Packages",
-        "groups": [
-          {
-            "group": "Core",
-            "pages": [
-              "packages/core",
-              "packages/facilitator",
-              "packages/middleware"
-            ]
-          },
-          {
-            "group": "Clients",
-            "pages": [
-              "packages/client-viem",
-              "packages/client-ethers",
-              "packages/client-web3"
-            ]
-          },
-          {
-            "group": "Utilities",
-            "pages": [
-              "packages/tokens"
-            ]
-          }
+        "group": "Make Payments",
+        "pages": [
+          "make-payments/viem",
+          "make-payments/ethers",
+          "make-payments/web3"
+        ]
+      },
+      {
+        "group": "Packages",
+        "pages": [
+          "packages/core",
+          "packages/facilitator",
+          "packages/middleware",
+          "packages/client-viem",
+          "packages/client-ethers",
+          "packages/client-web3",
+          "packages/tokens"
         ]
       }
     ]
