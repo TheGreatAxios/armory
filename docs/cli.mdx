@@ -1,0 +1,93 @@
+---
+description: Use the Armory CLI to scaffold new projects
+title: CLI
+---
+
+# Armory CLI
+
+Scaffold new Armory projects with a single command.
+
+## Installation
+
+```bash
+bunx armory-cli
+```
+
+## Create a Project
+
+```bash
+# Interactive mode
+bunx armory-cli create
+
+# Direct creation
+bunx armory-cli create facilitator my-facilitator
+bunx armory-cli create server my-api
+bunx armory-cli create client my-app
+```
+
+## Templates
+
+### Facilitator
+
+Payment verification & settlement server.
+
+```bash
+bunx armory-cli create facilitator my-facilitator
+```
+
+Creates:
+- `src/index.ts` — Facilitator server
+- `package.json` — Dependencies configured
+- `README.md` — Setup instructions
+
+### Server
+
+Simple payment-protected API server.
+
+```bash
+bunx armory-cli create server my-api
+```
+
+Creates:
+- `src/index.ts` — Bun server with payment middleware
+- `package.json` — Dependencies configured
+- `README.md` — Setup instructions
+
+### Client
+
+x402-enabled fetch wrapper for making payments.
+
+```bash
+bunx armory-cli create client my-app
+```
+
+Creates:
+- `src/index.ts` — Client setup
+- `src/client.ts` — Example implementation
+- `package.json` — Dependencies configured
+- `README.md` — Setup instructions
+
+## Next Steps
+
+After creating a project:
+
+```bash
+cd my-project
+bun install
+bun run dev
+```
+
+## Environment
+
+Most templates require environment variables:
+
+```bash
+# Facilitator
+PRIVATE_KEY=0x...your_private_key
+
+# Server
+# (configured in src/index.ts)
+
+# Client
+PRIVATE_KEY=0x...your_private_key
+```

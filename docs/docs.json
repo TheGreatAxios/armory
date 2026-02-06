@@ -24,13 +24,14 @@
     "groups": [
       {
         "group": "Overview",
-        "pages": ["index"]
+        "pages": ["index", "cli"]
       },
       {
         "group": "Accept Payments",
         "pages": [
           "accept-payments/express",
           "accept-payments/hono",
+          "accept-payments/elysia",
           "accept-payments/bun"
         ]
       },
@@ -43,15 +44,22 @@
         ]
       },
       {
+        "group": "Advanced Guides",
+        "pages": [
+          "advanced/custom-tokens",
+          "advanced/custom-networks"
+        ]
+      },
+      {
         "group": "Packages",
         "pages": [
-          "packages/core",
-          "packages/facilitator",
-          "packages/middleware",
-          "packages/client-viem",
-          "packages/client-ethers",
-          "packages/client-web3",
-          "packages/tokens"
+          { "title": "@armory-sh/base", "page": "packages/base" },
+          { "title": "@armory-sh/facilitator", "page": "packages/facilitator" },
+          { "title": "@armory-sh/middleware", "page": "packages/middleware" },
+          { "title": "@armory-sh/client-viem", "page": "packages/client-viem" },
+          { "title": "@armory-sh/client-ethers", "page": "packages/client-ethers" },
+          { "title": "@armory-sh/client-web3", "page": "packages/client-web3" },
+          { "title": "@armory-sh/tokens", "page": "packages/tokens" }
         ]
       }
     ]

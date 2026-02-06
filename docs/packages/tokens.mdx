@@ -1,64 +1,112 @@
 ---
 description: Pre-configured token objects for common ERC-20 tokens
+title: @armory-sh/tokens
 ---
 
-# @armory/tokens
+# @armory-sh/tokens
 
-Pre-configured token objects for USDC, USDT, DAI, and more across major chains.
+Pre-configured token objects for USDC, USDT, DAI, WBTC, and more.
 
 ## Installation
 
 ```bash
-bun add @armory/tokens
+bun add @armory-sh/tokens
 ```
 
 ## Usage
 
 ```typescript
-import { TOKENS } from '@armory/tokens';
+import { USDC_BASE } from '@armory-sh/tokens';
 
-// Use with any package
-import { acceptPaymentsViaArmory } from '@armory/middleware';
+import { paymentMiddleware } from '@armory-sh/middleware/bun';
 
-app.use(acceptPaymentsViaArmory({
-  payTo: '0x...',
-  amount: '1.0',
-  token: TOKENS.USDC_BASE,
-}));
+const app = Bun.serve({
+  fetch: paymentMiddleware({
+    payTo: '0x...',
+    amount: '2000000', // 2 USDC
+    token: USDC_BASE,
+  }),
+});
 ```
 
 ## Available Tokens
 
+### Base Mainnet
+
 ```typescript
-TOKENS.USDC_BASE        // USDC on Base
-TOKENS.USDC_ETHEREUM    // USDC on Ethereum
-TOKENS.USDC_POLYGON     // USDC on Polygon
-
-TOKENS.USDT_BASE        // USDT on Base
-TOKENS.USDT_ETHEREUM    // USDT on Ethereum
-
-TOKENS.DAI_BASE         // DAI on Base
-TOKENS.DAI_ETHEREUM     // DAI on Ethereum
-
-TOKENS.WBTC_BASE        // WBTC on Base
-TOKENS.WBTC_ETHEREUM    // WBTC on Ethereum
+import {
+  USDC_BASE,        // USDC
+  EURC_BASE,        // EURC
+} from '@armory-sh/tokens';
 ```
 
-## Query Tokens
+### Base Sepolia
+
+```typescript
+import {
+  USDC_BASE_SEPOLIA,
+} from '@armory-sh/tokens';
+```
+
+### SKALE Base Mainnet
+
+```typescript
+import {
+  USDC_SKALE_BASE,    // USDC
+  USDT_SKALE_BASE,    // USDT
+  WBTC_SKALE_BASE,    // WBTC
+  WETH_SKALE_BASE,    // WETH
+} from '@armory-sh/tokens';
+```
+
+### SKALE Base Sepolia
+
+```typescript
+import {
+  SKL_SKALE_BASE_SEPOLIA,    // SKL
+  USDC_SKALE_BASE_SEPOLIA,   // USDC
+  USDT_SKALE_BASE_SEPOLIA,   // USDT
+  WBTC_SKALE_BASE_SEPOLIA,   // WBTC
+  WETH_SKALE_BASE_SEPOLIA,   // WETH
+} from '@armory-sh/tokens';
+```
+
+## Token Object
+
+Each token export contains:
+
+```typescript
+{
+  symbol: string;      // e.g., "USDC"
+  name: string;        // e.g., "USD Coin"
+  version: string;     // Token version
+  contractAddress: `0x${string}`;
+  chainId: number;
+  decimals: number;
+}
+```
+
+## Query Functions
 
 ```typescript
 import {
   getToken,
   getTokensBySymbol,
   getTokensByChain,
-} from '@armory/tokens';
+  getUSDCTokens,
+  getAllTokens,
+} from '@armory-sh/tokens';
 
 // By chain and address
 const token = getToken(8453, '0x8335...');
 
 // By symbol
 const allUsdc = getTokensBySymbol('USDC');
+// or: const allUsdc = getUSDCTokens();
 
 // By chain
 const baseTokens = getTokensByChain(8453);
+
+// All tokens
+const all = getAllTokens();
 ```

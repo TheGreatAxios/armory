@@ -1,21 +1,22 @@
 ---
 description: HTTP middleware for Express, Hono, Bun, and Elysia
+title: @armory-sh/middleware
 ---
 
-# @armory/middleware
+# @armory-sh/middleware
 
 Accept payments in your HTTP API with middleware for major frameworks.
 
 ## Installation
 
 ```bash
-bun add @armory/middleware
+bun add @armory-sh/middleware
 ```
 
 ## Express
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory/middleware';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
 
 app.use(acceptPaymentsViaArmory({
   payTo: '0xYourWallet...',

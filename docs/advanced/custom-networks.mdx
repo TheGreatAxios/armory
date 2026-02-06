@@ -1,0 +1,216 @@
+---
+description: Configure Armory for custom EVM chains and networks
+---
+
+# Custom Networks
+
+Use Armory on any EVM-compatible chain by configuring network settings.
+
+## Network Configuration
+
+A network configuration includes:
+
+```typescript
+{
+  name: string;           // Display name
+  chainId: number;        // EIP-155 chain ID
+  usdcAddress: `0x${string}`;  // USDC contract address
+  rpcUrl: string;         // RPC endpoint
+  caip2Id: string;        // CAIP-2 network ID
+  caipAssetId: string;    // CAIP-2 asset ID
+}
+```
+
+## Add a Custom Network
+
+### For Middleware
+
+Configure RPC URLs for your custom network:
+
+#### Bun
+
+```typescript
+import { paymentMiddleware } from '@armory-sh/middleware/bun';
+import { USDC_BASE } from '@armory-sh/tokens';
+
+const app = Bun.serve({
+  fetch: paymentMiddleware({
+    payTo: '0x...',
+    amount: '2000000',
+    token: USDC_BASE,
+    rpcUrls: {
+      8453: 'https://mainnet.base.org',
+      // Add your custom network
+      123456: 'https://your-custom-rpc.com',
+    }
+  }),
+});
+```
+
+#### Express
+
+```typescript
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
+
+app.use(acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '2000000',
+  rpcUrls: {
+    8453: 'https://mainnet.base.org',
+    123456: 'https://your-custom-rpc.com',
+  }
+}));
+```
+
+### For Facilitator
+
+Configure facilitator with custom network:
+
+```typescript
+import { createFacilitatorServer } from '@armory-sh/facilitator';
+
+const server = createFacilitatorServer({
+  port: 3000,
+  rpcUrls: {
+    // Built-in networks
+    1: 'https://eth.llamarpc.com',
+    8453: 'https://mainnet.base.org',
+    // Your custom network
+    123456: 'https://your-custom-rpc.com',
+  },
+  privateKey: process.env.PRIVATE_KEY,
+});
+```
+
+### For Client
+
+Clients automatically derive network from the token's `chainId`:
+
+```typescript
+import { createArmoryClient } from '@armory-sh/client-viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const CUSTOM_TOKEN = {
+  symbol: 'USDC',
+  name: 'USD Coin',
+  version: '2',
+  contractAddress: '0x...',
+  chainId: 123456, // Your custom chain ID
+  decimals: 6,
+};
+
+const client = createArmoryClient({
+  wallet: { type: 'account', account },
+  token: CUSTOM_TOKEN,
+  rpcUrl: 'https://your-custom-rpc.com', // Optional: custom RPC
+});
+```
+
+## CAIP IDs
+
+Armory uses [CAIP](https://chainagnostic.org/)-style IDs for network identification:
+
+### CAIP-2 (Network)
+
+Format: `eip155:<chainId>`
+
+```typescript
+const caip2Id = `eip155:${chainId}`;
+
+// Examples:
+'eip155:1'        // Ethereum
+'eip155:8453'     // Base
+'eip155:123456'   // Custom
+```
+
+### CAIP-2 Asset (Token)
+
+Format: `eip155:<chainId>/erc20:<address>`
+
+```typescript
+const caipAssetId = `eip155:${chainId}/erc20:${contractAddress}`;
+
+// Example:
+'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+```
+
+## Example: Arbitrum Sepolia
+
+```typescript
+import { paymentMiddleware } from '@armory-sh/middleware/bun';
+
+// Custom token on Arbitrum Sepolia
+const USDC_ARB_SEPOLIA = {
+  symbol: 'USDC',
+  name: 'USD Coin',
+  version: '2',
+  contractAddress: '0x75faf114eafb1Acbe221d265a875F4Ea013E0bA1',
+  chainId: 421614,
+  decimals: 6,
+};
+
+const app = Bun.serve({
+  fetch: paymentMiddleware({
+    payTo: '0x...',
+    amount: '2000000',
+    token: USDC_ARB_SEPOLIA,
+    rpcUrls: {
+      421614: 'https://sepolia-rollup.arbitrum.one/rpc',
+    }
+  }),
+});
+```
+
+## Testnet Configuration
+
+```typescript
+// Testnet token
+const USDC_SEPOLIA = {
+  symbol: 'USDC',
+  name: 'USD Coin',
+  version: '2',
+  contractAddress: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
+  chainId: 11155111, // Sepolia
+  decimals: 6,
+};
+
+const client = createArmoryClient({
+  wallet: { type: 'account', account },
+  token: USDC_SEPOLIA,
+  rpcUrl: 'https://rpc.sepolia.org',
+});
+```
+
+## Multi-Network Support
+
+Accept payments across multiple networks:
+
+```typescript
+app.use(acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '2000000',
+  accept: {
+    networks: ['base', 'ethereum', 123456], // Mix names and chain IDs
+    tokens: [USDC_BASE, CUSTOM_TOKEN],
+  }
+}));
+```
+
+## Network Discovery
+
+Get network info from chain ID:
+
+```typescript
+import { getNetworkByChainId } from '@armory-sh/base';
+
+const network = getNetworkByChainId(8453);
+console.log(network);
+// {
+//   name: "Base Mainnet",
+//   chainId: 8453,
+//   usdcAddress: "0x8335...",
+//   rpcUrl: "https://mainnet.base.org",
+//   caip2Id: "eip155:8453",
+//   caipAssetId: "eip155:8453/erc20:0x8335..."
+// }
+```

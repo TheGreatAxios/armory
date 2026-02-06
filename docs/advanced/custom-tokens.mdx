@@ -1,0 +1,183 @@
+---
+description: Use custom tokens with Armory middleware and clients
+---
+
+# Custom Tokens
+
+Use any EIP-3009 compatible token with Armory — not just the pre-configured ones.
+
+## Define a Custom Token
+
+Create a token object matching your contract:
+
+```typescript
+import type { CustomToken } from '@armory-sh/base';
+
+const MY_TOKEN: CustomToken = {
+  symbol: 'MYTKN',
+  name: 'My Token',
+  version: '1',
+  contractAddress: '0x1234567890123456789012345678901234567890',
+  chainId: 8453, // Base
+  decimals: 18,
+};
+```
+
+## Use with Middleware
+
+Pass your custom token directly to the middleware:
+
+### Bun
+
+```typescript
+import { paymentMiddleware } from '@armory-sh/middleware/bun';
+
+const app = Bun.serve({
+  fetch: paymentMiddleware({
+    payTo: '0xYourWalletAddress...',
+    amount: '1000000000000000000', // 1 token (18 decimals)
+    token: MY_TOKEN,
+  }),
+});
+```
+
+### Express
+
+```typescript
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
+
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1000000000000000000',
+  token: MY_TOKEN,
+}));
+```
+
+### Hono
+
+```typescript
+import { armoryMiddleware } from '@armory-sh/middleware/hono';
+
+app.use('/api/*', armoryMiddleware({
+  payTo: '0xYourWalletAddress...',
+  amount: '1000000000000000000',
+  token: MY_TOKEN,
+}));
+```
+
+### Elysia
+
+```typescript
+import { elysiaPaymentMiddleware } from '@armory-sh/middleware/elysia';
+
+const app = new Elysia()
+  .use(elysiaPaymentMiddleware({
+    requirements: {
+      to: '0xYourWalletAddress...',
+      amount: '1000000000000000000',
+      chainId: 'eip155:8453',
+      assetId: 'eip155:8453/erc20:0x1234567890123456789012345678901234567890',
+    }
+  }));
+```
+
+## Use with Client
+
+Pass your custom token when creating a client:
+
+### Viem
+
+```typescript
+import { createArmoryClient } from '@armory-sh/client-viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0x...');
+
+const client = createArmoryClient({
+  wallet: { type: 'account', account },
+  token: MY_TOKEN,
+});
+```
+
+### Ethers
+
+```typescript
+import { createArmoryClient } from '@armory-sh/client-ethers';
+import { Wallet } from 'ethers';
+
+const wallet = new Wallet('0x...');
+
+const client = createArmoryClient({
+  wallet: { type: 'wallet', wallet },
+  token: MY_TOKEN,
+});
+```
+
+### Web3.js
+
+```typescript
+import { createArmoryClient } from '@armory-sh/client-web3';
+import { Web3 } from 'web3';
+
+const web3 = new Web3('...');
+const account = web3.eth.accounts.privateKeyToAccount('0x...');
+
+const client = createArmoryClient({
+  wallet: { type: 'web3', account, web3 },
+  token: MY_TOKEN,
+});
+```
+
+## Register Token (Optional)
+
+If you want your token to be discoverable via the token registry:
+
+```typescript
+import { registerToken } from '@armory-sh/tokens';
+
+registerToken(MY_TOKEN);
+
+// Now available via:
+import { getToken } from '@armory-sh/tokens';
+const token = getToken(8453, '0x1234...');
+```
+
+## Multi-Token Setup
+
+Accept multiple custom tokens:
+
+```typescript
+import { armoryMiddleware } from '@armory-sh/middleware/hono';
+
+const TOKEN_1 = { symbol: 'TKN1', contractAddress: '0x...', chainId: 8453, decimals: 18 };
+const TOKEN_2 = { symbol: 'TKN2', contractAddress: '0x...', chainId: 8453, decimals: 6 };
+
+// Middleware accepts either token
+app.use('/api/*', armoryMiddleware({
+  payTo: '0x...',
+  amount: '1000000',
+  accept: {
+    tokens: [TOKEN_1, TOKEN_2],
+  }
+}));
+```
+
+## Token Requirements
+
+Your token must implement [EIP-3009](https://eips.ethereum.org/EIPS/eip-3009):
+
+```solidity
+function transferWithAuthorization(
+    address from,
+    address to,
+    uint256 value,
+    uint256 validAfter,
+    uint256 validBefore,
+    bytes32 nonce,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+) external;
+```
+
+Most major stablecoins (USDC, USDT, DAI, PYUSD) already support this.

@@ -1,0 +1,61 @@
+---
+description: Accept Armory payments in Elysia
+---
+
+# Accept Payments with Elysia
+
+Accept Armory payments in your Elysia API using the middleware.
+
+## Basic Setup
+
+```typescript
+import { Elysia } from 'elysia';
+import { elysiaPaymentMiddleware } from '@armory/middleware';
+
+const app = new Elysia()
+  .use(elysiaPaymentMiddleware({
+    requirements: {
+      to: '0xYourWalletAddress...',
+      amount: '1000000', // 1 USDC (6 decimals)
+      expiry: Math.floor(Date.now() / 1000) + 3600,
+      chainId: 'eip155:8453',
+      assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    }
+  }))
+  .get('/api/data', ({ store }) => {
+    return { message: 'Payment successful!' };
+  })
+  .listen(3000);
+```
+
+## Access Payment Info
+
+```typescript
+app.get('/api/premium', ({ store }) => {
+  const payment = store.payment;
+  return {
+    message: `Hello ${payment.payerAddress}`,
+    amount: payment.amount
+  };
+});
+```
+
+## Schema Validation
+
+```typescript
+import { t } from 'elysia';
+
+app.post(
+  '/api/purchase',
+  ({ store, body }) => {
+    const { itemId, quantity } = body;
+    // ... handle purchase
+  },
+  {
+    body: t.Object({
+      itemId: t.String(),
+      quantity: t.Optional(t.Number()),
+    }),
+  }
+);
+```
