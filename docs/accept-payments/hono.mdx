@@ -1,0 +1,44 @@
+---
+description: Accept Armory payments in Hono
+---
+
+# Accept Payments with Hono
+
+Accept Armory payments in your Hono API using the middleware.
+
+## Basic Setup
+
+```typescript
+import { Hono } from 'hono';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+const app = new Hono();
+
+app.use('*', acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0'
+}));
+
+app.get('/api/data', (c) => {
+  return c.json({ message: 'Payment successful!', data: [...] });
+});
+
+app.listen(3000);
+```
+
+## Multi-Network/Multi-Token
+
+```typescript
+app.use('*', acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0',
+  accept: {
+    networks: ['base', 'ethereum', 'polygon'],
+    tokens: ['usdc', 'usdt'],
+    facilitators: [
+      { url: 'https://facilitator1.com' },
+      { url: 'https://facilitator2.com' }
+    ]
+  }
+}));
+```

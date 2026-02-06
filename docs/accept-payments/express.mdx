@@ -1,0 +1,45 @@
+---
+description: Accept Armory payments in Express
+---
+
+# Accept Payments with Express
+
+Accept Armory payments in your Express API using the middleware.
+
+## Basic Setup
+
+```typescript
+import express from 'express';
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+const app = express();
+
+// Accept 1 USDC per request
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0'
+}));
+
+app.get('/api/data', (req, res) => {
+  res.json({ message: 'Payment successful!', data: [...] });
+});
+
+app.listen(3000);
+```
+
+## Multi-Network/Multi-Token
+
+```typescript
+app.use(acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0',
+  accept: {
+    networks: ['base', 'ethereum', 'polygon'],
+    tokens: ['usdc', 'usdt'],
+    facilitators: [
+      { url: 'https://facilitator1.com' },
+      { url: 'https://facilitator2.com' }
+    ]
+  }
+}));
+```

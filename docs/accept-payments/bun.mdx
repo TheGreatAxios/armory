@@ -1,0 +1,51 @@
+---
+description: Accept Armory payments in Bun
+---
+
+# Accept Payments with Bun
+
+Accept Armory payments in your Bun HTTP server using the middleware.
+
+## Basic Setup
+
+```typescript
+import { acceptPaymentsViaArmory } from '@armory/middleware';
+
+const middleware = acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0'
+});
+
+Bun.serve({
+  port: 3000,
+  fetch: (req) => {
+    const payment = middleware(req);
+
+    if (!payment.valid) {
+      return new Response('Payment required', {
+        status: 402,
+        headers: payment.headers
+      });
+    }
+
+    return new Response(JSON.stringify({ data: [...] }));
+  }
+});
+```
+
+## Multi-Network/Multi-Token
+
+```typescript
+const middleware = acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0',
+  accept: {
+    networks: ['base', 'ethereum', 'polygon'],
+    tokens: ['usdc', 'usdt'],
+    facilitators: [
+      { url: 'https://facilitator1.com' },
+      { url: 'https://facilitator2.com' }
+    ]
+  }
+});
+```
