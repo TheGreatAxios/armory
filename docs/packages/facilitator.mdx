@@ -1,9 +1,7 @@
 ---
 description: Payment verification and on-chain settlement
-title: @armory-sh/facilitator
+title: "@armory-sh/facilitator"
 ---
-
-# @armory-sh/facilitator
 
 Verify payments and settle them on-chain via EIP-3009.
 
@@ -30,7 +28,7 @@ import {
 ## Verification
 
 ```typescript
-import { verifyPayment } from '@armory/facilitator';
+import { verifyPayment } from '@armory-sh/facilitator';
 
 const result = await verifyPayment(payload, {
   walletClient,
@@ -48,7 +46,7 @@ if (result.success) {
 ## Settlement
 
 ```typescript
-import { settlePayment } from '@armory/facilitator';
+import { settlePayment } from '@armory-sh/facilitator';
 
 const receipt = await settlePayment({
   walletClient,
@@ -61,7 +59,7 @@ const receipt = await settlePayment({
 ## HTTP Server
 
 ```typescript
-import { createFacilitatorServer } from '@armory/facilitator';
+import { createFacilitatorServer } from '@armory-sh/facilitator';
 
 const server = createFacilitatorServer({
   port: 3000,
@@ -81,7 +79,7 @@ import {
   InsufficientBalanceError,
   NonceUsedError,
   PaymentExpiredError,
-} from '@armory/facilitator';
+} from '@armory-sh/facilitator';
 
 try {
   await verifyPayment(payload, options);

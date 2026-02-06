@@ -9,11 +9,10 @@
     "dark": "#DC2626"
   },
   "appearance": {
-    "default": "light",
-    "strict": true
+    "default": "light"
   },
   "topbarCtaButton": {
-    "type": "github",
+    "name": "GitHub",
     "url": "https://github.com/thegreataxios/armory"
   },
   "navigation": {
