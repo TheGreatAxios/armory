@@ -103,18 +103,21 @@ export function isLegacyV1Payload(obj: unknown): obj is LegacyPaymentPayloadV1 {
  * Check if payload is legacy Armory V2 format
  */
 export function isLegacyV2Payload(obj: unknown): boolean {
+  if (typeof obj !== "object" || obj === null) return false;
+
+  const record = obj as Record<string, unknown>;
+  const signature = record.signature;
+
   return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "signature" in obj &&
-    typeof (obj as Record<string, unknown>).signature === "object" &&
-    (obj as Record<string, unknown>).signature !== null &&
-    "v" in (obj as Record<string, unknown>).signature! &&
-    "chainId" in obj &&
-    typeof (obj as Record<string, unknown>).chainId === "string" &&
-    (obj as Record<string, unknown>).chainId.toString().startsWith("eip155:") &&
-    "assetId" in obj &&
-    !("x402Version" in obj)
+    "signature" in record &&
+    typeof signature === "object" &&
+    signature !== null &&
+    "v" in signature &&
+    "chainId" in record &&
+    typeof record.chainId === "string" &&
+    record.chainId.startsWith("eip155:") &&
+    "assetId" in record &&
+    !("x402Version" in record)
   );
 }
 
