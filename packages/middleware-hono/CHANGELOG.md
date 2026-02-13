@@ -1,5 +1,11 @@
 # @armory-sh/middleware-hono
 
+## 0.3.8
+
+### Patch Changes
+
+- Automated release
+
 ## 0.3.7
 
 ### Patch Changes
