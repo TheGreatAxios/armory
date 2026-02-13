@@ -1,5 +1,11 @@
 # armory-cli
 
+## 0.2.4
+
+### Patch Changes
+
+- :wq!
+
 ## 0.2.3
 
 ### Patch Changes

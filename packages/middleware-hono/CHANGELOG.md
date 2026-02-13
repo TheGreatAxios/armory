@@ -4,6 +4,15 @@
 
 ### Patch Changes
 
+- :wq!
+- Updated dependencies
+  - @armory-sh/base@0.2.12
+  - @armory-sh/facilitator@0.2.12
+
+## 0.3.11
+
+### Patch Changes
+
 - Automated release
 - Updated dependencies
   - @armory-sh/base@0.2.11

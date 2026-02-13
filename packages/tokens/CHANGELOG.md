@@ -1,5 +1,13 @@
 # @armory-sh/tokens
 
+## 0.2.10
+
+### Patch Changes
+
+- :wq!
+- Updated dependencies
+  - @armory-sh/base@0.2.12
+
 ## 0.2.9
 
 ### Patch Changes

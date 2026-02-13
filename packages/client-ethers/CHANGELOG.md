@@ -1,5 +1,13 @@
 # @armory-sh/client-ethers
 
+## 0.2.12
+
+### Patch Changes
+
+- :wq!
+- Updated dependencies
+  - @armory-sh/base@0.2.12
+
 ## 0.2.11
 
 ### Patch Changes
