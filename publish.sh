@@ -181,9 +181,13 @@ for pkg in "${TO_PUBLISH[@]}"; do
     exit 1
   fi
 
-  # bun publish automatically strips workspace:* protocols
-  # No manual sed/restore needed!
-  bun publish --access public
+  # Replace workspace:* with actual versions for internal deps
+  for dep in $(get_deps "$pkg"); do
+    dep_version=$(node -e "console.log(require('$(get_dir "$dep")/package.json').version)")
+    sed -i '' "s|\"$dep\": \"workspace:\*\"|\"$dep\": \"^$dep_version\"|g" package.json
+  done
+
+  # bun publish --access public
 
   popd >/dev/null
 

@@ -1,5 +1,12 @@
 # @armory-sh/client-ethers
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [49e6a71]
+  - @armory-sh/base@0.2.2
+
 ## 0.2.0
 
 ### Minor Changes
