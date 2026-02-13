@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-hono",
-  "version": "0.3.13",
+  "version": "0.3.10",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
