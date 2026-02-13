@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/tokens",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -27,7 +27,7 @@
     "directory": "packages/tokens"
   },
   "dependencies": {
-    "@armory-sh/base": "^0.2.8"
+    "@armory-sh/base": "^0.2.9"
   },
   "devDependencies": {
     "typescript": "5.9.3",

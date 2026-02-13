@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/facilitator",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -27,7 +27,7 @@
     "directory": "packages/facilitator"
   },
   "dependencies": {
-    "@armory-sh/base": "^0.2.8",
+    "@armory-sh/base": "^0.2.9",
     "viem": "2.45.0"
   },
   "optionalDependencies": {
