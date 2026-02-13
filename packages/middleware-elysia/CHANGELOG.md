@@ -1,5 +1,16 @@
 # @armory-sh/middleware-elysia
 
+## 0.3.8
+
+### Patch Changes
+
+- Updated dependencies [0b7c70b]
+- Updated dependencies [77ddc6c]
+- Updated dependencies [0e32676]
+- Updated dependencies
+  - @armory-sh/base@0.2.10
+  - @armory-sh/facilitator@0.2.10
+
 ## 0.3.7
 
 ### Patch Changes

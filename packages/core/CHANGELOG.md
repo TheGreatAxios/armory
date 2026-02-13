@@ -1,5 +1,14 @@
 # @armory-sh/base
 
+## 0.2.10
+
+### Patch Changes
+
+- 0b7c70b: Automated release
+- 77ddc6c: Automated release
+- 0e32676: Automated release
+- Automated release
+
 ## 0.2.9
 
 ### Patch Changes
