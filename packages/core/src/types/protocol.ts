@@ -100,6 +100,25 @@ export function isLegacyV1Payload(obj: unknown): obj is LegacyPaymentPayloadV1 {
 }
 
 /**
+ * Check if payload is legacy Armory V2 format
+ */
+export function isLegacyV2Payload(obj: unknown): boolean {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "signature" in obj &&
+    typeof (obj as Record<string, unknown>).signature === "object" &&
+    (obj as Record<string, unknown>).signature !== null &&
+    "v" in (obj as Record<string, unknown>).signature! &&
+    "chainId" in obj &&
+    typeof (obj as Record<string, unknown>).chainId === "string" &&
+    (obj as Record<string, unknown>).chainId.toString().startsWith("eip155:") &&
+    "assetId" in obj &&
+    !("x402Version" in obj)
+  );
+}
+
+/**
  * Get x402 version from payload
  */
 export function getPaymentVersion(payload: PaymentPayload): 1 | 2 {
@@ -273,11 +292,15 @@ export function getTxHash(response: SettlementResponse): string | undefined {
 // ============================================================================
 
 /**
- * @deprecated Use isX402V1Payload or isX402V2Payload instead
+ * @deprecated Use isX402V1Payload or isLegacyV1Payload instead
  */
-export const isV1 = isX402V1Payload;
+export function isV1(obj: unknown): boolean {
+  return isX402V1Payload(obj) || isLegacyV1Payload(obj);
+}
 
 /**
- * @deprecated Use isX402V2Payload instead
+ * @deprecated Use isX402V2Payload or isLegacyV2Payload instead
  */
-export const isV2 = isX402V2Payload;
+export function isV2(obj: unknown): boolean {
+  return isX402V2Payload(obj) || isLegacyV2Payload(obj);
+}
