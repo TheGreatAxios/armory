@@ -1,5 +1,13 @@
 # @armory-sh/client-web3
 
+## 0.2.8
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.8
+
 ## 0.2.7
 
 ### Patch Changes

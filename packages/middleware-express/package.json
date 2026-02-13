@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-express",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
