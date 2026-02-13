@@ -118,6 +118,87 @@ ${summary}
   return fileName;
 }
 
+// Parse semver version
+function parseVersion(version) {
+  const match = version.match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!match) return null;
+  return { major: parseInt(match[1]), minor: parseInt(match[2]), patch: parseInt(match[3]) };
+}
+
+// Compare two versions
+function compareVersions(v1, v2) {
+  const parsed1 = parseVersion(v1);
+  const parsed2 = parseVersion(v2);
+
+  if (!parsed1 || !parsed2) return 0;
+
+  if (parsed1.major !== parsed2.major) return parsed1.major - parsed2.major;
+  if (parsed1.minor !== parsed2.minor) return parsed1.minor - parsed2.minor;
+  return parsed1.patch - parsed2.patch;
+}
+
+// Get expected next version
+function getNextVersion(current, type) {
+  const parsed = parseVersion(current);
+  if (!parsed) return current;
+
+  switch (type) {
+    case "major":
+      return `${parsed.major + 1}.0.0`;
+    case "minor":
+      return `${parsed.major}.${parsed.minor + 1}.0`;
+    case "patch":
+      return `${parsed.major}.${parsed.minor}.${parsed.patch + 1}`;
+    default:
+      return current;
+  }
+}
+
+// Check if version jumped too far
+function checkVersionSkips(packageName, currentVersion, changesetType) {
+  try {
+    // Try to get published version from npm
+    const published = run(`npm view ${packageName} version 2>/dev/null || echo '0.0.0'`, { silent: true }).trim();
+    if (published === "0.0.0") return null; // Not published yet
+
+    const expected = getNextVersion(published, changesetType);
+    const parsedCurrent = parseVersion(currentVersion);
+    const parsedExpected = parseVersion(expected);
+
+    if (!parsedCurrent || !parsedExpected) return null;
+
+    // Check if we skipped versions
+    if (parsedCurrent.major > parsedExpected.major) {
+      return {
+        current: currentVersion,
+        expected,
+        published,
+        reason: "major"
+      };
+    }
+    if (parsedCurrent.minor > parsedExpected.minor && parsedCurrent.major === parsedExpected.major) {
+      return {
+        current: currentVersion,
+        expected,
+        published,
+        reason: "minor"
+      };
+    }
+    if (parsedCurrent.patch > parsedExpected.patch && parsedCurrent.minor === parsedExpected.minor) {
+      return {
+        current: currentVersion,
+        expected,
+        published,
+        reason: "patch"
+      };
+    }
+
+    return null;
+  } catch {
+    return null; // Can't check npm, skip validation
+  }
+}
+
 // Step 1: Pre-flight checks
 log("\n📋 Pre-flight checks...", blue);
 
@@ -154,6 +235,9 @@ if (latestTag !== "none" && tagCommit !== currentHead) {
 log("\n🔍 Detecting changed packages...", blue);
 const changedPackages = getChangedPackages();
 
+// Track which packages to publish
+let packageNames = [];
+
 if (changedPackages.length === 0) {
   warn("No changed packages detected.");
   log("Checking for existing changesets...", blue);
@@ -163,13 +247,19 @@ if (changedPackages.length === 0) {
     if (!changesetFiles) {
       error("No changesets found and no package changes detected. Nothing to release.");
     }
-    success(`Found existing changesets`);
+    // Extract package names from existing changesets
+    const changesetContent = readFileSync(join(changesetsDir, changesetFiles.split("\n")[0]), "utf8");
+    const match = changesetContent.match(/'(@armory-sh\/[^']+)'/g);
+    if (match) {
+      packageNames = match.map(m => m.replace(/'/g, ""));
+    }
+    success(`Found existing changesets for ${packageNames.length} packages`);
   } catch (e) {
     error("No changesets found. Nothing to release.");
   }
 } else {
   log("\n📁 Detected changed packages:", cyan);
-  const packageNames = changedPackages
+  packageNames = changedPackages
     .map(dir => getPackageName(dir))
     .filter(Boolean);
 
@@ -216,28 +306,92 @@ log("\n🔨 Building packages...", blue);
 run("turbo run build");
 success("Build complete");
 
-// Step 8: Publish
+// Step 8: Publish (only changed packages)
 log("\n📤 Publishing packages...", blue);
 
-const dirs = readdirSync(packagesDir).filter((d) => {
-  const pkgJson = join(packagesDir, d, "package.json");
-  if (!existsSync(pkgJson)) return false;
-  const pkg = JSON.parse(readFileSync(pkgJson, "utf8"));
-  return pkg.private !== true;
-});
+// Only publish packages that were in the changeset
+const packagesToPublish = packageNames.length > 0
+  ? readdirSync(packagesDir).filter((d) => {
+      const pkgJson = join(packagesDir, d, "package.json");
+      if (!existsSync(pkgJson)) return false;
+      const pkg = JSON.parse(readFileSync(pkgJson, "utf8"));
+      return pkg.private !== true && packageNames.includes(pkg.name);
+    })
+  : [];
 
-log(`Publishing ${dirs.length} package(s)...`, blue);
+if (packagesToPublish.length === 0) {
+  warn("No packages to publish (all versions unchanged)");
+} else {
+  log(`Publishing ${packagesToPublish.length} package(s)...`, blue);
 
-for (const dir of dirs) {
-  const pkgPath = join(packagesDir, dir, "package.json");
-  const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
-  log(`  → ${pkg.name}@${pkg.version}`, cyan);
+  // Check for version skips
+  log("\n🔍 Validating versions...", blue);
+  const versionIssues = [];
 
-  try {
-    run(`cd "${join(packagesDir, dir)}" && bun publish --access public`, { silent: true });
-    success(`  ✓ ${pkg.name}@${pkg.version} published`);
-  } catch (err) {
-    warn(`  ⚠ ${pkg.name} may already be published or failed`);
+  for (const dir of packagesToPublish) {
+    const pkgPath = join(packagesDir, dir, "package.json");
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+
+    // Get changeset type for this package
+    const changesetFiles = run("find .changeset -name '*.md' -not -name 'README.md' -not -name 'config.json'", { silent: true }).trim().split("\n");
+    let changesetType = "patch";
+
+    for (const file of changesetFiles) {
+      const content = readFileSync(join(changesetsDir, file.trim()), "utf8");
+      if (content.includes(`'${pkg.name}'`)) {
+        if (content.includes(`'${pkg.name}': minor`)) changesetType = "minor";
+        else if (content.includes(`'${pkg.name}': major`)) changesetType = "major";
+        break;
+      }
+    }
+
+    const skip = checkVersionSkips(pkg.name, pkg.version, changesetType);
+    if (skip) {
+      versionIssues.push({ pkg, skip, changesetType });
+    }
+  }
+
+  if (versionIssues.length > 0) {
+    log("\n⚠️  Version skip detected:", yellow);
+    for (const { pkg, skip, changesetType } of versionIssues) {
+      log(`  ${pkg.name}:`, yellow);
+      log(`    Published: ${skip.published}`, yellow);
+      log(`    Expected:   ${skip.expected} (${changesetType})`, yellow);
+      log(`    Local:      ${skip.current} (skipped ${skip.reason})`, yellow);
+    }
+
+    // Auto-fix by updating package.json files
+    log("\n🔧 Auto-fixing versions...", blue);
+    for (const { pkg, skip } of versionIssues) {
+      const pkgPath = join(packagesDir, pkg.name.replace("@armory-sh/", ""), "package.json");
+      const pkgJson = JSON.parse(readFileSync(pkgPath, "utf8"));
+      pkgJson.version = skip.expected;
+      writeFileSync(pkgPath, JSON.stringify(pkgJson, null, 2) + "\n");
+      log(`  ✓ Fixed ${pkg.name} to ${skip.expected}`, green);
+    }
+
+    // Rebuild with fixed versions
+    log("\n🔨 Rebuilding with fixed versions...", blue);
+    run("turbo run build");
+    success("Rebuild complete");
+  } else {
+    success("All versions valid");
+  }
+
+  // Now publish
+  log("\n📤 Publishing to npm...", blue);
+  for (const dir of packagesToPublish) {
+    const pkgPath = join(packagesDir, dir, "package.json");
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
+    log(`  → ${pkg.name}@${pkg.version}`, cyan);
+
+    try {
+      // --yes skips confirmation prompt
+      run(`cd "${join(packagesDir, dir)}" && bun publish --access public --yes`, { silent: true });
+      success(`  ✓ ${pkg.name}@${pkg.version} published`);
+    } catch (err) {
+      warn(`  ⚠ ${pkg.name} may already be published or failed`);
+    }
   }
 }
 
