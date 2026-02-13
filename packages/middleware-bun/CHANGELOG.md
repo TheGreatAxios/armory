@@ -1,5 +1,14 @@
 # @armory-sh/middleware-bun
 
+## 0.3.4
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.6
+  - @armory-sh/facilitator@0.2.6
+
 ## 0.3.3
 
 ### Patch Changes

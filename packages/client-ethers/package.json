@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/client-ethers",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -27,7 +27,7 @@
     "directory": "packages/client-ethers"
   },
   "dependencies": {
-    "@armory-sh/base": "^0.2.5",
+    "@armory-sh/base": "^0.2.6",
     "ethers": "6.16.0"
   },
   "devDependencies": {
