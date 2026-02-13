@@ -369,13 +369,24 @@ if (packagesToPublish.length === 0) {
 
     // Auto-fix by updating package.json files
     log("\n🔧 Auto-fixing versions...", blue);
+    const fixedPackages = [];
     for (const { pkg, skip, dir } of versionIssues) {
       const pkgPath = join(packagesDir, dir, "package.json");
       const pkgJson = JSON.parse(readFileSync(pkgPath, "utf8"));
       pkgJson.version = skip.expected;
       writeFileSync(pkgPath, JSON.stringify(pkgJson, null, 2) + "\n");
       log(`  ✓ Fixed ${pkg.name} to ${skip.expected}`, green);
+      fixedPackages.push({ name: pkg.name, dir });
     }
+
+    // Add fixed packages to publish list
+    log("\n📝 Adding fixed packages to publish list...", blue);
+    for (const { name, dir } of fixedPackages) {
+      if (!packagesToPublish.includes(dir)) {
+        packagesToPublish.push(dir);
+      }
+    }
+    success(`Added ${fixedPackages.length} packages to publish`);
 
     // Rebuild with fixed versions
     log("\n🔨 Rebuilding with fixed versions...", blue);
