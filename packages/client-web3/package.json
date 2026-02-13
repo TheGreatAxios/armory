@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/client-web3",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -27,7 +27,7 @@
     "directory": "packages/client-web3"
   },
   "dependencies": {
-    "@armory-sh/base": "^0.2.10",
+    "@armory-sh/base": "^0.2.11",
     "web3": "4.16.0",
     "web3-types": "1.10.0"
   },
