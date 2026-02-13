@@ -27,7 +27,7 @@
     "directory": "packages/client-ethers"
   },
   "dependencies": {
-    "@armory-sh/base": "workspace:*",
+    "@armory-sh/base": "^0.2.2",
     "ethers": "6.16.0"
   },
   "devDependencies": {

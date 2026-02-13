@@ -4,42 +4,93 @@ description: Accept Armory payments in Express
 
 # Accept Payments with Express
 
-Accept Armory payments in your Express API using the middleware.
+Accept crypto payments in your Express API with the Armory middleware.
 
-## Basic Setup
+## Installation
+
+```bash
+bun add @armory-sh/middleware-express
+```
+
+## Quick Start
 
 ```typescript
 import express from 'express';
-import { acceptPaymentsViaArmory } from '@armory/middleware';
+import { paymentMiddleware } from '@armory-sh/middleware-express';
 
 const app = express();
 
-// Accept 1 USDC per request
-app.use(acceptPaymentsViaArmory({
-  payTo: '0xYourWalletAddress...',
-  amount: '1.0'
+// Protect all routes with payment
+app.use(paymentMiddleware({
+  requirements: {
+    to: '0xYourWalletAddress...',
+    amount: 1000000n, // 1 USDC (6 decimals)
+    expiry: Date.now() + 3600 * 1000,
+    chainId: 'eip155:8453',
+    assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+  },
+  facilitatorUrl: 'https://facilitator.armory.sh'
 }));
 
 app.get('/api/data', (req, res) => {
-  res.json({ message: 'Payment successful!', data: [...] });
+  res.json({ message: 'Payment successful!' });
 });
 
 app.listen(3000);
 ```
 
-## Multi-Network/Multi-Token
+---
+
+## Accessing Payment Info
+
+The middleware attaches payment information to every request:
 
 ```typescript
-app.use(acceptPaymentsViaArmory({
-  payTo: '0xYourWalletAddress...',
-  amount: '1.0',
-  accept: {
-    networks: ['base', 'ethereum', 'polygon'],
-    tokens: ['usdc', 'usdt'],
-    facilitators: [
-      { url: 'https://facilitator1.com' },
-      { url: 'https://facilitator2.com' }
-    ]
-  }
-}));
+app.get('/api/user', (req, res) => {
+  const { payerAddress, payload, version } = req.payment;
+
+  res.json({
+    message: `Hello ${payerAddress}`,
+    paid: payload.amount
+  });
+});
 ```
+
+---
+
+## Protecting Specific Routes
+
+You can apply the middleware to specific routes only:
+
+```typescript
+// Public route — no payment required
+app.get('/api/public', (req, res) => {
+  res.json({ message: 'Anyone can access this' });
+});
+
+// Protected route — payment required
+app.get('/api/premium',
+  paymentMiddleware({ /* config */ }),
+  (req, res) => {
+    res.json({ message: 'Paid content' });
+  }
+);
+```
+
+---
+
+## Tips
+
+<Tip>
+Want to accept payments on Base using USDC? Use token address `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` with 6 decimals.
+</Tip>
+
+<Note>
+Express middleware runs sequentially — place `paymentMiddleware` before any routes that require payment protection.
+</Note>
+
+---
+
+## More Information
+
+See [`@armory-sh/middleware-express`](/packages/middleware-express) for full configuration options.

@@ -1,0 +1,168 @@
+---
+description: Payment middleware for Hono
+title: "@armory-sh/middleware-hono"
+---
+
+Accept crypto payments in your Hono API with a single middleware function.
+
+## Installation
+
+```bash
+bun add @armory-sh/middleware-hono
+```
+
+## Quick Start
+
+```typescript
+import { Hono } from 'hono';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware-hono';
+
+const app = new Hono();
+
+app.use('/api/*', acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0'
+}));
+
+app.get('/api/protected', (c) => {
+  const payment = c.get('payment');
+  return c.json({ message: `Hello ${payment.payerAddress}!` });
+});
+
+app.listen(3000);
+```
+
+---
+
+## How It Works
+
+The middleware intercepts requests and:
+
+1. Checks for payment headers (`X-Payment` or `X402-PAYMENT`)
+2. Verifies the payment signature and amount
+3. Stores payment info in the Hono context
+4. Calls `next()` if valid, or returns 402 if invalid
+
+---
+
+## Configuration
+
+### Minimal Setup
+
+```typescript
+acceptPaymentsViaArmory({
+  payTo: '0xYourWallet...',  // Your wallet address
+  amount: '1.0'              // Amount in tokens (e.g., 1 USDC)
+});
+```
+
+### All Options
+
+```typescript
+{
+  payTo: string,                           // Your wallet address
+  amount: string | bigint,                 // Amount to charge
+  token?: string,                          // Token symbol (default: USDC)
+  network?: string,                        // Network name (default: base)
+  facilitator?: string | FacilitatorConfig, // Facilitator URL/config
+  defaultVersion?: 1 | 2                   // Payment version (default: 2)
+}
+```
+
+---
+
+## Accessing Payment Info
+
+Payment information is stored in the Hono context:
+
+```typescript
+app.get('/api/user', (c) => {
+  const payment = c.get('payment');
+
+  return c.json({
+    payer: payment.payerAddress,
+    paid: payment.payload.amount,
+    token: payment.payload.token
+  });
+});
+```
+
+**Available Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `payload` | `PaymentPayload` | Decoded payment payload |
+| `payerAddress` | `string` | Wallet address of the payer |
+| `version` | `1 \| 2` | Payment protocol version |
+| `verified` | `true` | Always true when request reaches your handler |
+
+---
+
+## Response Headers
+
+On successful verification:
+
+```
+X-Payment-Verified: true
+X-Payer-Address: 0x...
+X-Payment-Response: {"status":"verified","payerAddress":"0x...","version":2}
+```
+
+---
+
+## Error Responses
+
+### 402 Payment Required
+
+```json
+{
+  "error": "Payment required",
+  "requirements": { ... }
+}
+```
+
+### 402 Verification Failed
+
+```json
+{
+  "error": "Payment verification failed: ..."
+}
+```
+
+---
+
+## Multi-Network Support
+
+Accept payments across multiple networks and tokens:
+
+```typescript
+app.use('/api/*', acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '1.0',
+  accept: {
+    networks: ['base', 'ethereum', 'polygon'],
+    tokens: ['usdc', 'usdt'],
+    facilitators: [
+      { url: 'https://facilitator1.com' },
+      { url: 'https://facilitator2.com' }
+    ]
+  }
+}));
+```
+
+---
+
+## Tips
+
+<Tip>
+The `amount` parameter accepts human-readable strings like `"1.0"` for 1 token, or use `bigint` for precise decimal control.
+</Tip>
+
+<Note>
+Hono middleware applies to routes that match the path pattern. Use `/api/*` to protect all API routes, or specific paths like `/premium/*` for paid content.
+</Note>
+
+<Warning>
+The middleware will return 402 before your handler runs if payment is missing or invalid. Only verified requests reach your route handlers.
+</Warning>
+

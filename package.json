@@ -11,10 +11,9 @@
     "test": "bun test packages/*/src/**/*.test.ts",
     "build": "turbo run build",
     "changeset": "changeset",
-    "changeset:version": "changeset version && bun update",
-    "changeset:publish": "turbo run build && for dir in packages/*; do (cd \"$dir\" && bun publish || true); done && changeset tag",
-    "version-packages": "changeset version && bun update",
-    "release": "turbo run build && for dir in packages/*; do (cd \"$dir\" && bun publish || true); done && changeset tag"
+    "ci:version": "changeset version && bun update",
+    "ci:publish": "for dir in packages/*; do (cd \"$dir\" && bun publish || true); done && changeset tag",
+    "release": "bun scripts/release.mjs"
   },
   "private": true,
   "version": "",

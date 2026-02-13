@@ -1,0 +1,188 @@
+---
+description: Payment middleware for Express
+title: "@armory-sh/middleware-express"
+---
+
+Accept crypto payments in your Express API with a single middleware function.
+
+## Installation
+
+```bash
+bun add @armory-sh/middleware-express
+```
+
+## Quick Start
+
+```typescript
+import express from 'express';
+import { paymentMiddleware } from '@armory-sh/middleware-express';
+
+const app = express();
+
+app.use(paymentMiddleware({
+  requirements: {
+    to: '0xYourWalletAddress...',
+    amount: 1000000n, // 1 USDC (6 decimals)
+    expiry: Date.now() + 3600 * 1000,
+    chainId: 'eip155:8453',
+    assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+  },
+  facilitatorUrl: 'https://facilitator.armory.sh'
+}));
+
+app.get('/api/protected', (req, res) => {
+  // Payment info is attached to the request
+  console.log(req.payment);
+  res.json({ message: 'Payment verified!' });
+});
+
+app.listen(3000);
+```
+
+---
+
+## How It Works
+
+The middleware intercepts requests and:
+
+1. Checks for payment headers (`X-Payment` or `X402-PAYMENT`)
+2. Verifies the payment signature and amount
+3. Attaches payment info to `req.payment`
+4. Calls `next()` if valid, or returns 402 if invalid
+
+---
+
+## Configuration
+
+### Payment Requirements
+
+```typescript
+{
+  requirements: {
+    to: string,           // Your wallet address
+    amount: bigint,       // Amount in smallest unit (wei for native, token decimals for ERC20)
+    expiry: number,       // Expiry timestamp (milliseconds)
+    chainId: string,      // CAIP-2 chain ID (e.g., 'eip155:8453')
+    assetId: string       // CAIP-19 asset ID
+  }
+}
+```
+
+### Common Token Addresses
+
+| Network | Token | Address |
+|---------|-------|---------|
+| Base | USDC | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| Ethereum | USDC | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
+| Base | USDT | `0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb` |
+
+### Facilitator
+
+For production use, specify a facilitator for payment verification:
+
+```typescript
+{
+  facilitatorUrl: 'https://facilitator.armory.sh'
+}
+```
+
+### Verification Options
+
+```typescript
+{
+  verifyOptions: {
+    timeout: 5000,   // Request timeout in ms
+    retries: 3       // Number of retries
+  }
+}
+```
+
+---
+
+## Accessing Payment Info
+
+The middleware augments the Express request with payment information:
+
+```typescript
+app.get('/api/user', (req, res) => {
+  const { payerAddress, payload, version, verified } = req.payment;
+
+  res.json({
+    welcome: `Hello ${payerAddress}`,
+    youPaid: payload.amount,
+    token: payload.token
+  });
+});
+```
+
+**Available Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `payload` | `PaymentPayload` | Decoded payment payload |
+| `payerAddress` | `string` | Wallet address of the payer |
+| `version` | `1 \| 2` | Payment protocol version |
+| `verified` | `boolean` | Whether verification passed |
+
+---
+
+## Response Headers
+
+On successful verification, the middleware adds:
+
+```
+X-Payment-Response: {"status":"verified","payerAddress":"0x...","version":2}
+```
+
+---
+
+## Error Responses
+
+### 402 Payment Required
+
+No payment header was provided.
+
+```json
+{
+  "error": "Payment required",
+  "requirements": { ... }
+}
+```
+
+### 400 Invalid Payload
+
+Payment header exists but couldn't be decoded.
+
+```json
+{
+  "error": "Invalid payment payload",
+  "message": "..."
+}
+```
+
+### 402 Verification Failed
+
+Payment signature or amount was invalid.
+
+```json
+{
+  "error": "Verification failed: ..."
+}
+```
+
+---
+
+## Tips
+
+<Tip>
+Use `skipVerification: true` in development to bypass facilitator verification while still testing the middleware flow.
+</Tip>
+
+<Note>
+Express middleware runs in order — place `paymentMiddleware` before any routes that require payment.
+</Note>
+
+<Warning>
+Always validate `req.payment.verified` is `true` before processing paid requests. The middleware may skip verification if configured to do so.
+</Warning>
+

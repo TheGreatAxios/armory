@@ -1,4 +1,4 @@
-import { defineConfig } from "tsup"
+import { defineConfig } from "tsup";
 
 export default defineConfig({
   entry: ["src/index.ts"],
@@ -8,4 +8,10 @@ export default defineConfig({
   dts: true,
   sourcemap: false,
   splitting: false,
-})
+  external: [
+    "@armory-sh/middleware-bun",
+    "@armory-sh/middleware-express",
+    "@armory-sh/middleware-hono",
+    "@armory-sh/middleware-elysia",
+  ],
+});

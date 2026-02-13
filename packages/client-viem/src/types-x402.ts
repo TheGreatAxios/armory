@@ -2,7 +2,7 @@
  * X402 Client Types - Coinbase Compatible
  */
 
-import type { Address, Account, WalletClient, Transport } from "viem";
+import type { Address, Account, WalletClient } from "viem";
 import type {
   X402PaymentPayload,
   X402PaymentRequirements,

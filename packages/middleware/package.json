@@ -4,36 +4,15 @@
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
-      "default": "./dist/index.js"
-    },
-    "./integrations/hono": {
-      "types": "./integrations/hono.ts",
-      "default": "./integrations/hono.ts"
-    },
-    "./integrations/hono-simple": {
-      "types": "./integrations/hono-simple.ts",
-      "default": "./integrations/hono-simple.ts"
-    },
-    "./integrations/express": {
-      "types": "./integrations/express.ts",
-      "default": "./integrations/express.ts"
-    },
-    "./integrations/elysia": {
-      "types": "./integrations/elysia.ts",
-      "default": "./integrations/elysia.ts"
-    },
-    "./dist/*": "./dist/*.js"
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["src"],
   "publishConfig": {
     "access": "public"
   },
@@ -43,15 +22,9 @@
     "directory": "packages/middleware"
   },
   "dependencies": {
-    "@armory-sh/base": "workspace:*",
-    "@armory-sh/facilitator": "workspace:*"
-  },
-  "devDependencies": {
-    "typescript": "5.9.3",
-    "bun-types": "latest"
-  },
-  "scripts": {
-    "build": "tsup",
-    "test": "bun test"
+    "@armory-sh/middleware-bun": "workspace:*",
+    "@armory-sh/middleware-express": "workspace:*",
+    "@armory-sh/middleware-hono": "workspace:*",
+    "@armory-sh/middleware-elysia": "workspace:*"
   }
 }

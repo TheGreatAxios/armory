@@ -4,77 +4,103 @@ description: Accept Armory payments in Hono
 
 # Accept Payments with Hono
 
-Accept Armory payments in your Hono API using the middleware.
+Accept crypto payments in your Hono API with the Armory middleware.
 
-## Basic Setup
+## Installation
+
+```bash
+bun add @armory-sh/middleware-hono
+```
+
+## Quick Start
 
 ```typescript
 import { Hono } from 'hono';
-import { acceptPaymentsViaArmory } from '@armory-sh/middleware/integrations/hono-simple';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware-hono';
 
 const app = new Hono();
 
+// Protect all routes
 app.use('*', acceptPaymentsViaArmory({
   payTo: '0xYourWalletAddress...',
   amount: '1.0'
 }));
 
 app.get('/api/data', (c) => {
-  return c.json({ message: 'Payment successful!', data: [...] });
+  return c.json({ message: 'Payment successful!' });
 });
 
 app.listen(3000);
 ```
 
-## Multi-Network/Multi-Token
+---
+
+## Accessing Payment Info
+
+Payment information is stored in the Hono context:
 
 ```typescript
-app.use('*', acceptPaymentsViaArmory({
-  payTo: '0xYourWalletAddress...',
+app.get('/api/user', (c) => {
+  const payment = c.get('payment');
+  const { payerAddress, payload } = payment;
+
+  return c.json({
+    message: `Hello ${payerAddress}`,
+    paid: payload.amount
+  });
+});
+```
+
+---
+
+## Protecting Specific Routes
+
+Use path patterns to protect specific route groups:
+
+```typescript
+// Public routes — no payment
+app.get('/', (c) => c.json({ message: 'Welcome' }));
+
+// All /api/* routes require payment
+app.use('/api/*', acceptPaymentsViaArmory({
+  payTo: '0x...',
+  amount: '1.0'
+}));
+
+app.get('/api/data', (c) => c.json({ data: '...' }));
+```
+
+---
+
+## Multi-Network Support
+
+Accept payments across multiple networks:
+
+```typescript
+app.use('/api/*', acceptPaymentsViaArmory({
+  payTo: '0x...',
   amount: '1.0',
   accept: {
     networks: ['base', 'ethereum', 'polygon'],
-    tokens: ['usdc', 'usdt'],
-    facilitators: [
-      { url: 'https://facilitator1.com' },
-      { url: 'https://facilitator2.com' }
-    ]
+    tokens: ['usdc', 'usdt']
   }
 }));
 ```
 
-## Multi-Pricing
+---
 
-Charge different amounts based on network, token, or even facilitator:
+## Tips
 
-```typescript
-app.use('*', acceptPaymentsViaArmory({
-  payTo: '0xYourWalletAddress...',
-  amount: '10.0', // default fallback
-  pricing: [
-    // Ethereum USDC costs more due to gas
-    { network: 'ethereum', token: 'usdc', amount: '12.0' },
-    // Base USDT is cheaper
-    { network: 'base', token: 'usdt', amount: '9.50' },
-    // Specific facilitator has different pricing
-    { network: 'base', token: 'usdc', facilitator: 'https://special-facilitator.com', amount: '8.0' },
-    // All Ethereum tokens (any token) have premium
-    { network: 'ethereum', amount: '15.0' }
-  ],
-  accept: {
-    networks: ['base', 'ethereum'],
-    tokens: ['usdc', 'usdt'],
-    facilitators: [
-      { url: 'https://facilitator1.com' },
-      { url: 'https://special-facilitator.com' }
-    ]
-  }
-}));
-```
+<Tip>
+The `amount` parameter accepts human-readable strings like `"1.0"` for 1 token — no need to calculate decimals manually.
+</Tip>
 
-Pricing resolution order (most specific first):
-1. `network` + `token` + `facilitator` - exact match
-2. `network` + `token` - applies to all facilitators
-3. `network` only - applies to all tokens on that network
-4. Default `amount` - fallback for unmatched combinations
-```
+<Note>
+Hono's middleware matching is pattern-based. Use `/api/*` to protect all API routes, or `/premium/*` for paid content only.
+</Note>
+
+---
+
+## More Information
+
+See [`@armory-sh/middleware-hono`](/packages/middleware-hono) for full configuration options.

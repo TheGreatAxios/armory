@@ -1,9 +1,9 @@
 ---
-description: HTTP middleware for Express, Hono, Bun, and Elysia
+description: Barrel package for all Armory middleware
 title: "@armory-sh/middleware"
 ---
 
-Accept payments in your HTTP API with middleware for major frameworks.
+Convenience package that re-exports all framework-specific middleware.
 
 ## Installation
 
@@ -11,73 +11,40 @@ Accept payments in your HTTP API with middleware for major frameworks.
 bun add @armory-sh/middleware
 ```
 
-## Express
+## What This Package Does
+
+This is a **barrel package** — it simply re-exports everything from the framework-specific middleware packages. You can use it to import all middleware from a single package.
+
+## Framework-Specific Packages
+
+For detailed documentation, see:
+
+| Package | Framework |
+|---------|-----------|
+| [`@armory-sh/middleware-bun`](/packages/middleware-bun) | Bun |
+| [`@armory-sh/middleware-express`](/packages/middleware-express) | Express |
+| [`@armory-sh/middleware-hono`](/packages/middleware-hono) | Hono |
+| [`@armory-sh/middleware-elysia`](/packages/middleware-elysia) | Elysia |
+
+## Quick Import
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
-
-app.use(acceptPaymentsViaArmory({
-  payTo: '0xYourWallet...',
-  amount: '1.0'
-}));
+// Import everything from one place
+import {
+  createBunMiddleware,
+  paymentMiddleware,
+  acceptPaymentsViaArmory,
+} from '@armory-sh/middleware';
 ```
 
-## Hono
+---
 
-```typescript
-import { acceptPaymentsViaArmory } from '@armory/middleware';
+## Tips
 
-app.use('*', acceptPaymentsViaArmory({
-  payTo: '0xYourWallet...',
-  amount: '1.0'
-}));
-```
+<Note>
+For production apps, consider importing directly from the framework-specific package. This reduces bundle size and makes dependencies clearer.
+</Note>
 
-## Bun
-
-```typescript
-import { acceptPaymentsViaArmory } from '@armory/middleware';
-
-const middleware = acceptPaymentsViaArmory({
-  payTo: '0xYourWallet...',
-  amount: '1.0'
-});
-
-Bun.serve({
-  fetch: middleware
-});
-```
-
-## Elysia
-
-```typescript
-import { acceptPaymentsViaArmory } from '@armory/middleware';
-
-app.use(acceptPaymentsViaArmory({
-  payTo: '0xYourWallet...',
-  amount: '1.0'
-}));
-```
-
-## Settlement Modes
-
-- **`verify`** - Verify only, no settlement (testing)
-- **`settle`** - Verify and settle synchronously
-- **`async`** - Return immediately, settle in background
-
-## Multi-Network/Multi-Token
-
-```typescript
-acceptPaymentsViaArmory({
-  payTo: '0xYourWallet...',
-  amount: '1.0',
-  accept: {
-    networks: ['base', 'ethereum'],
-    tokens: ['usdc', 'usdt'],
-    facilitators: [
-      { url: 'https://facilitator1.com' },
-      { url: 'https://facilitator2.com' }
-    ]
-  }
-});
-```
+<Tip>
+Use this barrel package for quick prototyping or when building a multi-framework project.
+</Tip>

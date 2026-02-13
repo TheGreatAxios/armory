@@ -11,10 +11,8 @@ import type {
   Hash,
   TypedDataDomain,
   WalletClient,
-  Chain,
-  Transport,
 } from "viem";
-import { hashTypedData, recoverMessageAddress } from "viem";
+import { hashTypedData } from "viem";
 // Import X402 types and utilities from base package
 import type {
   X402PaymentPayload,

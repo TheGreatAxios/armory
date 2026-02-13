@@ -4,74 +4,100 @@ description: Accept Armory payments in Bun
 
 # Accept Payments with Bun
 
-Accept Armory payments in your Bun HTTP server using the middleware.
+Accept crypto payments in your Bun HTTP server with the Armory middleware.
 
-## Basic Setup
+## Installation
+
+```bash
+bun add @armory-sh/middleware-bun
+```
+
+## Quick Start
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
+import { createBunMiddleware } from '@armory-sh/middleware-bun';
 
-const middleware = acceptPaymentsViaArmory({
+const middleware = createBunMiddleware({
   payTo: '0xYourWalletAddress...',
   amount: '1.0'
 });
 
 Bun.serve({
   port: 3000,
-  fetch: (req) => {
-    const payment = middleware(req);
+  fetch: async (req) => {
+    const result = await middleware(req);
 
-    if (!payment.valid) {
-      return new Response('Payment required', {
-        status: 402,
-        headers: payment.headers
-      });
-    }
+    // If middleware returns a response, payment failed/required
+    if (result) return result;
 
-    return new Response(JSON.stringify({ data: [...] }));
+    // Payment verified — handle your request
+    return new Response(JSON.stringify({ data: 'protected content' }));
   }
 });
 ```
 
-## Multi-Network/Multi-Token
+---
+
+## How It Works
+
+The middleware returns:
+- `null` if payment is valid (your handler proceeds)
+- A `Response` object if payment is missing/invalid (returned to client)
+
+---
+
+## Settlement Modes
+
+Control how payments are settled after verification:
 
 ```typescript
-const middleware = acceptPaymentsViaArmory({
-  payTo: '0xYourWalletAddress...',
+const middleware = createBunMiddleware({
+  payTo: '0x...',
   amount: '1.0',
-  accept: {
-    networks: ['base', 'ethereum', 'polygon'],
-    tokens: ['usdc', 'usdt'],
-    facilitators: [
-      { url: 'https://facilitator1.com' },
-      { url: 'https://facilitator2.com' }
-    ]
-  }
+  settlementMode: 'verify'  // | 'settle' | 'async'
 });
 ```
 
-## Multi-Pricing
+| Mode | Description |
+|------|-------------|
+| `verify` | Verify only, don't settle (great for testing) |
+| `settle` | Verify and settle on-chain before responding |
+| `async` | Return immediately, settle in background |
 
-Charge different amounts based on network, token, or facilitator:
+---
+
+## Configuration
 
 ```typescript
-const middleware = acceptPaymentsViaArmory({
-  payTo: '0xYourWalletAddress...',
-  amount: '10.0', // default fallback
-  pricing: [
-    { network: 'ethereum', token: 'usdc', amount: '12.0' },
-    { network: 'base', token: 'usdt', amount: '9.50' },
-    { network: 'base', token: 'usdc', facilitator: 'https://special-facilitator.com', amount: '8.0' },
-    { network: 'ethereum', amount: '15.0' }
-  ],
-  accept: {
-    networks: ['base', 'ethereum'],
-    tokens: ['usdc', 'usdt'],
-    facilitators: [
-      { url: 'https://facilitator1.com' },
-      { url: 'https://special-facilitator.com' }
-    ]
+const middleware = createBunMiddleware({
+  payTo: '0x...',
+  amount: '1.0',
+  settlementMode: 'verify',
+  facilitator: {
+    url: 'https://facilitator.armory.sh'
   }
 });
 ```
+
+---
+
+## Tips
+
+<Tip>
+Use `settlementMode: 'verify'` during development to skip on-chain settlement while still testing payment verification.
+</Tip>
+
+<Note>
+The `amount` can be a human-readable string like `"1.0"` — no manual decimal calculation needed.
+</Note>
+
+<Warning>
+With `settlementMode: 'settle'`, responses will be delayed until the on-chain transaction completes. Use `async` for better UX.
+</Warning>
+
+---
+
+## More Information
+
+See [`@armory-sh/middleware-bun`](/packages/middleware-bun) for full configuration options.
 

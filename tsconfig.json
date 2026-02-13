@@ -10,6 +10,10 @@
 
     // Bundler mode
     "moduleResolution": "bundler",
+    "paths": {
+      "@armory-sh/base": ["./packages/core/src"],
+      "@armory-sh/facilitator": ["./packages/facilitator/src"]
+    },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,

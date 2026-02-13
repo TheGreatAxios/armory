@@ -207,16 +207,6 @@ export function createSettlementHeaders(
   };
 }
 
-// Legacy exports for backward compatibility
-export const encodePaymentV1 = encodePayment;
-export const decodePaymentV1 = decodePayment;
-export const encodePaymentV2 = encodePayment;
-export const decodePaymentV2 = decodePayment;
-export const encodeSettlementV1 = encodeSettlementResponse;
-export const decodeSettlementV1 = decodeSettlementResponse;
-export const encodeSettlementV2 = encodeSettlementResponse;
-export const decodeSettlementV2 = decodeSettlementResponse;
-
 /**
  * Type guards for legacy compatibility
  */

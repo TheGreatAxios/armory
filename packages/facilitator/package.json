@@ -27,7 +27,7 @@
     "directory": "packages/facilitator"
   },
   "dependencies": {
-    "@armory-sh/base": "workspace:*",
+    "@armory-sh/base": "^0.2.2",
     "viem": "2.45.0"
   },
   "optionalDependencies": {

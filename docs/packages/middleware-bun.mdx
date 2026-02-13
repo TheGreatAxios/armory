@@ -1,0 +1,162 @@
+---
+description: Payment middleware for Bun servers
+title: "@armory-sh/middleware-bun"
+---
+
+Accept crypto payments in your Bun HTTP server with a single function call.
+
+## Installation
+
+```bash
+bun add @armory-sh/middleware-bun
+```
+
+## Quick Start
+
+```typescript
+import { createBunMiddleware } from '@armory-sh/middleware-bun';
+
+const middleware = createBunMiddleware({
+  payTo: '0xYourWalletAddress...',
+  amount: '1.0'
+});
+
+Bun.serve({
+  port: 3000,
+  fetch: async (req) => {
+    const result = await middleware(req);
+
+    // If middleware returns a response, payment failed/required
+    if (result) return result;
+
+    // Payment verified — handle your request
+    return new Response(JSON.stringify({ data: 'protected content' }));
+  }
+});
+```
+
+---
+
+## How It Works
+
+The middleware intercepts incoming requests and:
+
+1. Checks for payment headers (`X-Payment` or `X402-PAYMENT`)
+2. Verifies the payment signature and amount
+3. Returns `null` if valid (allowing your handler to proceed)
+4. Returns a `Response` with 402 status if payment is missing or invalid
+
+---
+
+## Configuration
+
+### Required Options
+
+```typescript
+{
+  payTo: string,     // Your wallet address
+  amount: string | bigint  // Amount to charge
+}
+```
+
+### Settlement Modes
+
+Control how payments are settled after verification:
+
+```typescript
+const middleware = createBunMiddleware({
+  payTo: '0x...',
+  amount: '1.0',
+  settlementMode: 'verify'  // | 'settle' | 'async'
+});
+```
+
+| Mode | Description |
+|------|-------------|
+| `verify` | Verify only, don't settle (good for testing) |
+| `settle` | Verify and settle on-chain before responding |
+| `async` | Return immediately, settle in background |
+
+### Facilitator
+
+For production use, specify a facilitator for verification:
+
+```typescript
+const middleware = createBunMiddleware({
+  payTo: '0x...',
+  amount: '1.0',
+  facilitator: {
+    url: 'https://facilitator.armory.sh'
+  }
+});
+```
+
+---
+
+## Response Format
+
+On successful payment verification, the middleware returns a `Response` with:
+
+**Headers:**
+- `X-Payment-Verified: true`
+- `X-Payer-Address: 0x...`
+
+**Body:**
+```json
+{
+  "verified": true,
+  "payerAddress": "0x...",
+  "version": 2
+}
+```
+
+---
+
+## Error Responses
+
+### 402 Payment Required
+
+No payment header was provided.
+
+```json
+{
+  "error": "Payment required"
+}
+```
+
+### 402 Verification Failed
+
+Payment signature or amount was invalid.
+
+```json
+{
+  "error": "Payment verification failed: ..."
+}
+```
+
+### 400 Settlement Failed
+
+Settlement mode was `settle` but on-chain transaction failed.
+
+```json
+{
+  "error": "Settlement failed"
+}
+```
+
+---
+
+## Tips
+
+<Tip>
+For development and testing, use `settlementMode: 'verify'` to skip on-chain settlement while still verifying payment signatures.
+</Tip>
+
+<Note>
+The `amount` can be specified as a human-readable string like `"1.0"` for 1 token, or as a `bigint` for precise control over decimals.
+</Note>
+
+<Warning>
+Always validate the `payTo` address matches your wallet. The middleware does not check if the address is valid or belongs to you.
+</Warning>
+

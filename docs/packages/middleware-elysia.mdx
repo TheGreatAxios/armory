@@ -1,0 +1,216 @@
+---
+description: Payment middleware for Elysia
+title: "@armory-sh/middleware-elysia"
+---
+
+Accept crypto payments in your Elysia API with a single middleware plugin.
+
+## Installation
+
+```bash
+bun add @armory-sh/middleware-elysia
+```
+
+## Quick Start
+
+```typescript
+import { Elysia } from 'elysia';
+import { paymentMiddleware } from '@armory-sh/middleware-elysia';
+
+const app = new Elysia()
+  .use(paymentMiddleware({
+    requirements: {
+      to: '0xYourWalletAddress...',
+      amount: 1000000n, // 1 USDC (6 decimals)
+      expiry: Date.now() + 3600 * 1000,
+      chainId: 'eip155:8453',
+      assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    },
+    facilitatorUrl: 'https://facilitator.armory.sh'
+  }))
+  .get('/api/protected', ({ store }) => {
+    return { message: `Hello ${store.payment.payerAddress}!` };
+  })
+  .listen(3000);
+```
+
+---
+
+## How It Works
+
+The middleware plugin:
+
+1. Checks for payment headers (`X-Payment` or `X402-PAYMENT`)
+2. Verifies the payment signature and amount
+3. Stores payment info in the Elysia store
+4. Proceeds to your handler if valid, or returns 402 if invalid
+
+---
+
+## Configuration
+
+### Payment Requirements
+
+```typescript
+{
+  requirements: {
+    to: string,           // Your wallet address
+    amount: bigint,       // Amount in smallest unit
+    expiry: number,       // Expiry timestamp (milliseconds)
+    chainId: string,      // CAIP-2 chain ID
+    assetId: string       // CAIP-19 asset ID
+  }
+}
+```
+
+### Facilitator
+
+For production use, specify a facilitator:
+
+```typescript
+{
+  facilitatorUrl: 'https://facilitator.armory.sh'
+}
+```
+
+### Verification Options
+
+```typescript
+{
+  verifyOptions: {
+    timeout: 5000,   // Request timeout in ms
+    retries: 3       // Number of retries
+  }
+}
+```
+
+### Development Mode
+
+Skip verification for testing:
+
+```typescript
+{
+  skipVerification: true  // Only for development!
+}
+```
+
+---
+
+## Accessing Payment Info
+
+Payment information is stored in the Elysia store:
+
+```typescript
+app.get('/api/user', ({ store }) => {
+  const payment = store.payment;
+
+  return {
+    payer: payment.payerAddress,
+    paid: payment.payload.amount,
+    token: payment.payload.token
+  };
+});
+```
+
+**Available Properties:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `payload` | `PaymentPayload` | Decoded payment payload |
+| `payerAddress` | `string` | Wallet address of the payer |
+| `version` | `1 \| 2` | Payment protocol version |
+| `verified` | `boolean` | Whether verification passed |
+
+---
+
+## Type Safety
+
+For full TypeScript support, type your Elysia instance:
+
+```typescript
+import type { PaymentContext } from '@armory-sh/middleware-elysia';
+
+const app = new Elysia<{ store: PaymentContext }>()
+  .use(paymentMiddleware({ ... }))
+  .get('/api/data', ({ store }) => {
+    // store.payment is fully typed
+    console.log(store.payment.payerAddress);
+  });
+```
+
+---
+
+## Response Headers
+
+On successful verification:
+
+```
+X-Payment-Verified: true
+X-Payer-Address: 0x...
+X-Payment-Response: {"status":"verified","payerAddress":"0x...","version":2}
+```
+
+---
+
+## Error Responses
+
+### 402 Payment Required
+
+No payment header was provided.
+
+```json
+{
+  "error": "Payment required",
+  "requirements": { ... }
+}
+```
+
+### 400 Invalid Payload
+
+Payment header exists but couldn't be decoded.
+
+```json
+{
+  "error": "Invalid payment payload",
+  "message": "..."
+}
+```
+
+### 400 Version Mismatch
+
+Payment version doesn't match requirements.
+
+```json
+{
+  "error": "Payment version mismatch",
+  "expected": 2,
+  "received": 1
+}
+```
+
+### 402 Verification Failed
+
+Payment signature or amount was invalid.
+
+```json
+{
+  "error": "Verification failed: ..."
+}
+```
+
+---
+
+## Tips
+
+<Tip>
+Use `skipVerification: true` during development to test your middleware flow without a running facilitator.
+</Tip>
+
+<Note>
+Elysia's store is shared across all middleware and routes. Payment info will be available in any route handler after the middleware runs.
+</Note>
+
+<Warning>
+Never deploy with `skipVerification: true` in production. This allows anyone to bypass payment verification entirely.
+</Warning>
+

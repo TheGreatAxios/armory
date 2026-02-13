@@ -4,23 +4,30 @@ description: Accept Armory payments in Elysia
 
 # Accept Payments with Elysia
 
-Accept Armory payments in your Elysia API using the middleware.
+Accept crypto payments in your Elysia API with the Armory middleware plugin.
 
-## Basic Setup
+## Installation
+
+```bash
+bun add @armory-sh/middleware-elysia
+```
+
+## Quick Start
 
 ```typescript
 import { Elysia } from 'elysia';
-import { elysiaPaymentMiddleware } from '@armory/middleware';
+import { paymentMiddleware } from '@armory-sh/middleware-elysia';
 
 const app = new Elysia()
-  .use(elysiaPaymentMiddleware({
+  .use(paymentMiddleware({
     requirements: {
       to: '0xYourWalletAddress...',
-      amount: '1000000', // 1 USDC (6 decimals)
-      expiry: Math.floor(Date.now() / 1000) + 3600,
+      amount: 1000000n, // 1 USDC (6 decimals)
+      expiry: Date.now() + 3600 * 1000,
       chainId: 'eip155:8453',
-      assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-    }
+      assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    },
+    facilitatorUrl: 'https://facilitator.armory.sh'
   }))
   .get('/api/data', ({ store }) => {
     return { message: 'Payment successful!' };
@@ -28,19 +35,28 @@ const app = new Elysia()
   .listen(3000);
 ```
 
-## Access Payment Info
+---
+
+## Accessing Payment Info
+
+Payment information is stored in the Elysia store:
 
 ```typescript
 app.get('/api/premium', ({ store }) => {
   const payment = store.payment;
+
   return {
     message: `Hello ${payment.payerAddress}`,
-    amount: payment.amount
+    paid: payment.payload.amount
   };
 });
 ```
 
-## Schema Validation
+---
+
+## With Schema Validation
+
+Combine payment middleware with Elysia's schema validation:
 
 ```typescript
 import { t } from 'elysia';
@@ -49,7 +65,10 @@ app.post(
   '/api/purchase',
   ({ store, body }) => {
     const { itemId, quantity } = body;
-    // ... handle purchase
+    const { payerAddress } = store.payment;
+
+    // Process purchase for verified payer
+    return { purchased: true, for: payerAddress };
   },
   {
     body: t.Object({
@@ -59,3 +78,38 @@ app.post(
   }
 );
 ```
+
+---
+
+## Type Safety
+
+For full TypeScript support, type your Elysia instance:
+
+```typescript
+import type { PaymentContext } from '@armory-sh/middleware-elysia';
+
+const app = new Elysia<{ store: PaymentContext }>()
+  .use(paymentMiddleware({ ... }))
+  .get('/api/data', ({ store }) => {
+    // store.payment is fully typed
+    console.log(store.payment.payerAddress);
+  });
+```
+
+---
+
+## Tips
+
+<Tip>
+USDC on Base uses 6 decimals. 1 USDC = `1000000n` as a bigint.
+</Tip>
+
+<Note>
+Elysia's store is shared across all middleware. Payment info is available in any route after the middleware runs.
+</Note>
+
+---
+
+## More Information
+
+See [`@armory-sh/middleware-elysia`](/packages/middleware-elysia) for full configuration options.

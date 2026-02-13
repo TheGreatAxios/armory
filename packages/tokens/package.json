@@ -27,7 +27,7 @@
     "directory": "packages/tokens"
   },
   "dependencies": {
-    "@armory-sh/base": "workspace:*"
+    "@armory-sh/base": "^0.2.2"
   },
   "devDependencies": {
     "typescript": "5.9.3",
