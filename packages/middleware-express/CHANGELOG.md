@@ -1,5 +1,13 @@
 # @armory-sh/middleware-express
 
+## 0.3.11
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.12
+
 ## 0.3.10
 
 ### Patch Changes
