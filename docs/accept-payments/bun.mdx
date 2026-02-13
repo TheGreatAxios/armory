@@ -9,7 +9,7 @@ Accept Armory payments in your Bun HTTP server using the middleware.
 ## Basic Setup
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory/middleware';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
 
 const middleware = acceptPaymentsViaArmory({
   payTo: '0xYourWalletAddress...',
@@ -49,3 +49,29 @@ const middleware = acceptPaymentsViaArmory({
   }
 });
 ```
+
+## Multi-Pricing
+
+Charge different amounts based on network, token, or facilitator:
+
+```typescript
+const middleware = acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '10.0', // default fallback
+  pricing: [
+    { network: 'ethereum', token: 'usdc', amount: '12.0' },
+    { network: 'base', token: 'usdt', amount: '9.50' },
+    { network: 'base', token: 'usdc', facilitator: 'https://special-facilitator.com', amount: '8.0' },
+    { network: 'ethereum', amount: '15.0' }
+  ],
+  accept: {
+    networks: ['base', 'ethereum'],
+    tokens: ['usdc', 'usdt'],
+    facilitators: [
+      { url: 'https://facilitator1.com' },
+      { url: 'https://special-facilitator.com' }
+    ]
+  }
+});
+```
+

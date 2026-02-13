@@ -16,6 +16,7 @@ import type {
   AcceptPaymentOptions,
   ResolvedPaymentConfig,
   ValidationError,
+  PricingConfig,
 } from "@armory-sh/base";
 import {
   resolveNetwork,
@@ -41,12 +42,14 @@ import type { MiddlewareConfig, FacilitatorConfig as CoreFacilitatorConfig } fro
 export interface SimpleMiddlewareConfig {
   /** Address to receive payments */
   payTo: Address;
-  /** Amount to charge (default: "1.0") */
+  /** Default amount to charge (default: "1.0") */
   amount?: string;
   /** Payment acceptance options */
   accept?: AcceptPaymentOptions;
   /** Fallback facilitator URL (if not using accept.facilitators) */
   facilitatorUrl?: string;
+  /** Per-network/token/facilitator pricing overrides */
+  pricing?: PricingConfig[];
 }
 
 /**
@@ -54,11 +57,19 @@ export interface SimpleMiddlewareConfig {
  */
 export interface ResolvedMiddlewareConfig {
   /** All valid payment configurations (network/token combinations) */
-  configs: ResolvedPaymentConfig[];
+  configs: ResolvedPaymentConfigWithPricing[];
   /** Protocol version */
   version: 1 | 2 | "auto";
   /** Facilitator configs */
   facilitators: CoreFacilitatorConfig[];
+}
+
+/** Extended config with pricing info */
+export interface ResolvedPaymentConfigWithPricing extends ResolvedPaymentConfig {
+  /** Facilitator URL (for per-facilitator pricing) */
+  facilitatorUrl?: string;
+  /** Pricing config entry (if any) */
+  pricing?: PricingConfig;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -66,12 +77,50 @@ export interface ResolvedMiddlewareConfig {
 // ═══════════════════════════════════════════════════════════════
 
 /**
+ * Find matching pricing config for a network/token/facilitator combination
+ */
+const findPricingConfig = (
+  pricing: PricingConfig[] | undefined,
+  network: string,
+  token: string,
+  facilitatorUrl: string
+): PricingConfig | undefined => {
+  if (!pricing) return undefined;
+
+  // First try exact match with facilitator
+  const withFacilitator = pricing.find(
+    p =>
+      p.network === network &&
+      p.token === token &&
+      p.facilitator === facilitatorUrl
+  );
+  if (withFacilitator) return withFacilitator;
+
+  // Then try network/token match (any facilitator)
+  const withNetworkToken = pricing.find(
+    p =>
+      p.network === network &&
+      p.token === token &&
+      !p.facilitator
+  );
+  if (withNetworkToken) return withNetworkToken;
+
+  // Then try network-only match
+  const networkOnly = pricing.find(
+    p => p.network === network && !p.token && !p.facilitator
+  );
+  if (networkOnly) return networkOnly;
+
+  return undefined;
+};
+
+/**
  * Resolve simple middleware config to full config
  */
 export const resolveMiddlewareConfig = (
   config: SimpleMiddlewareConfig
 ): ResolvedMiddlewareConfig | ValidationError => {
-  const { payTo, amount = "1.0", accept = {}, facilitatorUrl } = config;
+  const { payTo, amount = "1.0", accept = {}, facilitatorUrl, pricing } = config;
 
   // If using legacy facilitatorUrl, convert to AcceptPaymentOptions
   const acceptOptions: AcceptPaymentOptions = facilitatorUrl
@@ -95,8 +144,30 @@ export const resolveMiddlewareConfig = (
     createHeaders: f.input.headers,
   })) ?? [];
 
+  // Enrich configs with pricing info
+  const enrichedConfigs: ResolvedPaymentConfigWithPricing[] = result.config.map((c) => {
+    const networkName = c.network.config.name;
+    const tokenSymbol = c.token.config.symbol;
+
+    // Check each facilitator for pricing
+    const facilitatorPricing: { url: string; pricing?: PricingConfig }[] = c.facilitators.map((f) => {
+      const pricingConfig = findPricingConfig(pricing, networkName, tokenSymbol, f.url);
+      return { url: f.url, pricing: pricingConfig };
+    });
+
+    // Get default pricing for this network/token
+    const defaultPricing = findPricingConfig(pricing, networkName, tokenSymbol, "");
+
+    return {
+      ...c,
+      amount: defaultPricing?.amount ?? c.amount,
+      facilitatorUrl: facilitatorPricing[0]?.url,
+      pricing: defaultPricing,
+    };
+  });
+
   return {
-    configs: result.config,
+    configs: enrichedConfigs,
     version: acceptOptions.version ?? "auto",
     facilitators: facilitatorConfigs,
   };
@@ -153,7 +224,7 @@ export const getRequirements = (
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Get the primary/default middleware config for legacy middlewares
+ * Get primary/default middleware config for legacy middlewares
  */
 export const getPrimaryConfig = (resolved: ResolvedMiddlewareConfig): MiddlewareConfig => {
   const primary = resolved.configs[0];

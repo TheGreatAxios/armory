@@ -10,7 +10,7 @@ Accept Armory payments in your Hono API using the middleware.
 
 ```typescript
 import { Hono } from 'hono';
-import { acceptPaymentsViaArmory } from '@armory/middleware';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware/integrations/hono-simple';
 
 const app = new Hono();
 
@@ -41,4 +41,40 @@ app.use('*', acceptPaymentsViaArmory({
     ]
   }
 }));
+```
+
+## Multi-Pricing
+
+Charge different amounts based on network, token, or even facilitator:
+
+```typescript
+app.use('*', acceptPaymentsViaArmory({
+  payTo: '0xYourWalletAddress...',
+  amount: '10.0', // default fallback
+  pricing: [
+    // Ethereum USDC costs more due to gas
+    { network: 'ethereum', token: 'usdc', amount: '12.0' },
+    // Base USDT is cheaper
+    { network: 'base', token: 'usdt', amount: '9.50' },
+    // Specific facilitator has different pricing
+    { network: 'base', token: 'usdc', facilitator: 'https://special-facilitator.com', amount: '8.0' },
+    // All Ethereum tokens (any token) have premium
+    { network: 'ethereum', amount: '15.0' }
+  ],
+  accept: {
+    networks: ['base', 'ethereum'],
+    tokens: ['usdc', 'usdt'],
+    facilitators: [
+      { url: 'https://facilitator1.com' },
+      { url: 'https://special-facilitator.com' }
+    ]
+  }
+}));
+```
+
+Pricing resolution order (most specific first):
+1. `network` + `token` + `facilitator` - exact match
+2. `network` + `token` - applies to all facilitators
+3. `network` only - applies to all tokens on that network
+4. Default `amount` - fallback for unmatched combinations
 ```

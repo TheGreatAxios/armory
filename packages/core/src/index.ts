@@ -225,6 +225,7 @@ export type {
   TokenId,
   FacilitatorConfig,
   AcceptPaymentOptions,
+  PricingConfig,
   PaymentResult,
   PaymentError,
   PaymentErrorCode,

@@ -41,6 +41,20 @@ export interface FacilitatorConfig {
 }
 
 /**
+ * Pricing configuration for a specific network/token/facilitator combination
+ */
+export interface PricingConfig {
+  /** Network for this pricing */
+  network?: NetworkId;
+  /** Token for this pricing */
+  token?: TokenId;
+  /** Facilitator URL for this pricing (optional - applies to all facilitators if not specified) */
+  facilitator?: string;
+  /** Amount to charge */
+  amount: string;
+}
+
+/**
  * Payment accept options for merchants (v2 multi-support)
  */
 export interface AcceptPaymentOptions {
@@ -52,6 +66,8 @@ export interface AcceptPaymentOptions {
   facilitators?: FacilitatorConfig | FacilitatorConfig[];
   /** Protocol version (default: auto-detect) */
   version?: 1 | 2 | "auto";
+  /** Pricing configurations - if not provided, uses amount from top-level config */
+  pricing?: PricingConfig[];
 }
 
 /**

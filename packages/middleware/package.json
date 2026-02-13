@@ -12,6 +12,22 @@
       "bun": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./integrations/hono": {
+      "types": "./integrations/hono.ts",
+      "default": "./integrations/hono.ts"
+    },
+    "./integrations/hono-simple": {
+      "types": "./integrations/hono-simple.ts",
+      "default": "./integrations/hono-simple.ts"
+    },
+    "./integrations/express": {
+      "types": "./integrations/express.ts",
+      "default": "./integrations/express.ts"
+    },
+    "./integrations/elysia": {
+      "types": "./integrations/elysia.ts",
+      "default": "./integrations/elysia.ts"
+    },
     "./dist/*": "./dist/*.js"
   },
   "files": [

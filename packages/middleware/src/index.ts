@@ -52,7 +52,8 @@ export type { AnyPaymentPayload as PaymentPayload } from "./payment-utils.js";
 
 export { createBunMiddleware, acceptPaymentsViaArmory, type BunMiddleware, type BunMiddlewareConfig } from "./bun.js";
 
-// Framework-specific exports are available in the integrations directory
+// Framework-specific exports are in the integrations directory
+// Import them separately: import { ... } from '@armory-sh/middleware/integrations/hono'
 // These require additional dependencies: express, hono, or elysia
 
 // Simple one-line API for merchants
@@ -65,6 +66,7 @@ export {
   isSupported,
   type SimpleMiddlewareConfig,
   type ResolvedMiddlewareConfig,
+  type ResolvedPaymentConfigWithPricing,
 } from "./simple.js";
 
 // Re-export simple types from core

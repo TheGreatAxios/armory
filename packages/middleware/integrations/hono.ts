@@ -11,7 +11,7 @@ import {
   decodePayload,
   verifyPaymentWithRetry,
   extractPayerAddress,
-} from "./payment-utils";
+} from "../src/payment-utils";
 
 export interface PaymentMiddlewareConfig {
   requirements: PaymentRequirements;
