@@ -145,17 +145,22 @@ if (latestTag !== "none" && tagCommit !== currentHead) {
 }
 
 // Step 2: Detect and auto-commit changes
+log("\n🔍 Detecting changed packages...", blue);
 const changedPackages = getChangedPackages();
 
 if (changedPackages.length === 0) {
-  log("\n⚠️  No uncommitted changes detected.", yellow);
+  warn("No changed packages detected.");
   log("Checking for existing changesets...", blue);
 
-  const existingChangesets = run("ls .changeset/*.md 2>/dev/null | grep -v README || true", { silent: true }).trim();
-  if (!existingChangesets) {
+  try {
+    const changesetFiles = run("find .changeset -name '*.md' -not -name 'README.md' -not -name 'config.json'", { silent: true }).trim();
+    if (!changesetFiles) {
+      error("No changesets found and no package changes detected. Nothing to release.");
+    }
+    success(`Found existing changesets`);
+  } catch (e) {
     error("No changesets found. Nothing to release.");
   }
-  success(`Found existing changesets`);
 } else {
   log("\n📁 Detected changed packages:", cyan);
   const packageNames = changedPackages
@@ -173,8 +178,12 @@ if (changedPackages.length === 0) {
 
   // Step 3: Auto-create changeset
   log("\n📝 Creating changeset...", blue);
-  createChangeset(packageNames, "patch", "Automated release");
-  success("Changeset created");
+  try {
+    createChangeset(packageNames, "patch", "Automated release");
+    success("Changeset created");
+  } catch (e) {
+    error(`Failed to create changeset: ${e.message}`);
+  }
 }
 
 // Step 4: Run tests
