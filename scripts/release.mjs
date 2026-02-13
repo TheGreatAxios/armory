@@ -49,39 +49,45 @@ function run(cmd, { silent = false } = {}) {
 function getChangedPackages() {
   const changedPackages = new Set();
 
-  // Check uncommitted changes first
-  const status = run("git status --porcelain", { silent: true }).trim();
-  if (status) {
-    const changedFiles = status.split("\n");
-    for (const line of changedFiles) {
-      const parts = line.trim().split(/\s+/);
-      const filePath = parts[parts.length - 1];
-      const match = filePath.match(/^packages\/([^\/]+)\//);
-      if (match) {
-        changedPackages.add(match[1]);
-      }
-    }
-  }
-
-  // If no uncommitted changes, check commits since last tag
-  if (changedPackages.size === 0) {
-    const latestTag = run("git describe --tags --abbrev=0 2>/dev/null || echo 'none'", { silent: true }).trim();
-    let baseRef = "HEAD~10"; // Default: check last 10 commits if no tags
-
-    if (latestTag !== "none") {
-      baseRef = latestTag;
-    }
-
-    // Get changed files since base ref
-    const changedFiles = run(`git diff --name-only ${baseRef}...HEAD 2>/dev/null || echo ''`, { silent: true }).trim();
-    if (changedFiles) {
-      for (const filePath of changedFiles.split("\n")) {
+  try {
+    // Check uncommitted changes first
+    const status = run("git status --porcelain", { silent: true }).trim();
+    if (status) {
+      const changedFiles = status.split("\n");
+      for (const line of changedFiles) {
+        const parts = line.trim().split(/\s+/);
+        const filePath = parts[parts.length - 1];
         const match = filePath.match(/^packages\/([^\/]+)\//);
         if (match) {
           changedPackages.add(match[1]);
         }
       }
     }
+
+    // If no uncommitted changes, check commits since last tag
+    if (changedPackages.size === 0) {
+      let baseRef = "HEAD~10"; // Default: check last 10 commits
+
+      try {
+        const latestTag = run("git describe --tags --abbrev=0", { silent: true }).trim();
+        baseRef = latestTag;
+      } catch {
+        // No tags found, use default
+      }
+
+      // Get changed files since base ref
+      const changedFiles = run(`git diff --name-only ${baseRef} HEAD`, { silent: true }).trim();
+      if (changedFiles) {
+        for (const filePath of changedFiles.split("\n")) {
+          const match = filePath.match(/^packages\/([^\/]+)\//);
+          if (match) {
+            changedPackages.add(match[1]);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    log(`Warning: Could not detect changes: ${e.message}`, yellow);
   }
 
   return Array.from(changedPackages);
