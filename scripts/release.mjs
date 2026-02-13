@@ -393,11 +393,18 @@ if (packagesToPublish.length === 0) {
     log(`  → ${pkg.name}@${pkg.version}`, cyan);
 
     try {
-      // --yes skips confirmation prompt
-      run(`cd "${join(packagesDir, dir)}" && bun publish --access public --yes`, { silent: true });
+      // Check if already published at this version
+      const check = run(`npm view ${pkg.name}@${pkg.version} 2>&1 || echo 'not-found'`, { silent: true }).trim();
+      if (check && !check.includes("not-found") && !check.includes("404")) {
+        log(`    Already published, skipping...`, yellow);
+        continue;
+      }
+
+      // Publish (not silent so we can see what's happening)
+      run(`cd "${join(packagesDir, dir)}" && bun publish --access public --yes`);
       success(`  ✓ ${pkg.name}@${pkg.version} published`);
     } catch (err) {
-      warn(`  ⚠ ${pkg.name} may already be published or failed`);
+      warn(`  ⚠ ${pkg.name} failed to publish (may need OTP or already exists)`);
     }
   }
 }
