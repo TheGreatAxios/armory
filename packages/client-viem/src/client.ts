@@ -276,7 +276,7 @@ const checkSettlement = (response: Response, version: 1 | 2): void => {
 const createFetch = (
   wallet: X402Wallet,
   config: Omit<X402ClientConfig, "wallet">
-): typeof fetch => {
+): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> => {
   const { version = "auto", nonceGenerator = DEFAULT_NONCE, debug = false, domainName, domainVersion } = config;
   const getAddress = () => getWalletAddress(wallet);
 
@@ -404,7 +404,7 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
   };
 };
 
-export const createX402Transport = (config: X402TransportConfig): typeof fetch => {
+export const createX402Transport = (config: X402TransportConfig): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> => {
   const { wallet, transport, version, defaultExpiry, nonceGenerator, debug, token, domainName, domainVersion } = config;
   return createFetch(wallet, { version, defaultExpiry, nonceGenerator, debug, token, domainName, domainVersion });
 };

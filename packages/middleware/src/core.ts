@@ -2,12 +2,18 @@ import type {
   PaymentRequirements,
   PaymentRequirementsV1,
   PaymentRequirementsV2,
-  SettlementResponse,
+  PaymentPayloadV1,
   SettlementResponseV1,
   SettlementResponseV2,
   PayToV2,
+  X402SettlementResponse,
 } from "@armory-sh/base";
-import { getNetworkConfig, getNetworkByChainId } from "@armory-sh/base";
+import {
+  getNetworkConfig,
+  getNetworkByChainId,
+  encodeSettlementResponse,
+  encodePaymentPayload,
+} from "@armory-sh/base";
 import type {
   MiddlewareConfig,
   FacilitatorConfig,
@@ -62,7 +68,11 @@ export const createPaymentRequirements = (
   config: MiddlewareConfig,
   version: 1 | 2 = 1
 ): PaymentRequirements => {
+  const networkName = getNetworkName(config.network);
+  const network = getNetworkConfig(networkName);
+  if (!network) throw new Error(`Unsupported network: ${networkName}`);
   const expiry = Math.floor(Date.now() / 1000) + 3600;
+
   return version === 1 ? createV1Requirements(config, expiry) : createV2Requirements(config, expiry);
 };
 
@@ -183,17 +193,46 @@ export const createPaymentRequiredHeaders = (
   version: 1 | 2
 ): Record<string, string> => {
   if (version === 1) {
-    return { "X-PAYMENT-REQUIRED": encode(requirements as PaymentRequirementsV1) };
+    const { encodePaymentPayload: encodeV1Payload } = require("@armory-sh/base");
+    return { "X-PAYMENT-REQUIRED": encodeV1Payload(requirements as PaymentRequirementsV1) };
   }
-  return { "PAYMENT-REQUIRED": encode(requirements as PaymentRequirementsV2) };
+  // For V2/x402 - base64 encode the JSON
+  return { "PAYMENT-REQUIRED": Buffer.from(JSON.stringify(requirements)).toString("base64") };
 };
 
+/**
+ * Accepts both X402SettlementResponse and legacy SettlementResponseV1/V2
+ * For V1, manually constructs the header. For V2/x402, uses the x402 encoder.
+ */
 export const createSettlementHeaders = (
-  response: SettlementResponse,
+  response: X402SettlementResponse | SettlementResponseV1 | SettlementResponseV2,
   version: 1 | 2
 ): Record<string, string> => {
   if (version === 1) {
-    return { "X-PAYMENT-RESPONSE": encode(response as SettlementResponseV1) };
+    // V1 settlement response - manually construct the response
+    // Handle both V1 format (success, txHash) and V2 format (status, txHash)
+    const isSuccess = "success" in response
+      ? (response as SettlementResponseV1).success
+      : (response as SettlementResponseV2).status === "success";
+    const txHash = "transaction" in response
+      ? response.transaction
+      : response.txHash || "";
+
+    const settlementJson = JSON.stringify({
+      status: isSuccess ? "success" : "failed",
+      txHash: txHash ?? "",
+    });
+    return { "X-PAYMENT-RESPONSE": Buffer.from(settlementJson).toString("base64") };
   }
-  return { "PAYMENT-RESPONSE": encode(response as SettlementResponseV2) };
+  // For V2/x402 - base64 encode the JSON
+  const txHash = "transaction" in response ? response.transaction : response.txHash || "";
+  const isSuccess = "success" in response
+    ? response.success
+    : (response as SettlementResponseV2).status === "success";
+
+  const settlementJson = JSON.stringify({
+    status: isSuccess ? "success" : "failed",
+    txHash: txHash || "",
+  });
+  return { "PAYMENT-RESPONSE": Buffer.from(settlementJson).toString("base64") };
 };

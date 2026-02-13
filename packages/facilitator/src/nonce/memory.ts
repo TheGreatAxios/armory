@@ -56,8 +56,20 @@ export class MemoryNonceTracker implements NonceTracker {
     return this.nonces.size;
   }
 
+  cleanup(): void {
+    // Remove all expired nonces
+    const now = Date.now();
+    for (const [key, entry] of this.nonces.entries()) {
+      if (entry.expiresAt && now > entry.expiresAt) {
+        this.nonces.delete(key);
+      }
+    }
+  }
+
   close(): void {
-    this.clear();
+    // For memory tracker, close is a no-op
+    // The data remains for isUsed checks after close
+    // Only clear() should remove all data
   }
 
   clear(): void {

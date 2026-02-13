@@ -27,6 +27,10 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .cache
 *.tsbuildinfo
 
+# TypeScript build artifacts in src (should be in dist/)
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map
+
 # IntelliJ based IDEs
 .idea
 
@@ -36,3 +40,5 @@ DEPLOYMENT.md
 dist/
 .claude/*
 .turbo/
+.turbo/*
+.turbo

@@ -1,6 +1,6 @@
 import type { Signer } from "ethers";
 import {
-  decodeSettlement,
+  decodeSettlementLegacy,
   type SettlementResponse,
 } from "@armory-sh/base";
 import type { X402TransportConfig, X402RequestInit } from "./types";
@@ -74,7 +74,7 @@ const handlePaymentRequired = async (
       state.config.timeout
     );
 
-    return { success: true, settlement: decodeSettlement(paymentResponse.headers) };
+    return { success: true, settlement: decodeSettlementLegacy(paymentResponse.headers) };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
   }

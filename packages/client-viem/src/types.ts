@@ -30,7 +30,7 @@ export interface X402ClientConfig {
 }
 
 export interface X402Client {
-  fetch: typeof fetch;
+  fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   getAddress(): Address;
   createPayment(
     amount: string,

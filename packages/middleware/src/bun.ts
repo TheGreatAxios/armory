@@ -1,8 +1,10 @@
 import type {
-  PaymentPayload,
-  SettlementResponse,
+  X402PaymentPayload as PaymentPayload,
+  X402SettlementResponse as SettlementResponse,
 } from "@armory-sh/base";
-import { decodePayment, isV1, isV2 } from "@armory-sh/base";
+
+type Network = "base" | "base-sepolia" | "ethereum" | "ethereum-sepolia" | "polygon" | "polygon-amoy" | "arbitrum" | "arbitrum-sepolia" | "optimism" | "optimism-sepolia" | string;
+import { decodePayment, isExactEvmPayload, X402_HEADERS } from "@armory-sh/base";
 import type { MiddlewareConfig, HttpRequest } from "./types.js";
 import {
   createPaymentRequirements,
@@ -33,18 +35,31 @@ type ParsedPayment = {
 };
 
 const parsePaymentHeader = async (request: Request): Promise<ParsedPayment | null> => {
-  const v1 = request.headers.get("X-PAYMENT");
-  if (v1) {
-    const headers = new Headers({ "X-PAYMENT": v1 });
-    const payload = decodePayment(headers);
-    return isV1(payload) ? { payload, version: 1, payerAddress: payload.from } : null;
+  // Check for x402 payment (Coinbase compatible)
+  const x402Sig = request.headers.get(X402_HEADERS.PAYMENT);
+  if (x402Sig) {
+    try {
+      const payload = decodePayment(x402Sig);
+      if (isExactEvmPayload(payload)) {
+        return { payload, version: 2, payerAddress: payload.payload.authorization.from };
+      }
+    } catch {
+      // Fall through to legacy handling
+    }
   }
 
-  const v2 = request.headers.get("PAYMENT-SIGNATURE");
-  if (v2) {
-    const headers = new Headers({ "PAYMENT-SIGNATURE": v2 });
-    const payload = decodePayment(headers);
-    return isV2(payload) ? { payload, version: 2, payerAddress: payload.from } : null;
+  // Legacy V1 handling
+  const v1 = request.headers.get("X-PAYMENT");
+  if (v1) {
+    try {
+      const payload = decodePayment(v1);
+      // x402 decoder handles both legacy and new formats
+      if (isExactEvmPayload(payload)) {
+        return { payload, version: 2, payerAddress: payload.payload.authorization.from };
+      }
+    } catch {
+      // Invalid payload
+    }
   }
 
   return null;
@@ -70,10 +85,10 @@ const createSettlementResponse = (
   success: boolean,
   txHash?: string
 ): SettlementResponse => ({
-  status: success ? "success" : "failed",
-  txHash,
-  txId: txHash,
-  timestamp: Math.floor(Date.now() / 1000),
+  success,
+  transaction: txHash ?? "",
+  errorReason: success ? undefined : "Settlement failed",
+  network: "base" as Network,
 });
 
 const successResponse = (
@@ -81,8 +96,8 @@ const successResponse = (
   version: PaymentVersion,
   settlement?: SettlementResponse
 ): Response => {
-  const isSuccess = settlement ? ("success" in settlement ? settlement.success : settlement.status === "success") : undefined;
-  const txHash = settlement?.txHash;
+  const isSuccess = settlement?.success;
+  const txHash = settlement?.transaction;
 
   return new Response(
     JSON.stringify({

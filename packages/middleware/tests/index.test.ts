@@ -1,6 +1,20 @@
 import { test, expect, mock } from "bun:test";
 import * as middleware from "../src/index.js";
 
+// Helper to create a V1 settlement response for tests
+const createV1Settlement = (): middleware.SettlementResponseV1 => ({
+  success: true,
+  txHash: "0xabc123",
+  timestamp: Math.floor(Date.now() / 1000),
+});
+
+// Helper to create a V2 settlement response for tests
+const createV2Settlement = (): middleware.SettlementResponseV2 => ({
+  status: "success",
+  txHash: "0xabc123",
+  timestamp: Math.floor(Date.now() / 1000),
+});
+
 // ============================================================
 // Type Exports
 // ============================================================
@@ -109,11 +123,7 @@ test("createPaymentRequiredHeaders creates correct V2 headers", () => {
 // ============================================================
 
 test("createSettlementHeaders creates correct V1 settlement headers", () => {
-  const v1Response: middleware.SettlementResponse = {
-    status: "success",
-    txHash: "0xabc123",
-    timestamp: Math.floor(Date.now() / 1000),
-  };
+  const v1Response = createV1Settlement();
 
   const headers = middleware.createSettlementHeaders(v1Response, 1);
 
@@ -126,11 +136,7 @@ test("createSettlementHeaders creates correct V1 settlement headers", () => {
 });
 
 test("createSettlementHeaders creates correct V2 settlement headers", () => {
-  const v2Response: middleware.SettlementResponse = {
-    status: "success",
-    txHash: "0xabc123",
-    timestamp: Math.floor(Date.now() / 1000),
-  };
+  const v2Response = createV2Settlement();
 
   const headers = middleware.createSettlementHeaders(v2Response, 2);
 

@@ -3,45 +3,29 @@ export type {
   PaymentPayloadV1,
   PaymentRequirementsV1,
   SettlementResponseV1,
-} from "@armory-sh/base";
-
-export {
-  V1_HEADERS,
-  encodePaymentPayload,
-  decodePaymentPayload,
-  encodeSettlementResponse,
-  decodeSettlementResponse,
-} from "@armory-sh/base";
-
-export type {
+  PaymentPayloadV2,
+  PaymentRequirementsV2,
+  SettlementResponseV2,
+  PaymentPayload,
+  PaymentRequirements,
+  SettlementResponse,
   CAIP2ChainId,
   CAIPAssetId,
   Address,
   Signature,
   PayToV2,
   Extensions,
-  PaymentPayloadV2,
-  PaymentRequirementsV2,
-  SettlementResponseV2,
+  NetworkConfig,
+  TransferWithAuthorizationParams,
+  BalanceOfParams,
 } from "@armory-sh/base";
 
 export {
+  V1_HEADERS,
   V2_HEADERS,
-  isCAIP2ChainId,
-  isCAIPAssetId,
-  isAddress,
-} from "@armory-sh/base";
-
-export type {
-  PaymentPayload,
-  PaymentRequirements,
-  SettlementResponse,
-} from "@armory-sh/base";
-
-export {
   isV1,
   isV2,
-  getPaymentVersionFromPayload,
+  getPaymentVersion,
   getRequirementsVersion,
   getSettlementVersion,
   getPaymentHeaderName,
@@ -49,26 +33,12 @@ export {
   getPaymentRequiredHeaderName,
   isSettlementSuccessful,
   getTxHash,
-} from "@armory-sh/base";
-
-export type { NetworkConfig } from "@armory-sh/base";
-
-export {
   NETWORKS,
   getNetworkConfig,
   getNetworkByChainId,
   getMainnets,
   getTestnets,
-} from "@armory-sh/base";
-
-export type {
-  TransferWithAuthorizationParams,
-  BalanceOfParams,
-} from "@armory-sh/base";
-
-export { ERC20_ABI } from "@armory-sh/base";
-
-export {
+  ERC20_ABI,
   encodePaymentV1,
   decodePaymentV1,
   encodeSettlementV1,
@@ -79,18 +49,18 @@ export {
   decodeSettlementV2,
   detectPaymentVersion,
   decodePayment,
-  decodeSettlement,
+  decodeSettlementLegacy,
   isPaymentV1,
   isPaymentV2,
   isSettlementV1,
   isSettlementV2,
-} from "@armory-sh/base";
-
-export {
   EIP712_TYPES,
   createEIP712Domain,
   createTransferWithAuthorization,
   validateTransferWithAuthorization,
+  isCAIP2ChainId,
+  isCAIPAssetId,
+  isAddress,
 } from "@armory-sh/base";
 
 // Ethers-specific exports

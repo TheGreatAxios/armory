@@ -9,6 +9,18 @@ export type {
   FacilitatorSettleResult,
 } from "./types.js";
 
+// Re-export payment types from base for backward compatibility
+export type {
+  PaymentRequirementsV1,
+  PaymentRequirementsV2,
+  SettlementResponseV1,
+  SettlementResponseV2,
+} from "@armory-sh/base";
+
+// Union type for backward compatibility
+export type PaymentRequirements = import("@armory-sh/base").PaymentRequirementsV1 | import("@armory-sh/base").PaymentRequirementsV2;
+export type SettlementResponse = import("@armory-sh/base").SettlementResponseV1 | import("@armory-sh/base").SettlementResponseV2;
+
 export {
   createPaymentRequirements,
   verifyWithFacilitator,
@@ -27,7 +39,16 @@ export {
   createResponseHeaders,
 } from "./payment-utils.js";
 
-export type { PaymentVersion, PaymentVerificationResult } from "./payment-utils.js";
+export type {
+  PaymentVersion,
+  PaymentVerificationResult,
+  AnyPaymentPayload,
+  LegacyPaymentPayloadV1,
+  LegacyPaymentPayloadV2,
+} from "./payment-utils.js";
+
+// For backward compatibility, also export as PaymentPayload
+export type { AnyPaymentPayload as PaymentPayload } from "./payment-utils.js";
 
 export { createBunMiddleware, acceptPaymentsViaArmory, type BunMiddleware, type BunMiddlewareConfig } from "./bun.js";
 

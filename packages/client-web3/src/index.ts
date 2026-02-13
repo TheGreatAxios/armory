@@ -71,7 +71,7 @@ export {
   decodeSettlementV2,
   isV1,
   isV2,
-  getPaymentVersionFromPayload,
+  getPaymentVersion,
   getRequirementsVersion,
   getSettlementVersion,
   getPaymentHeaderName,
