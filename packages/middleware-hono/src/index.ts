@@ -56,15 +56,16 @@ export const acceptPaymentsViaArmory = (
 
   const primaryConfig = getPrimaryConfig(resolved);
   const defaultVersion = config.defaultVersion ?? 2;
-  const requirementsV1 = createPaymentRequirements(primaryConfig, 1);
-  const requirementsV2 = createPaymentRequirements(primaryConfig, 2);
+
+  // Lazy creation to avoid crypto.randomUUID() at global scope in Cloudflare Workers
+  const createRequirements = (version: 1 | 2) => createPaymentRequirements(primaryConfig, version);
 
   return async (c: Context, next: Next) => {
     const paymentHeader = c.req.header("X-Payment") || c.req.header("x402-payment");
 
     if (!paymentHeader) {
-      const requirements = defaultVersion === 1 ? requirementsV1 : requirementsV2;
       const version = defaultVersion === 1 ? 1 : 2;
+      const requirements = createRequirements(version);
       const headers = getHeadersForVersion(version);
 
       c.status(402);
@@ -79,7 +80,7 @@ export const acceptPaymentsViaArmory = (
       if (primaryConfig.facilitator) {
         const verifyResult = await verifyWithFacilitator(toHttpRequest(c), primaryConfig.facilitator);
         if (!verifyResult.success) {
-          const requirements = version === 1 ? requirementsV1 : requirementsV2;
+          const requirements = createRequirements(version);
           const headers = getHeadersForVersion(version);
 
           c.status(402);
