@@ -508,9 +508,9 @@ test("client verifies successful v2 settlement", () => {
   });
 
   const response: SettlementResponseV2 = {
-    status: "success",
-    txHash: "0xabc123",
-    timestamp: Date.now(),
+    success: true,
+    transaction: "0xabc123",
+    network: "eip155:8453",
   };
 
   expect(client.verifySettlement(response)).toBeTrue();

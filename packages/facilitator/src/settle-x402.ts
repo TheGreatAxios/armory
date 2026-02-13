@@ -13,7 +13,7 @@ import {
   ContractFunctionRevertedError,
 } from "viem";
 import type { X402PaymentPayload } from "@armory-sh/base";
-import { ERC20_ABI, NETWORKS, parseSignature } from "@armory-sh/base";
+import { ERC20_ABI, NETWORKS, parseSignatureV2 } from "@armory-sh/base";
 
 export class X402SettlementError extends Error {
   override readonly cause?: unknown;
@@ -240,7 +240,7 @@ export async function settleX402Payment(
   const tokenAddress = contractAddress ?? (networkConfig?.usdcAddress as Address);
 
   // Parse signature into v, r, s components
-  const sig = parseSignature(signature as `0x${string}`);
+  const sig = parseSignatureV2(signature as `0x${string}`);
 
   try {
     const hash = await walletClient.writeContract({

@@ -1,11 +1,15 @@
 import type {
   PaymentPayload,
   PaymentRequirements,
+  X402PaymentPayloadV1,
+  LegacyPaymentPayloadV1,
 } from "@armory-sh/base";
 import {
   NETWORKS,
   getNetworkByChainId,
   isPaymentV1,
+  isX402V1Payload,
+  isLegacyV1Payload,
 } from "@armory-sh/base";
 import type { NonceTracker } from "./nonce/types.js";
 import type { PaymentQueue, SettleJob, SettleResult } from "./queue/types.js";
@@ -106,6 +110,32 @@ const getQueueStats = (queue: PaymentQueue) => ({
   completed: (queue as { getCompletedCount?: () => number }).getCompletedCount?.() ?? 0,
 });
 
+// Helper to extract chainId from various payload formats
+const extractChainId = (payload: PaymentPayload): number => {
+  if (isX402V1Payload(payload)) {
+    const networkToChainId: Record<string, number> = {
+      "base": 8453,
+      "base-sepolia": 84532,
+      "ethereum": 1,
+      "ethereum-sepolia": 11155111,
+      "polygon": 137,
+      "polygon-amoy": 80002,
+      "arbitrum": 42161,
+      "arbitrum-sepolia": 421614,
+      "optimism": 10,
+      "optimism-sepolia": 11155420,
+    };
+    return networkToChainId[payload.network] ?? 8453;
+  }
+  if (isLegacyV1Payload(payload)) {
+    return payload.chainId;
+  }
+  // V2 format - chainId is in CAIP-2 format
+  const match = payload.accepted.network.match(/^eip155:(\d+)$/);
+  if (!match) throw new Error(`Invalid CAIP-2 chain ID: ${payload.accepted.network}`);
+  return parseInt(match[1], 10);
+};
+
 const processJob = async (
   job: SettleJob,
   rpcUrls: Record<number | string, string>,
@@ -116,9 +146,7 @@ const processJob = async (
   let walletClient;
   if (privateKey) {
     const account = privateKeyToAccount(privateKey);
-    const chainId = isPaymentV1(paymentPayload)
-      ? paymentPayload.chainId
-      : Number.parseInt(paymentPayload.chainId.split(":")[1], 10);
+    const chainId = extractChainId(paymentPayload);
 
     const rpcUrl =
       rpcUrls[chainId] ??

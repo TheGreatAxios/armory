@@ -1,67 +1,106 @@
 import type { Web3X402Client, X402Transport, X402TransportOptions } from "./types";
-import { V1_HEADERS, V2_HEADERS, encodePaymentV1, encodePaymentV2 } from "@armory-sh/base";
+import {
+  V1_HEADERS,
+  V2_HEADERS,
+  encodePaymentV1,
+  encodePaymentV2,
+  isX402V1Requirements,
+  isX402V2Requirements,
+  type PaymentRequirementsV1,
+  type PaymentRequirementsV2,
+  type PaymentPayloadV1,
+  type PaymentPayloadV2,
+} from "@armory-sh/base";
+import {
+  detectX402Version,
+  parsePaymentRequired,
+  isPaymentRequiredResponse,
+  selectSchemeRequirements,
+  type X402Version,
+} from "./protocol";
 
 const DEFAULT_MAX_RETRIES = 3;
 
-const detectProtocolVersion = (response: Response, client: Web3X402Client): 1 | 2 => {
-  if (response.headers.has(V2_HEADERS.PAYMENT_REQUIRED) || response.headers.has("PAYMENT-REQUIRED")) {
-    return 2;
-  }
-  if (response.headers.has("X-PAYMENT-REQUIRED")) {
-    return 1;
-  }
-  return client.getVersion();
-};
-
-const parsePaymentRequirements = async (
-  response: Response,
-  version: 1 | 2
-): Promise<unknown> => {
-  if (version === 2) {
-    const header = response.headers.get(V2_HEADERS.PAYMENT_REQUIRED);
-    if (header) return JSON.parse(header);
-  } else {
-    const header = response.headers.get("X-PAYMENT-REQUIRED");
-    if (header) {
-      const json = Buffer.from(header, "base64").toString("utf-8");
-      return JSON.parse(json);
-    }
-  }
-  return JSON.parse(await response.clone().text());
-};
-
-const createPaymentHeaders = (payload: unknown, version: 1 | 2): Headers => {
+/**
+ * Create payment headers based on detected version and payload
+ */
+const createPaymentHeaders = (
+  payload: PaymentPayloadV1 | PaymentPayloadV2,
+  version: X402Version
+): Headers => {
   const headers = new Headers();
+
   if (version === 1) {
-    headers.set(V1_HEADERS.PAYMENT, encodePaymentV1(payload as import("@armory-sh/base").PaymentPayloadV1));
+    headers.set(V1_HEADERS.PAYMENT, encodePaymentV1(payload as PaymentPayloadV1));
   } else {
-    headers.set(V2_HEADERS.PAYMENT_SIGNATURE, encodePaymentV2(payload as import("@armory-sh/base").PaymentPayloadV2));
+    headers.set(V2_HEADERS.PAYMENT_SIGNATURE, encodePaymentV2(payload as PaymentPayloadV2));
   }
+
   return headers;
 };
 
+/**
+ * Check if error is payment-related and should trigger retry
+ */
 const isPaymentRelatedError = (error: Error): boolean =>
   error.message.includes("402") ||
   error.message.includes("payment") ||
-  error.message.includes("signature");
+  error.message.includes("signature") ||
+  error.message.includes("Payment");
 
+/**
+ * Exponential backoff with jitter
+ */
 const backoff = (attempt: number): Promise<void> => {
-  const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-  return new Promise((resolve) => setTimeout(resolve, delay));
+  const baseDelay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+  const jitter = Math.random() * 100;
+  return new Promise((resolve) => setTimeout(resolve, baseDelay + jitter));
 };
 
+/**
+ * Handle 402 Payment Required response
+ * Detects protocol version and creates appropriate payment headers
+ */
 const handlePaymentRequired = async (
   response: Response,
   client: Web3X402Client
 ): Promise<Headers> => {
-  const version = detectProtocolVersion(response, client);
-  const requirements = await parsePaymentRequirements(response, version);
-  const result = await client.handlePaymentRequired(
-    requirements as Parameters<Web3X402Client["handlePaymentRequired"]>[0]
-  );
+  // Detect protocol version from response
+  const version = detectX402Version(response, client.getVersion());
+
+  // Parse payment requirements using protocol functions
+  const parsed = await parsePaymentRequired(response, version);
+
+  // Select the first "exact" scheme requirements
+  const selectedRequirements = selectSchemeRequirements(parsed.requirements, "exact");
+
+  if (!selectedRequirements) {
+    throw new Error("No supported payment scheme found in requirements");
+  }
+
+  // Convert requirements to client format based on version
+  let result;
+
+  if (version === 1 && isX402V1Requirements(selectedRequirements)) {
+    // V1 requirements
+    const req = selectedRequirements as PaymentRequirementsV1;
+    result = await client.handlePaymentRequired(req);
+  } else if (version === 2 && isX402V2Requirements(selectedRequirements)) {
+    // V2 requirements
+    const req = selectedRequirements as PaymentRequirementsV2;
+    result = await client.handlePaymentRequired(req);
+  } else {
+    // Fallback - try to handle with raw requirements
+    result = await client.handlePaymentRequired(selectedRequirements as PaymentRequirementsV1 | PaymentRequirementsV2);
+  }
+
+  // Create appropriate payment headers based on version
   return createPaymentHeaders(result.payload, version);
 };
 
+/**
+ * Merge payment headers into existing request init
+ */
 const mergePaymentHeaders = (
   init: RequestInit = {},
   paymentHeaders: Headers
@@ -73,6 +112,9 @@ const mergePaymentHeaders = (
   return { ...init, headers: existingHeaders };
 };
 
+/**
+ * Create an x402 transport layer for handling payment-required responses
+ */
 export const createX402Transport = (options: X402TransportOptions): X402Transport => {
   const client = options.client;
   const autoSign = options.autoSign ?? true;
@@ -91,7 +133,8 @@ export const createX402Transport = (options: X402TransportOptions): X402Transpor
         try {
           const response = await fetch(url, init);
 
-          if (response.status === 402 && autoSign) {
+          // Check for 402 Payment Required using protocol detection
+          if (isPaymentRequiredResponse(response) && autoSign) {
             const paymentHeaders = await handlePaymentRequired(response, client);
             const newInit = mergePaymentHeaders(init, paymentHeaders);
             return await fetch(url, newInit);
@@ -116,6 +159,9 @@ export const createX402Transport = (options: X402TransportOptions): X402Transpor
   };
 };
 
+/**
+ * Create a fetch function bound to an x402 transport
+ */
 export const createFetchWithX402 = (
   transport: X402Transport
 ): (url: string | Request, init?: RequestInit) => Promise<Response> =>

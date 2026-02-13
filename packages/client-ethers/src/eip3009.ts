@@ -1,4 +1,4 @@
-import type { Signer } from "ethers";
+import { ethers, type Signer } from "ethers";
 import {
   createEIP712Domain,
   type TransferWithAuthorization,
@@ -7,7 +7,7 @@ import type {
   TransferWithAuthorizationParams,
   EIP712Domain as EIP712DomainType,
 } from "./types";
-import { AuthorizationError } from "./types";
+import { AuthorizationError } from "./errors";
 
 const EIP712_TYPES_ETHERS = {
   TransferWithAuthorization: [
@@ -18,7 +18,7 @@ const EIP712_TYPES_ETHERS = {
     { name: "validBefore", type: "uint256" },
     { name: "nonce", type: "uint256" },
   ],
-} as const;
+};
 
 export async function signEIP3009(
   signer: Signer,

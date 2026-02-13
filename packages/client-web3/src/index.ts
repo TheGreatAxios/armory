@@ -16,6 +16,24 @@ export type {
   X402RequestContext,
 } from "./types";
 
+// Protocol functions for x402 V1/V2 compatibility
+export {
+  detectX402Version,
+  detectVersionFromObject,
+  parsePaymentRequired,
+  parsePaymentRequiredFromHeader,
+  parsePaymentRequiredFromBody,
+  createX402V1Payment,
+  createX402V2Payment,
+  createPaymentHeader,
+  getPaymentHeader,
+  getPaymentRequiredHeader,
+  isPaymentRequiredResponse,
+  selectSchemeRequirements,
+  type X402Version,
+  type ParsedPaymentRequired,
+} from "./protocol";
+
 export {
   createEIP712Domain,
   createTransferWithAuthorization,
@@ -57,14 +75,11 @@ export type {
 
 export {
   V1_HEADERS,
+  V2_HEADERS,
   encodePaymentV1,
   decodePaymentV1,
   encodeSettlementV1,
   decodeSettlementV1,
-  V2_HEADERS,
-  isCAIP2ChainId,
-  isCAIPAssetId,
-  isAddress,
   encodePaymentV2,
   decodePaymentV2,
   encodeSettlementV2,
@@ -84,6 +99,15 @@ export {
   getNetworkByChainId,
   getMainnets,
   getTestnets,
+  isX402V1Payload,
+  isX402V2Payload,
+  isX402V1Requirements,
+  isX402V2Requirements,
+  isX402V1Settlement,
+  isX402V2Settlement,
+  combineSignatureV2,
+  parseSignatureV2,
+  createNonce,
   EIP712_TYPES as CORE_EIP712_TYPES,
   USDC_DOMAIN as CORE_USDC_DOMAIN,
   createEIP712Domain as createCoreEIP712Domain,

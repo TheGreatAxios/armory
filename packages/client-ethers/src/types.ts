@@ -4,6 +4,16 @@ import type { CustomToken } from "@armory-sh/base";
 // Re-export ethers types
 export type { Signer, Provider };
 
+// Re-export errors from errors.ts
+export {
+  X402ClientError,
+  SigningError,
+  PaymentError,
+  SignerRequiredError,
+  AuthorizationError,
+  ProviderRequiredError,
+} from "./errors";
+
 /** Token configuration - can use pre-configured tokens from @armory-sh/tokens */
 export type Token = CustomToken;
 
@@ -65,35 +75,4 @@ export interface EIP712Domain {
   version: string;
   chainId: number;
   verifyingContract: `0x${string}`;
-}
-
-export class X402ClientError extends Error {
-  override readonly cause?: unknown;
-
-  constructor(message: string, cause?: unknown) {
-    super(message);
-    this.name = "X402ClientError";
-    this.cause = cause;
-  }
-}
-
-export class SignerRequiredError extends X402ClientError {
-  constructor(message = "Signer is required for this operation") {
-    super(message);
-    this.name = "SignerRequiredError";
-  }
-}
-
-export class AuthorizationError extends X402ClientError {
-  constructor(message: string, cause?: unknown) {
-    super(`Authorization failed: ${message}`, cause);
-    this.name = "AuthorizationError";
-  }
-}
-
-export class ProviderRequiredError extends X402ClientError {
-  constructor(message = "Provider is required for this operation") {
-    super(message);
-    this.name = "ProviderRequiredError";
-  }
 }

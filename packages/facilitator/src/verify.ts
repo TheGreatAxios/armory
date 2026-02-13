@@ -6,9 +6,132 @@ import type {
   PaymentPayloadV2,
   PaymentRequirements,
   CustomToken,
+  X402PaymentPayloadV1,
+  LegacyPaymentPayloadV1,
 } from "@armory-sh/base";
-import { isV1, isV2, ERC20_ABI, EIP712_TYPES, NETWORKS, getCustomToken } from "@armory-sh/base";
+import { isX402V1Payload, isX402V2Payload, isLegacyV1Payload, isPaymentV1, isPaymentV2, ERC20_ABI, EIP712_TYPES, NETWORKS, getCustomToken } from "@armory-sh/base";
 import type { NonceTracker } from "./nonce/types.js";
+
+// ============================================================================
+// Helper functions to extract values from nested x402 structures
+// ============================================================================
+
+const isX402V1 = (payload: PaymentPayload): payload is X402PaymentPayloadV1 =>
+  isX402V1Payload(payload);
+
+const isLegacyV1 = (payload: PaymentPayload): payload is LegacyPaymentPayloadV1 =>
+  isLegacyV1Payload(payload);
+
+const extractFrom = (payload: PaymentPayload): string => {
+  if (isX402V1(payload)) return payload.payload.authorization.from;
+  if (isLegacyV1(payload)) return payload.from;
+  return payload.payload.authorization.from;
+};
+
+const extractTo = (payload: PaymentPayload): string => {
+  if (isX402V1(payload)) return payload.payload.authorization.to;
+  if (isLegacyV1(payload)) return payload.to;
+  return payload.payload.authorization.to;
+};
+
+const extractValue = (payload: PaymentPayload): string => {
+  if (isX402V1(payload)) return payload.payload.authorization.value;
+  if (isLegacyV1(payload)) return payload.amount;
+  return payload.payload.authorization.value;
+};
+
+const extractNonce = (payload: PaymentPayload): string => {
+  if (isX402V1(payload)) return payload.payload.authorization.nonce;
+  if (isLegacyV1(payload)) return payload.nonce;
+  return payload.payload.authorization.nonce;
+};
+
+const extractExpiry = (payload: PaymentPayload): number => {
+  if (isX402V1(payload)) return parseInt(payload.payload.authorization.validBefore, 10);
+  if (isLegacyV1(payload)) return payload.expiry;
+  return parseInt(payload.payload.authorization.validBefore, 10);
+};
+
+const extractChainId = (payload: PaymentPayload): number => {
+  if (isX402V1(payload)) {
+    const networkToChainId: Record<string, number> = {
+      "base": 8453,
+      "base-sepolia": 84532,
+      "ethereum": 1,
+      "ethereum-sepolia": 11155111,
+      "polygon": 137,
+      "polygon-amoy": 80002,
+      "arbitrum": 42161,
+      "arbitrum-sepolia": 421614,
+      "optimism": 10,
+      "optimism-sepolia": 11155420,
+    };
+    return networkToChainId[payload.network] ?? 8453;
+  }
+  if (isLegacyV1(payload)) return payload.chainId;
+  // V2 CAIP-2 format: eip155:{chainId}
+  const match = payload.accepted.network.match(/^eip155:(\d+)$/);
+  if (!match) throw new InvalidPayloadError(`Invalid CAIP-2 chain ID: ${payload.accepted.network}`);
+  return parseInt(match[1], 10);
+};
+
+const extractContractAddress = (payload: PaymentPayload): string => {
+  if (isX402V1(payload)) {
+    // For x402 V1, we need to get the contract address from the asset in requirements
+    // or use a default USDC address based on network
+    const networkToAddress: Record<string, string> = {
+      "base": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+      "base-sepolia": "0x036bd51497f7f969ef59aBaadF254486EA431C8e",
+      "ethereum": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "ethereum-sepolia": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+      "polygon": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+      "polygon-amoy": "0x41e94eb011e5644eb7edcae66bb0748983356c4b",
+      "arbitrum": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "arbitrum-sepolia": "0x75faf114eafb1a353f7c805b6e268a0db3c29b58",
+      "optimism": "0x7b5eb834b866e62c5a3616f46ae63df5acddbcde",
+      "optimism-sepolia": "0xe05a0646e49d56bc01ad2e394a89cc0f6a51bd07",
+    };
+    return networkToAddress[payload.network] ?? "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+  }
+  if (isLegacyV1(payload)) return payload.contractAddress;
+  // For V2, extract from the accepted.asset or from assetId if available
+  const assetId = (payload as any).assetId as string | undefined;
+  if (assetId) {
+    const match = assetId.match(/^eip155:\d+\/erc20:(0x[a-fA-F0-9]{40})$/);
+    if (match) return match[1];
+  }
+  // Fallback to USDC on Base
+  return "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+};
+
+const extractSignature = (payload: PaymentPayload): { v: number; r: string; s: string } => {
+  if (isX402V1(payload)) {
+    const sig = payload.payload.signature;
+    return {
+      v: parseInt(sig.slice(130, 132), 16),
+      r: `0x${sig.slice(2, 66)}`,
+      s: `0x${sig.slice(66, 130)}`,
+    };
+  }
+  if (isLegacyV1(payload)) {
+    return { v: payload.v, r: payload.r, s: payload.s };
+  }
+  const sig = payload.payload.signature;
+  return {
+    v: parseInt(sig.slice(130, 132), 16),
+    r: `0x${sig.slice(2, 66)}`,
+    s: `0x${sig.slice(66, 130)}`,
+  };
+};
+
+const extractRequirementsAmount = (requirements: PaymentRequirements): string => {
+  if ("maxAmountRequired" in requirements) return requirements.maxAmountRequired;
+  if ("amount" in requirements) return requirements.amount;
+  throw new InvalidPayloadError("Missing amount in requirements");
+};
+
+const requirementsHasExpiry = (requirements: PaymentRequirements): boolean =>
+  "expiry" in requirements && typeof requirements.expiry === "number";
 
 export class PaymentVerificationError extends Error {
   override readonly cause?: unknown;
@@ -107,7 +230,7 @@ const validateVersionsMatch = (
   payload: PaymentPayload,
   requirements: PaymentRequirements
 ): void => {
-  const payloadIsV1 = isV1(payload);
+  const payloadIsV1 = isPaymentV1(payload);
   const requirementsIsV1 = "contractAddress" in requirements && "network" in requirements;
 
   if (payloadIsV1 !== requirementsIsV1) {
@@ -140,7 +263,7 @@ const performBalanceCheck = async (
   requirements: PaymentRequirements,
   customRpcUrl?: string
 ): Promise<VerificationSuccess> => {
-  const requiredAmount = BigInt(requirements.amount);
+  const requiredAmount = BigInt(extractRequirementsAmount(requirements));
   const rpcUrl = customRpcUrl ?? network.rpcUrl;
   if (!rpcUrl) throw new InvalidPayloadError("Missing RPC URL for balance check");
 
@@ -163,7 +286,9 @@ export async function verifyPayment(
     validateRequirements(requirements);
     validateVersionsMatch(payload, requirements);
 
-    const { chainId, contractAddress, fromAddress } = extractPaymentDetails(payload);
+    const chainId = extractChainId(payload);
+    const contractAddress = extractContractAddress(payload) as Address;
+    const fromAddress = extractFrom(payload) as Address;
     const network = getNetworkByChainId(chainId);
 
     const payerAddress = await verifySignatureAndPayer(
@@ -178,7 +303,7 @@ export async function verifyPayment(
     if (!options.skipNonceCheck) checkNonce(payload, options.nonceTracker);
 
     return options.skipBalanceCheck
-      ? { success: true, payerAddress, balance: 0n, requiredAmount: BigInt(requirements.amount) }
+      ? { success: true, payerAddress, balance: 0n, requiredAmount: BigInt(extractRequirementsAmount(requirements)) }
       : await performBalanceCheck(payerAddress, contractAddress, network ?? {}, requirements, options.rpcUrl);
   } catch (error) {
     if (error instanceof PaymentVerificationError) {
@@ -198,50 +323,28 @@ const validateAddress = (address: string, fieldName: string): void => {
 };
 
 const validatePayload = (payload: PaymentPayload): void => {
-  if (!payload.from) throw new InvalidPayloadError("Missing 'from' address");
-  if (!payload.to) throw new InvalidPayloadError("Missing 'to' address");
-  if (!payload.amount) throw new InvalidPayloadError("Missing 'amount'");
-  if (!payload.nonce) throw new InvalidPayloadError("Missing 'nonce'");
-  if (!payload.expiry) throw new InvalidPayloadError("Missing 'expiry'");
+  const from = extractFrom(payload);
+  const to = extractTo(payload);
+  const value = extractValue(payload);
+  const nonce = extractNonce(payload);
+  const expiry = extractExpiry(payload);
 
-  validateAddress(payload.from, "from");
+  if (!from) throw new InvalidPayloadError("Missing 'from' address");
+  if (!to) throw new InvalidPayloadError("Missing 'to' address");
+  if (!value) throw new InvalidPayloadError("Missing 'amount'");
+  if (!nonce) throw new InvalidPayloadError("Missing 'nonce'");
+  if (!expiry) throw new InvalidPayloadError("Missing 'expiry'");
 
-  const to = isV1(payload)
-    ? payload.to
-    : typeof payload.to === "string" ? payload.to : undefined;
-  if (to) validateAddress(to, "to");
+  validateAddress(from, "from");
+  validateAddress(to, "to");
 };
 
 const validateRequirements = (requirements: PaymentRequirements): void => {
-  if (!requirements.amount) throw new InvalidPayloadError("Missing required amount in requirements");
-  if (!requirements.expiry) throw new InvalidPayloadError("Missing required expiry in requirements");
+  if (!extractRequirementsAmount(requirements)) throw new InvalidPayloadError("Missing required amount in requirements");
+  if (!requirementsHasExpiry(requirements)) throw new InvalidPayloadError("Missing required expiry in requirements");
   if ("to" in requirements && !requirements.to) {
     throw new InvalidPayloadError("Missing required 'to' address in requirements");
   }
-};
-
-const extractPaymentDetails = (payload: PaymentPayload): {
-  chainId: number;
-  contractAddress: Address;
-  fromAddress: Address;
-} => {
-  if (isV1(payload)) {
-    return {
-      chainId: payload.chainId,
-      contractAddress: payload.contractAddress as Address,
-      fromAddress: payload.from as Address,
-    };
-  }
-
-  const chainIdMatch = payload.chainId.match(/^eip155:(\d+)$/);
-  if (!chainIdMatch) throw new InvalidPayloadError(`Invalid CAIP-2 chain ID: ${payload.chainId}`);
-  const chainId = Number.parseInt(chainIdMatch[1], 10);
-
-  const assetIdMatch = payload.assetId.match(/^eip155:\d+\/erc20:(0x[a-fA-F0-9]{40})$/);
-  if (!assetIdMatch) throw new InvalidPayloadError(`Invalid CAIP asset ID: ${payload.assetId}`);
-  const contractAddress = assetIdMatch[1] as Address;
-
-  return { chainId, contractAddress, fromAddress: payload.from };
 };
 
 const getNetworkByChainId = (chainId: number) => {
@@ -278,16 +381,23 @@ const verifySignature = async (
   contractAddress: Address,
   options: VerifyPaymentOptions
 ): Promise<Address> => {
-  if (isV1(payload)) return verifyV1Signature(payload, network, contractAddress, options);
+  if (isPaymentV1(payload)) return verifyV1Signature(payload, network, contractAddress, options);
   return verifyV2Signature(payload, network, contractAddress, options);
 };
 
 const recoverSignatureAddress = async (
-  payload: PaymentPayloadV1 | PaymentPayloadV2,
+  payload: PaymentPayload,
   domain: { name: string; version: string },
   network: { chainId: number },
   contractAddress: Address
 ): Promise<Address> => {
+  const from = extractFrom(payload) as Address;
+  const to = extractTo(payload) as Address;
+  const value = extractValue(payload);
+  const expiry = extractExpiry(payload);
+  const nonce = extractNonce(payload);
+  const sigData = extractSignature(payload);
+
   const hash = hashTypedData({
     domain: {
       name: domain.name,
@@ -298,41 +408,33 @@ const recoverSignatureAddress = async (
     types: EIP712_TYPES,
     primaryType: "TransferWithAuthorization",
     message: {
-      from: payload.from as Address,
-      to: isV1(payload)
-        ? payload.to as Address
-        : typeof payload.to === "string"
-          ? payload.to as Address
-          : ("0x0000000000000000000000000000000000000000" as Address),
-      value: BigInt(payload.amount),
+      from,
+      to,
+      value: BigInt(value),
       validAfter: 0n,
-      validBefore: BigInt(payload.expiry),
-      nonce: toNonceBigInt(payload.nonce),
+      validBefore: BigInt(expiry),
+      nonce: toNonceBigInt(nonce),
     },
   });
 
-  // Convert { v, r, s } to viem's { r, s, yParity } format
-  const v1Sig = isV1(payload)
-    ? { v: payload.v, r: payload.r, s: payload.s }
-    : payload.signature;
   const sig = {
-    r: v1Sig.r as `0x${string}`,
-    s: v1Sig.s as `0x${string}`,
-    yParity: v1Sig.v === 27 ? 0 : 1,
+    r: sigData.r as `0x${string}`,
+    s: sigData.s as `0x${string}`,
+    yParity: sigData.v === 27 ? 0 : 1,
   };
 
   return await recoverAddress({ hash, signature: sig });
 };
 
 const verifyV1Signature = async (
-  payload: PaymentPayloadV1,
+  payload: PaymentPayload,
   network: { chainId: number },
   contractAddress: Address,
   options: VerifyPaymentOptions
-): Promise<Address> => await recoverSignatureAddress(payload, getTokenDomain(network.chainId, contractAddress, options), network, payload.contractAddress as Address);
+): Promise<Address> => await recoverSignatureAddress(payload, getTokenDomain(network.chainId, contractAddress, options), network, contractAddress);
 
 const verifyV2Signature = async (
-  payload: PaymentPayloadV2,
+  payload: PaymentPayload,
   network: { chainId: number; usdcAddress: `0x${string}` },
   contractAddress: Address,
   options: VerifyPaymentOptions
@@ -353,7 +455,7 @@ const toNonceBigInt = (nonce: string | number | bigint): bigint => {
 
 const checkExpiry = (payload: PaymentPayload, gracePeriodSeconds = 0): void => {
   const now = Math.floor(Date.now() / 1000);
-  const expiry = payload.expiry;
+  const expiry = extractExpiry(payload);
 
   if (expiry < now - gracePeriodSeconds) {
     throw new PaymentExpiredError(expiry, now);
@@ -363,7 +465,7 @@ const checkExpiry = (payload: PaymentPayload, gracePeriodSeconds = 0): void => {
 const checkNonce = (payload: PaymentPayload, nonceTracker?: NonceTracker): void => {
   if (!nonceTracker) return;
 
-  const nonce = payload.nonce;
+  const nonce = extractNonce(payload);
   if (nonceTracker.isUsed(nonce)) {
     throw new NonceUsedError(nonce);
   }

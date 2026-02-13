@@ -1,23 +1,31 @@
 /**
- * X402 Protocol Implementation for Ethers Client
+ * X402 Protocol Implementation for Viem Client
  *
  * Handles parsing x402 V1 and V2 PAYMENT-REQUIRED headers
  * and generating x402 V1 and V2 PAYMENT-SIGNATURE payloads
  */
 
-import type { Signer } from "ethers";
+import type {
+  Account,
+  Address,
+  Hash,
+  TypedData,
+  TypedDataDomain,
+  WalletClient,
+} from "viem";
 import type {
   // x402 V1 types
+  X402PaymentRequiredV1,
   X402PaymentRequirementsV1,
   X402PaymentPayloadV1,
   X402SchemePayloadV1,
   EIP3009AuthorizationV1,
   // x402 V2 types
+  PaymentRequiredV2,
   PaymentRequirementsV2,
   PaymentPayloadV2,
   SchemePayloadV2,
   EIP3009Authorization,
-  Address,
 } from "@armory-sh/base";
 import {
   V1_HEADERS,
@@ -25,18 +33,22 @@ import {
   safeBase64Decode,
   isX402V1PaymentRequired,
   isX402V2PaymentRequired,
-  isX402V1Requirements,
   getNetworkByChainId,
   getNetworkConfig,
   createEIP712Domain,
   createTransferWithAuthorization,
   EIP712_TYPES,
   normalizeNetworkName,
-  type TransferWithAuthorization,
 } from "@armory-sh/base";
-import type { TransferWithAuthorizationParams, EIP712Domain } from "./types";
-import { signEIP3009 } from "./eip3009";
 import { PaymentError } from "./errors";
+
+// ============================================================================
+// Type Guards
+// ============================================================================
+
+export type X402Wallet =
+  | { type: "account"; account: Account }
+  | { type: "walletClient"; walletClient: WalletClient };
 
 // ============================================================================
 // Version Detection
@@ -80,17 +92,14 @@ export function detectX402Version(response: Response): 1 | 2 {
 // ============================================================================
 
 /**
- * Parsed payment requirements with version info
+ * Parse x402 PAYMENT-REQUIRED header from response
+ * Automatically detects V1 or V2 format
  */
 export interface ParsedPaymentRequirements {
   version: 1 | 2;
   requirements: X402PaymentRequirementsV1 | PaymentRequirementsV2;
 }
 
-/**
- * Parse x402 PAYMENT-REQUIRED header from response
- * Automatically detects V1 or V2 format
- */
 export function parsePaymentRequired(response: Response): ParsedPaymentRequirements {
   const version = detectX402Version(response);
 
@@ -101,7 +110,7 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
     }
 
     try {
-      const parsed = JSON.parse(v2Header);
+      const parsed = JSON.parse(v2Header) as PaymentRequiredV2;
       if (!isX402V2PaymentRequired(parsed)) {
         throw new PaymentError("Invalid x402 V2 payment required format");
       }
@@ -126,7 +135,7 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
 
   try {
     const decoded = safeBase64Decode(v1Header);
-    const parsed = JSON.parse(decoded);
+    const parsed = JSON.parse(decoded) as X402PaymentRequiredV1;
     if (!isX402V1PaymentRequired(parsed)) {
       throw new PaymentError("Invalid x402 V1 payment required format");
     }
@@ -144,8 +153,58 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
 }
 
 // ============================================================================
-// Helpers
+// Create x402 Payment Payloads
 // ============================================================================
+
+/**
+ * Get wallet address from X402Wallet
+ */
+export function getWalletAddress(wallet: X402Wallet): Address {
+  return wallet.type === "account"
+    ? wallet.account.address
+    : wallet.walletClient.account.address;
+}
+
+/**
+ * Sign EIP-712 typed data
+ */
+async function signTypedData(
+  wallet: X402Wallet,
+  domain: TypedDataDomain,
+  types: TypedData,
+  message: Record<string, unknown>
+): Promise<Hash> {
+  if (wallet.type === "account" && !wallet.account.signTypedData) {
+    throw new PaymentError("Account does not support signTypedData");
+  }
+  const params = {
+    domain,
+    types,
+    primaryType: 'TransferWithAuthorization' as const,
+    message,
+  } as const;
+
+  if (wallet.type === "account") {
+    return wallet.account.signTypedData(params as any);
+  }
+
+  return wallet.walletClient.signTypedData({
+    ...params,
+    account: wallet.walletClient.account,
+  } as any);
+}
+
+/**
+ * Parse signature into { v, r, s } components
+ */
+function parseSignature(signature: Hash): { v: number; r: string; s: string } {
+  const sig = signature.slice(2);
+  return {
+    v: parseInt(sig.slice(128, 130), 16) + 27,
+    r: `0x${sig.slice(0, 64)}`,
+    s: `0x${sig.slice(64, 128)}`,
+  };
+}
 
 /**
  * Convert amount (string like "1.0") to atomic units (string like "1000000")
@@ -172,6 +231,18 @@ function extractChainId(network: string): number {
 }
 
 /**
+ * Get USDC address for network
+ */
+function getUsdcAddress(network: string): Address {
+  const chainId = extractChainId(network);
+  const net = getNetworkByChainId(chainId);
+  if (!net) {
+    throw new PaymentError(`No network config found for chainId: ${chainId}`);
+  }
+  return net.usdcAddress;
+}
+
+/**
  * Get network slug (e.g., "base-sepolia") from CAIP-2 or network name
  */
 function getNetworkSlug(network: string): string {
@@ -187,22 +258,10 @@ function getNetworkSlug(network: string): string {
 }
 
 /**
- * Create nonce as hex string
- */
-function createNonce(): `0x${string}` {
-  const now = Math.floor(Date.now() / 1000);
-  return `0x${(now * 1000).toString(16).padStart(64, "0")}` as `0x${string}`;
-}
-
-// ============================================================================
-// Create x402 V1 Payment Payload
-// ============================================================================
-
-/**
  * Create x402 V1 payment payload
  */
 export async function createX402V1Payment(
-  signer: Signer,
+  wallet: X402Wallet,
   requirements: X402PaymentRequirementsV1,
   fromAddress: Address,
   nonce: `0x${string}`,
@@ -212,11 +271,10 @@ export async function createX402V1Payment(
 ): Promise<X402PaymentPayloadV1> {
   const network = getNetworkSlug(requirements.network);
   const contractAddress = requirements.asset;
-  const chainId = extractChainId(requirements.network);
 
   // Create EIP-712 domain
-  const domain = createEIP712Domain(chainId, contractAddress);
-  const customDomain: EIP712Domain = domainName || domainVersion
+  const domain = createEIP712Domain(extractChainId(requirements.network), contractAddress);
+  const customDomain = domainName || domainVersion
     ? { ...domain, name: domainName ?? domain.name, version: domainVersion ?? domain.version }
     : domain;
 
@@ -231,22 +289,20 @@ export async function createX402V1Payment(
   };
 
   // Sign the authorization
-  const authParams: TransferWithAuthorizationParams = {
+  const value = createTransferWithAuthorization({
     from: authorization.from,
     to: authorization.to,
     value: BigInt(authorization.value),
     validAfter: BigInt(authorization.validAfter),
     validBefore: BigInt(authorization.validBefore),
     nonce: BigInt(authorization.nonce),
-  };
+  });
 
-  const signature = await signEIP3009(signer, authParams, customDomain);
-
-  // Combine signature into 65-byte hex
-  const combinedSignature = `0x${signature.r.slice(2)}${signature.s.slice(2)}${signature.v.toString(16).padStart(2, "0")}` as `0x${string}`;
+  const signature = await signTypedData(wallet, customDomain, EIP712_TYPES, value as unknown as Record<string, unknown>);
+  const { v, r, s } = parseSignature(signature);
 
   const payload: X402SchemePayloadV1 = {
-    signature: combinedSignature,
+    signature: `0x${r.slice(2)}${s.slice(2)}${v.toString(16).padStart(2, "0")}` as `0x${string}`,
     authorization,
   };
 
@@ -258,15 +314,11 @@ export async function createX402V1Payment(
   };
 }
 
-// ============================================================================
-// Create x402 V2 Payment Payload
-// ============================================================================
-
 /**
  * Create x402 V2 payment payload
  */
 export async function createX402V2Payment(
-  signer: Signer,
+  wallet: X402Wallet,
   requirements: PaymentRequirementsV2,
   fromAddress: Address,
   nonce: `0x${string}`,
@@ -275,11 +327,11 @@ export async function createX402V2Payment(
   domainVersion?: string
 ): Promise<PaymentPayloadV2> {
   const contractAddress = requirements.asset;
-  const chainId = extractChainId(requirements.network);
+  const network = requirements.network;
 
   // Create EIP-712 domain
-  const domain = createEIP712Domain(chainId, contractAddress);
-  const customDomain: EIP712Domain = domainName || domainVersion
+  const domain = createEIP712Domain(extractChainId(network), contractAddress);
+  const customDomain = domainName || domainVersion
     ? { ...domain, name: domainName ?? domain.name, version: domainVersion ?? domain.version }
     : domain;
 
@@ -294,22 +346,20 @@ export async function createX402V2Payment(
   };
 
   // Sign the authorization
-  const authParams: TransferWithAuthorizationParams = {
+  const value = createTransferWithAuthorization({
     from: authorization.from,
     to: authorization.to,
     value: BigInt(authorization.value),
     validAfter: BigInt(authorization.validAfter),
     validBefore: BigInt(authorization.validBefore),
     nonce: BigInt(authorization.nonce),
-  };
+  });
 
-  const signature = await signEIP3009(signer, authParams, customDomain);
-
-  // Combine signature into 65-byte hex
-  const combinedSignature = `0x${signature.r.slice(2)}${signature.s.slice(2)}${signature.v.toString(16).padStart(2, "0")}` as `0x${string}`;
+  const signature = await signTypedData(wallet, customDomain, EIP712_TYPES, value as unknown as Record<string, unknown>);
+  const { v, r, s } = parseSignature(signature);
 
   const payload: SchemePayloadV2 = {
-    signature: combinedSignature,
+    signature: `0x${r.slice(2)}${s.slice(2)}${v.toString(16).padStart(2, "0")}` as `0x${string}`,
     authorization,
   };
 
@@ -320,43 +370,36 @@ export async function createX402V2Payment(
   };
 }
 
-// ============================================================================
-// Create x402 Payment (Auto-detect version)
-// ============================================================================
-
 /**
  * Create x402 payment payload (auto-detects version)
  */
 export async function createX402Payment(
-  signer: Signer,
+  wallet: X402Wallet,
   parsed: ParsedPaymentRequirements,
   fromAddress: Address,
-  nonce?: `0x${string}`,
-  validBefore?: number,
+  nonce: `0x${string}`,
+  validBefore: number,
   domainName?: string,
   domainVersion?: string
 ): Promise<X402PaymentPayloadV1 | PaymentPayloadV2> {
-  const effectiveNonce = nonce ?? createNonce();
-  const effectiveValidBefore = validBefore ?? Math.floor(Date.now() / 1000) + 3600;
-
   if (parsed.version === 1) {
     return createX402V1Payment(
-      signer,
+      wallet,
       parsed.requirements as X402PaymentRequirementsV1,
       fromAddress,
-      effectiveNonce,
-      effectiveValidBefore,
+      nonce,
+      validBefore,
       domainName,
       domainVersion
     );
   }
 
   return createX402V2Payment(
-    signer,
+    wallet,
     parsed.requirements as PaymentRequirementsV2,
     fromAddress,
-    effectiveNonce,
-    effectiveValidBefore,
+    nonce,
+    validBefore,
     domainName,
     domainVersion
   );
@@ -378,42 +421,4 @@ export function encodeX402Payment(payload: X402PaymentPayloadV1 | PaymentPayload
  */
 export function getPaymentHeaderName(version: 1 | 2): string {
   return version === 1 ? V1_HEADERS.PAYMENT : V2_HEADERS.PAYMENT_SIGNATURE;
-}
-
-// ============================================================================
-// Legacy Compatibility (deprecated)
-// ============================================================================
-
-/**
- * @deprecated Use createX402Payment instead
- */
-export async function createPaymentPayload(
-  requirements: unknown,
-  signer: Signer,
-  from: string
-): Promise<[string, string]> {
-  // Convert legacy requirements to parsed format
-  const parsed: ParsedPaymentRequirements = isX402V1Requirements(requirements)
-    ? { version: 1, requirements: requirements as X402PaymentRequirementsV1 }
-    : { version: 2, requirements: requirements as PaymentRequirementsV2 };
-
-  const payload = await createX402Payment(signer, parsed, from as Address);
-  const encoded = encodeX402Payment(payload);
-
-  return [encoded, getPaymentHeaderName(parsed.version)];
-}
-
-/**
- * @deprecated Use parsePaymentRequired instead
- */
-export async function parsePaymentRequirements(response: Response): Promise<unknown> {
-  const parsed = parsePaymentRequired(response);
-  return parsed.requirements;
-}
-
-/**
- * @deprecated Use detectX402Version instead
- */
-export function detectProtocolVersion(requirements: unknown): 1 | 2 {
-  return isX402V1Requirements(requirements) ? 1 : 2;
 }

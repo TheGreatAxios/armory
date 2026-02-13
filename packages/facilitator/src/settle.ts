@@ -2,8 +2,10 @@ import type {
   PaymentPayload,
   PaymentPayloadV1,
   PaymentPayloadV2,
+  X402PaymentPayloadV1,
+  LegacyPaymentPayloadV1,
 } from "@armory-sh/base";
-import { ERC20_ABI, getNetworkByChainId, isPaymentV1 } from "@armory-sh/base";
+import { ERC20_ABI, getNetworkByChainId, isPaymentV1, isLegacyPaymentPayloadV1 } from "@armory-sh/base";
 import type { WalletClient } from "viem";
 import {
   BaseError,
@@ -136,24 +138,85 @@ const extractV1Params = (payload: PaymentPayloadV1): {
   s: `0x${string}`;
   chainId: number;
 } => {
-  if (!payload.amount) throw new InvalidPaymentError("Missing 'amount'");
-  if (!payload.nonce) throw new InvalidPaymentError("Missing 'nonce'");
-  if (!payload.expiry || payload.expiry <= 0) {
+  // Handle x402 V1 format (nested structure)
+  if (!isLegacyPaymentPayloadV1(payload)) {
+    return extractX402V1Params(payload as X402PaymentPayloadV1);
+  }
+
+  // Handle legacy V1 format (direct properties)
+  const legacy = payload as LegacyPaymentPayloadV1;
+  if (!legacy.amount) throw new InvalidPaymentError("Missing 'amount'");
+  if (!legacy.nonce) throw new InvalidPaymentError("Missing 'nonce'");
+  if (!legacy.expiry || legacy.expiry <= 0) {
     throw new InvalidPaymentError("Invalid 'expiry'");
   }
-  if (!payload.chainId || payload.chainId <= 0) {
+  if (!legacy.chainId || legacy.chainId <= 0) {
     throw new InvalidPaymentError("Invalid 'chainId'");
   }
 
   return {
-    from: validateAddress(payload.from, "from"),
-    to: validateAddress(payload.to, "to"),
-    value: parseAmount(payload.amount),
-    expiry: BigInt(payload.expiry),
-    v: (() => { validateV(payload.v); return payload.v; })(),
-    r: validateHex64(payload.r, "r"),
-    s: validateHex64(payload.s, "s"),
-    chainId: payload.chainId,
+    from: validateAddress(legacy.from, "from"),
+    to: validateAddress(legacy.to, "to"),
+    value: parseAmount(legacy.amount),
+    expiry: BigInt(legacy.expiry),
+    v: (() => { validateV(legacy.v); return legacy.v; })(),
+    r: validateHex64(legacy.r, "r"),
+    s: validateHex64(legacy.s, "s"),
+    chainId: legacy.chainId,
+  };
+};
+
+const extractX402V1Params = (payload: X402PaymentPayloadV1): {
+  from: `0x${string}`;
+  to: `0x${string}`;
+  value: bigint;
+  expiry: bigint;
+  v: number;
+  r: `0x${string}`;
+  s: `0x${string}`;
+  chainId: number;
+} => {
+  const { authorization, signature: fullSig } = payload.payload;
+
+  // Parse signature from combined hex format (0x + r + s + v)
+  const r = `0x${fullSig.slice(2, 66)}` as `0x${string}`;
+  const s = `0x${fullSig.slice(66, 130)}` as `0x${string}`;
+  const v = parseInt(fullSig.slice(130, 132), 16);
+
+  // Get chain ID from network name
+  const networkToChainId: Record<string, number> = {
+    "base": 8453,
+    "base-sepolia": 84532,
+    "ethereum": 1,
+    "ethereum-sepolia": 11155111,
+    "polygon": 137,
+    "polygon-amoy": 80002,
+    "arbitrum": 42161,
+    "arbitrum-sepolia": 421614,
+    "optimism": 10,
+    "optimism-sepolia": 11155420,
+  };
+  const chainId = networkToChainId[payload.network] ?? 8453; // Default to Base
+
+  if (!authorization.value) throw new InvalidPaymentError("Missing 'value'");
+  if (!authorization.nonce) throw new InvalidPaymentError("Missing 'nonce'");
+  if (!authorization.validBefore || parseInt(authorization.validBefore) <= 0) {
+    throw new InvalidPaymentError("Invalid 'validBefore'");
+  }
+
+  validateV(v);
+  validateHex64(r, "r");
+  validateHex64(s, "s");
+
+  return {
+    from: validateAddress(authorization.from, "from"),
+    to: validateAddress(authorization.to, "to"),
+    value: BigInt(authorization.value),
+    expiry: BigInt(authorization.validBefore),
+    v,
+    r,
+    s,
+    chainId,
   };
 };
 
@@ -193,32 +256,35 @@ const extractV2Params = (payload: PaymentPayloadV2): {
   s: `0x${string}`;
   chainId: number;
 } => {
-  const from = validateAddress(payload.from, "from");
-  const to = typeof payload.to === "string"
-    ? validateAddress(payload.to, "to")
-    : (() => { throw new InvalidPaymentError("Complex 'to' format not yet supported"); })();
+  const { authorization, signature: fullSig } = payload.payload;
 
-  if (!payload.amount) throw new InvalidPaymentError("Missing 'amount'");
-  if (!payload.nonce) throw new InvalidPaymentError("Missing 'nonce'");
-  if (!payload.expiry || payload.expiry <= 0) {
-    throw new InvalidPaymentError("Invalid 'expiry'");
+  // Parse signature from combined hex format (0x + r + s + v)
+  const r = `0x${fullSig.slice(2, 66)}` as `0x${string}`;
+  const s = `0x${fullSig.slice(66, 130)}` as `0x${string}`;
+  const v = parseInt(fullSig.slice(130, 132), 16);
+
+  const from = validateAddress(authorization.from, "from");
+  const to = validateAddress(authorization.to, "to");
+
+  if (!authorization.value) throw new InvalidPaymentError("Missing 'value'");
+  if (!authorization.nonce) throw new InvalidPaymentError("Missing 'nonce'");
+  if (!authorization.validBefore || parseInt(authorization.validBefore) <= 0) {
+    throw new InvalidPaymentError("Invalid 'validBefore'");
   }
 
-  const { signature } = payload;
-  if (!signature) throw new InvalidPaymentError("Missing 'signature'");
-  validateV(signature.v);
-  const r = validateHex64(signature.r, "signature 'r'");
-  const s = validateHex64(signature.s, "signature 's'");
+  validateV(v);
+  validateHex64(r, "signature 'r'");
+  validateHex64(s, "signature 's'");
 
   return {
     from,
     to,
-    value: parseAmount(payload.amount),
-    expiry: BigInt(payload.expiry),
-    v: signature.v,
+    value: BigInt(authorization.value),
+    expiry: BigInt(authorization.validBefore),
+    v,
     r,
     s,
-    chainId: parseCAIP2ChainId(payload.chainId),
+    chainId: parseCAIP2ChainId(payload.accepted.network),
   };
 };
 

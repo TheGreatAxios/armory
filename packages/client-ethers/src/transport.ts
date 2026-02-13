@@ -2,10 +2,19 @@ import type { Signer } from "ethers";
 import {
   decodeSettlementLegacy,
   type SettlementResponse,
+  V2_HEADERS,
+  V1_HEADERS,
+  isSettlementSuccessful,
 } from "@armory-sh/base";
 import type { X402TransportConfig, X402RequestInit } from "./types";
-import { createPaymentPayload, parsePaymentRequirements } from "./protocol";
-import { SignerRequiredError } from "./types";
+import {
+  parsePaymentRequired,
+  createX402Payment,
+  encodeX402Payment,
+  getPaymentHeaderName,
+  type ParsedPaymentRequirements,
+} from "./protocol";
+import { SignerRequiredError } from "./errors";
 
 const defaultConfig: Required<X402TransportConfig> = {
   baseURL: "",
@@ -61,20 +70,27 @@ const handlePaymentRequired = async (
   }
 
   try {
-    const requirements = await parsePaymentRequirements(response);
+    // Parse payment requirements using new x402 protocol functions
+    const parsed = parsePaymentRequired(response);
     const from = await state.signer.getAddress();
-    const [payload, headerName] = await createPaymentPayload(requirements, state.signer, from);
+
+    // Create x402 payment payload
+    const payload = await createX402Payment(state.signer, parsed, from as `0x${string}`);
+    const encoded = encodeX402Payment(payload);
+    const headerName = getPaymentHeaderName(parsed.version);
 
     const paymentResponse = await fetchWithTimeout(
       response.url,
       {
         method: "GET",
-        headers: { ...state.config.headers, [headerName]: payload },
+        headers: { ...state.config.headers, [headerName]: encoded },
       },
       state.config.timeout
     );
 
-    return { success: true, settlement: decodeSettlementLegacy(paymentResponse.headers) };
+    // Decode settlement response from headers
+    const settlement = decodeSettlementLegacy(paymentResponse.headers);
+    return { success: true, settlement };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
   }
@@ -85,8 +101,8 @@ const shouldRetryPayment = async (
   response: Response
 ): Promise<boolean> => {
   if (!state.config.autoPay) return false;
-  const requirements = await parsePaymentRequirements(response);
-  return await state.config.onPaymentRequired(requirements);
+  const parsed = parsePaymentRequired(response);
+  return await state.config.onPaymentRequired(parsed.requirements);
 };
 
 const x402Fetch = async (

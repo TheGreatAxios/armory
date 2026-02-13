@@ -1,10 +1,13 @@
+/**
+ * X402 Client Types - V1 and V2 Compatible
+ */
+
+import type { Address, Account, WalletClient, Transport } from "viem";
 import type {
-  Address,
-  Account,
-  WalletClient,
-  Transport,
-} from "viem";
-import type { PaymentPayloadV1, PaymentPayloadV2, CustomToken } from "@armory-sh/base";
+  X402PaymentPayloadV1,
+  PaymentPayloadV2,
+  CustomToken,
+} from "@armory-sh/base";
 
 export type X402Wallet =
   | { type: "account"; account: Account }
@@ -38,10 +41,10 @@ export interface X402Client {
     contractAddress: Address,
     chainId: number,
     expiry?: number
-  ): Promise<PaymentPayloadV1 | PaymentPayloadV2>;
-  signPayment<T extends PaymentPayloadV1 | PaymentPayloadV2>(
-    payload: Omit<T, "signature" | "v" | "r" | "s">
-  ): Promise<T>;
+  ): Promise<X402PaymentPayloadV1 | PaymentPayloadV2>;
+  signPayment(
+    payload: Omit<X402PaymentPayloadV1 | PaymentPayloadV2, "signature" | "v" | "r" | "s">
+  ): Promise<X402PaymentPayloadV1 | PaymentPayloadV2>;
 }
 
 export interface X402TransportConfig {

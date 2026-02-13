@@ -1,6 +1,12 @@
 import type { Context, Next } from "hono";
 import type {
   PaymentRequirements,
+  X402PaymentRequirementsV1,
+  PaymentRequirementsV2,
+} from "@armory-sh/base";
+import {
+  V1_HEADERS,
+  V2_HEADERS,
 } from "@armory-sh/base";
 import {
   resolveMiddlewareConfig,
@@ -10,10 +16,12 @@ import {
 import {
   createPaymentRequirements,
   verifyWithFacilitator,
+  createX402V1PaymentRequiredHeaders,
+  createX402V2PaymentRequiredHeaders,
+  createSettlementHeaders,
 } from "./core";
 import {
   getHeadersForVersion,
-  encodeRequirements,
   decodePayload,
   extractPayerAddress,
 } from "./payment-utils";
@@ -58,20 +66,55 @@ export const acceptPaymentsViaArmory = (
   const defaultVersion = config.defaultVersion ?? 2;
 
   // Lazy creation to avoid crypto.randomUUID() at global scope in Cloudflare Workers
-  const createRequirements = (version: 1 | 2) => createPaymentRequirements(primaryConfig, version);
+  const createRequirementsForVersion = (version: 1 | 2, resourceUrl: string) =>
+    createPaymentRequirements(primaryConfig, version, resourceUrl);
+
+  /**
+   * Create x402-compliant payment required headers
+   */
+  const createPaymentRequiredResponse = (
+    version: 1 | 2,
+    requirements: PaymentRequirements,
+    resourceUrl: string,
+    errorMessage?: string
+  ): Record<string, string> => {
+    if (version === 1) {
+      return createX402V1PaymentRequiredHeaders(
+        requirements as X402PaymentRequirementsV1,
+        errorMessage ?? "X-PAYMENT header is required"
+      );
+    }
+    return createX402V2PaymentRequiredHeaders(
+      requirements as PaymentRequirementsV2,
+      resourceUrl,
+      { errorMessage }
+    );
+  };
 
   return async (c: Context, next: Next) => {
-    const paymentHeader = c.req.header("X-Payment") || c.req.header("x402-payment");
+    // Check for payment header (supports both x402 V1 and V2)
+    const paymentHeader =
+      c.req.header(V1_HEADERS.PAYMENT) ||
+      c.req.header(V2_HEADERS.PAYMENT_SIGNATURE) ||
+      c.req.header("X-Payment"); // Fallback for case variations
+
+    const resourceUrl = c.req.url;
 
     if (!paymentHeader) {
       const version = defaultVersion === 1 ? 1 : 2;
-      const requirements = createRequirements(version);
-      const headers = getHeadersForVersion(version);
+      const requirements = createRequirementsForVersion(version, resourceUrl);
+      const headers = createPaymentRequiredResponse(version, requirements, resourceUrl);
 
       c.status(402);
-      c.header(headers.required, encodeRequirements(requirements));
-      c.header("Content-Type", "application/json");
-      return c.json({ error: "Payment required", requirements });
+      // Set all headers from the response
+      for (const [key, value] of Object.entries(headers)) {
+        c.header(key, value);
+      }
+      return c.json({
+        error: "Payment required",
+        x402Version: version,
+        requirements
+      });
     }
 
     try {
@@ -80,23 +123,43 @@ export const acceptPaymentsViaArmory = (
       if (primaryConfig.facilitator) {
         const verifyResult = await verifyWithFacilitator(toHttpRequest(c), primaryConfig.facilitator);
         if (!verifyResult.success) {
-          const requirements = createRequirements(version);
-          const headers = getHeadersForVersion(version);
+          const requirements = createRequirementsForVersion(version, resourceUrl);
+          const headers = createPaymentRequiredResponse(
+            version,
+            requirements,
+            resourceUrl,
+            `Payment verification failed: ${verifyResult.error}`
+          );
 
           c.status(402);
-          c.header(headers.required, encodeRequirements(requirements));
-          c.header("Content-Type", "application/json");
-          return c.json({ error: `Payment verification failed: ${verifyResult.error}` });
+          for (const [key, value] of Object.entries(headers)) {
+            c.header(key, value);
+          }
+          return c.json({
+            error: `Payment verification failed: ${verifyResult.error}`,
+            x402Version: version
+          });
         }
       }
 
       const payerAddress = extractPayerAddress(payload);
-      const headers = getHeadersForVersion(version);
+      const responseHeaders = getHeadersForVersion(version);
 
       c.set("payment", { payload, payerAddress, version, verified: true });
       c.header("X-Payment-Verified", "true");
       c.header("X-Payer-Address", payerAddress);
-      c.header(headers.response, JSON.stringify({ status: "verified", payerAddress, version }));
+
+      // Create proper x402 settlement response
+      const settlementResponse = {
+        success: true,
+        transaction: "",
+        network: version === 1 ? "base-sepolia" : "eip155:84532",
+        payer: payerAddress as `0x${string}`,
+      };
+      const settlementHeaders = createSettlementHeaders(settlementResponse, version, undefined, payerAddress);
+      for (const [key, value] of Object.entries(settlementHeaders)) {
+        c.header(key, value);
+      }
 
       await next();
     } catch (error) {

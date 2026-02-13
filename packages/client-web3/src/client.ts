@@ -3,14 +3,23 @@ import {
   getNetworkConfig,
   encodePaymentV1,
   encodePaymentV2,
-} from "@armory-sh/base";
-import type {
-  PaymentPayloadV1,
-  PaymentPayloadV2,
-  PaymentRequirementsV1,
-  PaymentRequirementsV2,
-  SettlementResponseV1,
-  SettlementResponseV2,
+  isX402V1Requirements,
+  isX402V2Requirements,
+  isLegacyPaymentPayloadV1,
+  networkToCaip2,
+  combineSignatureV2,
+  createNonce,
+  type PaymentPayloadV1,
+  type PaymentPayloadV2,
+  type PaymentRequirementsV1,
+  type PaymentRequirementsV2,
+  type SettlementResponseV1,
+  type SettlementResponseV2,
+  type X402PaymentPayloadV1,
+  type EIP3009Authorization,
+  type EIP3009AuthorizationV1,
+  type X402PaymentRequirementsV1,
+  type LegacyPaymentRequirementsV1,
 } from "@armory-sh/base";
 import type {
   Web3Account,
@@ -21,6 +30,11 @@ import type {
   Web3EIP712Domain,
 } from "./types";
 import { createEIP712Domain, createTransferWithAuthorization } from "./eip3009";
+import {
+  createX402V1Payment,
+  createX402V2Payment,
+  type X402Version,
+} from "./protocol";
 
 const DEFAULT_EXPIRY_SECONDS = 3600;
 const DEFAULT_VALID_AFTER = 0;
@@ -83,7 +97,7 @@ const signTypedDataWrapper = async (
     return parseSignature(sig);
   }
 
-  const getAddress = () => {
+  const getAddressLocal = () => {
     if ("address" in account) return account.address;
     if (Array.isArray(account) && account[0]) return account[0].address;
     throw new Error("Unable to get address from account");
@@ -92,7 +106,7 @@ const signTypedDataWrapper = async (
   if (typeof acc.request === "function") {
     const sig = await (acc.request as (args: { method: string; params: unknown[] }) => Promise<string>)({
       method: "eth_signTypedData_v4",
-      params: [getAddress(), JSON.stringify({ domain, message })],
+      params: [getAddressLocal(), JSON.stringify({ domain, message })],
     });
     return parseSignature(sig);
   }
@@ -104,6 +118,10 @@ const signTypedDataWrapper = async (
   throw new Error("Account does not support EIP-712 signing.");
 };
 
+/**
+ * Sign payment for x402 V1 protocol
+ * Creates a legacy format payload for backward compatibility
+ */
 const signPaymentV1 = async (
   state: ReturnType<typeof createClientState>,
   params: { from: string; to: string; amount: string; nonce: string; expiry: number; validAfter: number }
@@ -123,7 +141,8 @@ const signPaymentV1 = async (
 
   const signature = await signTypedDataWrapper(state.account, domain, message);
 
-  const payload: PaymentPayloadV1 = {
+  // Create legacy V1 payload for backward compatibility
+  const legacyPayload: PaymentPayloadV1 = {
     from,
     to,
     amount,
@@ -137,14 +156,25 @@ const signPaymentV1 = async (
     network: network.name.toLowerCase().replace(" ", "-"),
   };
 
-  return { v: signature.v, r: signature.r, s: signature.s, payload };
+  return { v: signature.v, r: signature.r, s: signature.s, payload: legacyPayload };
 };
 
+/**
+ * Sign payment for x402 V2 protocol
+ * Creates a proper x402 V2 PaymentPayload with x402Version, accepted, payload structure
+ */
 const signPaymentV2 = async (
   state: ReturnType<typeof createClientState>,
-  params: { from: string; to: string; amount: string; nonce: string; expiry: number }
+  params: {
+    from: string;
+    to: string;
+    amount: string;
+    nonce: string;
+    expiry: number;
+    accepted?: PaymentRequirementsV2;
+  }
 ): Promise<PaymentSignatureResult> => {
-  const { from, to, amount, nonce, expiry } = params;
+  const { from, to, amount, nonce, expiry, accepted } = params;
   const { network, domainName, domainVersion } = state;
 
   const domain = createEIP712Domain(network.chainId, network.usdcAddress, domainName, domainVersion);
@@ -158,23 +188,39 @@ const signPaymentV2 = async (
   });
 
   const signature = await signTypedDataWrapper(state.account, domain, message);
+  const combinedSig = combineSignatureV2(signature.v, signature.r, signature.s);
 
-  const payload: PaymentPayloadV2 = {
-    from: from as `0x${string}`,
-    to: to as `0x${string}`,
+  // Create default accepted requirements if not provided
+  const defaultAccepted: PaymentRequirementsV2 = accepted ?? {
+    scheme: "exact",
+    network: network.caip2Id as `eip155:${string}`,
     amount,
-    nonce,
-    expiry,
-    signature: {
-      v: signature.v,
-      r: signature.r as `0x${string}`,
-      s: signature.s as `0x${string}`,
-    },
-    chainId: network.caip2Id as `eip155:${string}`,
-    assetId: network.caipAssetId as `eip155:${string}/erc20:${string}`,
+    asset: network.usdcAddress as `0x${string}`,
+    payTo: to as `0x${string}`,
+    maxTimeoutSeconds: expiry - Math.floor(Date.now() / 1000),
   };
 
-  return { signature: payload.signature, payload };
+  // Create x402 V2 payment payload
+  const x402Payload = createX402V2Payment({
+    from,
+    to,
+    value: amount,
+    nonce: `0x${nonce.padStart(64, "0")}`,
+    validAfter: "0x0",
+    validBefore: `0x${expiry.toString(16)}`,
+    signature: combinedSig,
+    accepted: defaultAccepted,
+  });
+
+  // Return with the x402 V2 payload
+  return {
+    signature: {
+      v: signature.v,
+      r: signature.r,
+      s: signature.s,
+    },
+    payload: x402Payload,
+  };
 };
 
 export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
@@ -222,30 +268,77 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
     handlePaymentRequired: async (
       requirements: PaymentRequirementsV1 | PaymentRequirementsV2
     ): Promise<PaymentSignatureResult> => {
-      if ("contractAddress" in requirements) {
+      // Detect version from requirements structure
+      const version = detectVersionFromRequirements(requirements);
+
+      if (version === 1) {
+        // V1 requirements handling
         const req = requirements as PaymentRequirementsV1;
+
+        // Handle x402 V1 format
+        if (isX402V1Requirements(req)) {
+          const x402Req = req as X402PaymentRequirementsV1;
+          return signPayment({
+            amount: x402Req.maxAmountRequired,
+            to: x402Req.payTo,
+          }, state);
+        }
+
+        // Handle legacy V1 format
+        const legacyReq = req as LegacyPaymentRequirementsV1;
         return signPayment({
-          amount: req.amount,
-          to: req.payTo,
-          expiry: req.expiry,
+          amount: legacyReq.amount,
+          to: legacyReq.payTo,
+          expiry: legacyReq.expiry,
         }, state);
       }
 
+      // V2 requirements handling
       const req = requirements as PaymentRequirementsV2;
-      const to = typeof req.to === "string" ? req.to : "0x0000000000000000000000000000000000000000";
+      const to = typeof req.payTo === "string" ? req.payTo : "0x0000000000000000000000000000000000000000";
+      const from = getAddress(state.account);
 
-      return signPayment({
-        amount: req.amount,
+      return signPaymentV2(state, {
+        from,
         to,
-        nonce: req.nonce,
-        expiry: req.expiry,
-      }, state);
+        amount: req.amount,
+        nonce: crypto.randomUUID(),
+        expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
+        accepted: req,
+      });
     },
 
     verifySettlement: (response: SettlementResponseV1 | SettlementResponseV2): boolean => {
-      return "success" in response ? response.success : response.status === "success";
+      // Check for success field (both V1 and V2 have this)
+      if ("success" in response) {
+        return response.success;
+      }
+      return false;
     },
   };
+};
+
+/**
+ * Detect x402 version from requirements object structure
+ */
+const detectVersionFromRequirements = (requirements: PaymentRequirementsV1 | PaymentRequirementsV2): X402Version => {
+  // V2 has CAIP-2 network format (eip155:xxx)
+  if (isX402V2Requirements(requirements)) {
+    return 2;
+  }
+
+  // V1 has string network name
+  if (isX402V1Requirements(requirements)) {
+    return 1;
+  }
+
+  // Check for legacy format indicators
+  if ("contractAddress" in requirements) {
+    return 1;
+  }
+
+  // Default to client version
+  return 2;
 };
 
 const signPayment = async (

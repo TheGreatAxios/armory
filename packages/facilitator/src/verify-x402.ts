@@ -15,7 +15,7 @@ import {
   EIP712_TYPES,
   ERC20_ABI,
   NETWORKS,
-  parseSignature,
+  parseSignatureV2,
   fromAtomicUnits,
 } from "@armory-sh/base";
 import type { NonceTracker } from "./nonce/types.js";
@@ -246,7 +246,7 @@ async function verifyX402Signature(
   });
 
   // Parse signature from hex format
-  const sig = parseSignature(payload.payload.signature as `0x${string}`);
+  const sig = parseSignatureV2(payload.payload.signature as `0x${string}`);
 
   return await recoverAddress({
     hash,

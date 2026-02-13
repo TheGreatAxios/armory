@@ -56,8 +56,6 @@ export {
   createNonce,
   toAtomicUnits,
   fromAtomicUnits,
-  parseSignature,
-  combineSignature,
   caip2ToNetwork,
   networkToCaip2,
   getCurrentTimestamp,
@@ -66,27 +64,41 @@ export {
 } from "./utils/x402";
 
 // ============================================
-// Legacy V1 types and functions
+// Legacy V1 types and functions (x402 V1 compatible)
 // ============================================
 export type {
   PaymentPayloadV1,
   PaymentRequirementsV1,
   SettlementResponseV1,
+  X402PaymentPayloadV1,
+  X402PaymentRequiredV1,
+  X402PaymentRequirementsV1,
+  X402SettlementResponseV1,
+  X402SchemePayloadV1,
+  EIP3009AuthorizationV1,
+  LegacyPaymentPayloadV1,
+  LegacyPaymentRequirementsV1,
+  LegacySettlementResponseV1,
 } from "./types/v1";
 
 export {
   V1_HEADERS,
-  encodePaymentPayload,
-  decodePaymentPayload,
-  encodeSettlementResponse as encodeSettlementResponseV1,
-  decodeSettlementResponse as decodeSettlementResponseV1,
+  encodeX402PaymentRequiredV1,
+  decodeX402PaymentRequiredV1,
+  encodeX402PaymentPayloadV1,
+  decodeX402PaymentPayloadV1,
+  encodeX402SettlementResponseV1,
+  decodeX402SettlementResponseV1,
+  isX402PaymentRequiredV1,
+  isX402PaymentPayloadV1,
+  isLegacyPaymentPayloadV1,
 } from "./types/v1";
 
 // ============================================
-// Legacy V2 types and functions
+// V2 types and functions (x402 V2 compatible)
 // ============================================
 export type {
-  CAIP2ChainId,
+  CAIP2Network as CAIP2ChainId,
   CAIPAssetId,
   Address,
   Signature,
@@ -95,13 +107,22 @@ export type {
   PaymentPayloadV2,
   PaymentRequirementsV2,
   SettlementResponseV2,
+  PaymentRequiredV2,
+  ResourceInfo,
+  EIP3009Authorization,
+  SchemePayloadV2,
 } from "./types/v2";
 
 export {
   V2_HEADERS,
   isCAIP2ChainId,
   isCAIPAssetId,
-  isAddress,
+  isPaymentRequiredV2,
+  isPaymentPayloadV2,
+  assetIdToAddress,
+  addressToAssetId,
+  parseSignature as parseSignatureV2,
+  combineSignature as combineSignatureV2,
 } from "./types/v2";
 
 // ============================================
@@ -111,14 +132,25 @@ export type {
   PaymentPayload,
   PaymentRequirements,
   SettlementResponse,
+  PaymentRequired,
 } from "./types/protocol";
 
 export {
   isV1,
   isV2,
+  isX402V1Payload,
+  isX402V2Payload,
+  isLegacyV1Payload,
+  isX402V1Requirements,
+  isX402V2Requirements,
+  isX402V1Settlement,
+  isX402V2Settlement,
+  isX402V1PaymentRequired,
+  isX402V2PaymentRequired,
   getPaymentVersion,
   getRequirementsVersion,
   getSettlementVersion,
+  getPaymentRequiredVersion,
   getPaymentHeaderName,
   getPaymentResponseHeaderName,
   getPaymentRequiredHeaderName,

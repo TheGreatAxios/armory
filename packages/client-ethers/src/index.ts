@@ -28,7 +28,7 @@ export {
   getPaymentVersion,
   getRequirementsVersion,
   getSettlementVersion,
-  getPaymentHeaderName,
+  getPaymentHeaderName as getPaymentHeaderNameBase,
   getPaymentResponseHeaderName,
   getPaymentRequiredHeaderName,
   isSettlementSuccessful,
@@ -54,24 +54,51 @@ export {
   isPaymentV2,
   isSettlementV1,
   isSettlementV2,
+  isX402V1PaymentRequired,
+  isX402V2PaymentRequired,
+  isX402V1Requirements,
   EIP712_TYPES,
   createEIP712Domain,
   createTransferWithAuthorization,
   validateTransferWithAuthorization,
   isCAIP2ChainId,
   isCAIPAssetId,
-  isAddress,
+  safeBase64Decode,
 } from "@armory-sh/base";
 
-// Ethers-specific exports
+// Ethers-specific exports - x402 protocol functions
 export {
-  createPaymentPayloadV1,
-  createPaymentPayloadV2,
+  detectX402Version,
+  parsePaymentRequired,
+  createX402V1Payment,
+  createX402V2Payment,
+  createX402Payment,
+  encodeX402Payment,
+  getPaymentHeaderName,
+  // Legacy compatibility (deprecated)
   createPaymentPayload,
   parsePaymentRequirements,
   detectProtocolVersion,
+  type ParsedPaymentRequirements,
 } from "./protocol";
 
-export type { Signer } from "./types";
-export type { X402ClientConfig, ClientConfig } from "./types";
+// Errors
+export {
+  X402ClientError,
+  SigningError,
+  PaymentError,
+  SignerRequiredError,
+  AuthorizationError,
+  ProviderRequiredError,
+} from "./errors";
+
+// Types
+export type { Signer, Provider } from "./types";
+export type { X402ClientConfig, ClientConfig, X402TransportConfig, X402RequestInit } from "./types";
+
+// Transport
 export { createX402Transport } from "./transport";
+export type { X402Transport } from "./transport";
+
+// EIP-3009 signing utilities
+export { signEIP3009, signEIP3009WithDomain, signPayment, recoverEIP3009Signer } from "./eip3009";
