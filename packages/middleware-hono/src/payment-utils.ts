@@ -58,7 +58,7 @@ export const getRequirementsVersion = (requirements: X402PaymentRequirements): P
   "contractAddress" in requirements && "network" in requirements ? 1 : 2;
 
 export const encodeRequirements = (requirements: PaymentRequirements): string =>
-  JSON.stringify(requirements);
+  Buffer.from(JSON.stringify(requirements)).toString("base64");
 
 /**
  * Detect if a payload is legacy V1 format
