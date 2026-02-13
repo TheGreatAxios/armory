@@ -1,5 +1,13 @@
 # @armory-sh/facilitator
 
+## 0.2.7
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.7
+
 ## 0.2.6
 
 ### Patch Changes

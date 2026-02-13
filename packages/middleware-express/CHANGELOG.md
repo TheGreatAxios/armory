@@ -1,5 +1,14 @@
 # @armory-sh/middleware-express
 
+## 0.3.5
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.7
+  - @armory-sh/facilitator@0.2.7
+
 ## 0.3.4
 
 ### Patch Changes
