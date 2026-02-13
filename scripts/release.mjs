@@ -243,12 +243,13 @@ if (changedPackages.length === 0) {
   log("Checking for existing changesets...", blue);
 
   try {
-    const changesetFiles = run("find .changeset -name '*.md' -not -name 'README.md' -not -name 'config.json'", { silent: true }).trim();
+    const changesetFiles = run("find .changeset -type f -name '*.md' -not -name 'README.md'", { silent: true }).trim();
     if (!changesetFiles) {
       error("No changesets found and no package changes detected. Nothing to release.");
     }
     // Extract package names from existing changesets
-    const changesetContent = readFileSync(join(changesetsDir, changesetFiles.split("\n")[0]), "utf8");
+    const firstFile = changesetFiles.split("\n")[0];
+    const changesetContent = readFileSync(join(process.cwd(), firstFile), "utf8");
     const match = changesetContent.match(/'(@armory-sh\/[^']+)'/g);
     if (match) {
       packageNames = match.map(m => m.replace(/'/g, ""));
@@ -328,20 +329,26 @@ if (packagesToPublish.length === 0) {
   log("\n🔍 Validating versions...", blue);
   const versionIssues = [];
 
+  // Get all changeset files once
+  const changesetFiles = run("find .changeset -type f -name '*.md' -not -name 'README.md'", { silent: true }).trim().split("\n").filter(Boolean);
+
   for (const dir of packagesToPublish) {
     const pkgPath = join(packagesDir, dir, "package.json");
     const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 
     // Get changeset type for this package
-    const changesetFiles = run("find .changeset -name '*.md' -not -name 'README.md' -not -name 'config.json'", { silent: true }).trim().split("\n");
     let changesetType = "patch";
 
     for (const file of changesetFiles) {
-      const content = readFileSync(join(changesetsDir, file.trim()), "utf8");
-      if (content.includes(`'${pkg.name}'`)) {
-        if (content.includes(`'${pkg.name}': minor`)) changesetType = "minor";
-        else if (content.includes(`'${pkg.name}': major`)) changesetType = "major";
-        break;
+      try {
+        const content = readFileSync(join(process.cwd(), file), "utf8");
+        if (content.includes(`'${pkg.name}'`)) {
+          if (content.includes(`'${pkg.name}': minor`)) changesetType = "minor";
+          else if (content.includes(`'${pkg.name}': major`)) changesetType = "major";
+          break;
+        }
+      } catch {
+        // Skip files that can't be read
       }
     }
 
