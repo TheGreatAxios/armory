@@ -354,7 +354,7 @@ if (packagesToPublish.length === 0) {
 
     const skip = checkVersionSkips(pkg.name, pkg.version, changesetType);
     if (skip) {
-      versionIssues.push({ pkg, skip, changesetType });
+      versionIssues.push({ pkg, skip, changesetType, dir }); // Include dir for correct path
     }
   }
 
@@ -369,8 +369,8 @@ if (packagesToPublish.length === 0) {
 
     // Auto-fix by updating package.json files
     log("\n🔧 Auto-fixing versions...", blue);
-    for (const { pkg, skip } of versionIssues) {
-      const pkgPath = join(packagesDir, pkg.name.replace("@armory-sh/", ""), "package.json");
+    for (const { pkg, skip, dir } of versionIssues) {
+      const pkgPath = join(packagesDir, dir, "package.json");
       const pkgJson = JSON.parse(readFileSync(pkgPath, "utf8"));
       pkgJson.version = skip.expected;
       writeFileSync(pkgPath, JSON.stringify(pkgJson, null, 2) + "\n");

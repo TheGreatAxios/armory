@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/client-web3",
-  "version": "0.2.9",
+  "version": "0.2.5",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
