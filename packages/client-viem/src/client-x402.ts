@@ -31,7 +31,7 @@ import {
   safeBase64Decode,
   createNonce,
   toAtomicUnits,
-  combineSignature,
+  combineSignatureV2,
 } from "@armory-sh/base";
 
 import type { X402Client, X402ClientConfig, X402Wallet } from "./types-x402";
@@ -64,7 +64,7 @@ function getChainIdFromNetwork(network: string): number {
   throw new Error(`Unknown network: ${network}`);
 }
 
-function parseSignatureToHex(signature: Hash): string {
+function parseSignatureToHex(signature: Hash): `0x${string}` {
   // Remove 0x prefix if present
   const sig = signature.startsWith("0x") ? signature.slice(2) : signature;
   // Return full hex with prefix
@@ -86,7 +86,10 @@ async function signTypedData(
   wallet: X402Wallet,
   domain: TypedDataDomain,
   message: ExactEvmAuthorization
-): Promise<string> {
+): Promise<`0x${string}`> {
+  // Convert hex nonce to bigint for viem
+  const nonceBigInt = BigInt(message.nonce);
+  
   const params = {
     domain,
     types: EIP712_TYPES,
@@ -97,7 +100,7 @@ async function signTypedData(
       value: BigInt(message.value),
       validAfter: BigInt(message.validAfter),
       validBefore: BigInt(message.validBefore),
-      nonce: message.nonce,
+      nonce: nonceBigInt,
     },
   };
 
@@ -289,7 +292,7 @@ export function createX402Client(config: X402ClientConfig): X402Client {
   };
 }
 
-export function createX402Transport(config: X402ClientConfig): typeof fetch {
+export function createX402Transport(config: X402ClientConfig): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
   const client = createX402Client(config);
   return client.fetch;
 }

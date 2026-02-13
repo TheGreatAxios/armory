@@ -1,5 +1,17 @@
 # @armory-sh/middleware-hono
 
+## 0.3.13
+
+### Patch Changes
+
+- Fix Structure
+
+## 0.3.12
+
+### Patch Changes
+
+- d5977fa: Fix Compatiblity
+
 ## 0.3.11
 
 ### Patch Changes

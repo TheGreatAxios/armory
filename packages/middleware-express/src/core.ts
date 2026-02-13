@@ -7,12 +7,14 @@ import type {
   SettlementResponseV2,
   PayToV2,
   X402SettlementResponse,
+  X402PaymentRequiredV1,
+  X402PaymentRequirementsV1,
 } from "@armory-sh/base";
 import {
   getNetworkConfig,
   getNetworkByChainId,
   encodeSettlementResponse,
-  encodePaymentPayload,
+  encodeX402PaymentRequiredV1,
   normalizeNetworkName,
 } from "@armory-sh/base";
 import type {
@@ -36,7 +38,9 @@ const toSlug = (network: string | number): string => {
 
   // Handle eip155 format input
   if (network.startsWith("eip155:")) {
-    const chainId = parseInt(network.split(":")[1], 10);
+    const chainIdStr = network.split(":")[1];
+    if (!chainIdStr) throw new Error(`Invalid eip155 format: ${network}`);
+    const chainId = parseInt(chainIdStr, 10);
     const net = getNetworkByChainId(chainId);
     if (!net) throw new Error(`No network found for chainId: ${chainId}`);
     return normalizeNetworkName(net.name);
@@ -92,19 +96,24 @@ const createV1Requirements = (
 
 const createV2Requirements = (
   config: MiddlewareConfig,
-  expiry: number
+  _expiry: number
 ): PaymentRequirementsV2 => {
   const networkName = getNetworkName(config.network);
   const network = getNetworkConfig(networkName);
   if (!network) throw new Error(`Unsupported network: ${networkName}`);
 
+  // Extract address from payTo - should be a valid Ethereum address
+  const payToAddress = typeof config.payTo === "string" && config.payTo.startsWith("0x")
+    ? config.payTo as `0x${string}`
+    : network.usdcAddress as `0x${string}`;
+
   return {
+    scheme: "exact",
+    network: getChainId(config.network) as `eip155:${string}`,
     amount: config.amount,
-    to: config.payTo as PayToV2,
-    chainId: getChainId(config.network) as `eip155:${string}`,
-    assetId: network.caipAssetId as `eip155:${string}/erc20:${string}`,
-    nonce: `${Date.now()}-${crypto.randomUUID()}`,
-    expiry,
+    asset: network.usdcAddress as `0x${string}`,
+    payTo: payToAddress,
+    maxTimeoutSeconds: 300,
   };
 };
 
@@ -237,7 +246,13 @@ export const createPaymentRequiredHeaders = (
   version: 1 | 2
 ): Record<string, string> => {
   if (version === 1) {
-    return { "X-PAYMENT-REQUIRED": encodePaymentPayload(requirements as PaymentRequirementsV1) };
+    // For V1, wrap in X402PaymentRequiredV1 format and encode
+    const v1Requirements: X402PaymentRequiredV1 = {
+      x402Version: 1,
+      error: "Payment required",
+      accepts: [requirements as unknown as X402PaymentRequirementsV1],
+    };
+    return { "X-PAYMENT-REQUIRED": encodeX402PaymentRequiredV1(v1Requirements) };
   }
   // For V2/x402 - base64 encode the JSON
   return { "PAYMENT-REQUIRED": Buffer.from(JSON.stringify(requirements)).toString("base64") };
@@ -251,31 +266,27 @@ export const createSettlementHeaders = (
   response: X402SettlementResponse | SettlementResponseV1 | SettlementResponseV2,
   version: 1 | 2
 ): Record<string, string> => {
-  if (version === 1) {
-    // V1 settlement response - manually construct the response
-    // Handle both V1 format (success, txHash) and V2 format (status, txHash)
-    const isSuccess = "success" in response
-      ? (response as SettlementResponseV1).success
-      : (response as SettlementResponseV2).status === "success";
-    const txHash = "transaction" in response
-      ? response.transaction
-      : response.txHash || "";
+  // Extract success and txHash from any response format
+  const isSuccess = "success" in response ? response.success : false;
+  const txHash = "transaction" in response 
+    ? response.transaction 
+    : "txHash" in response 
+      ? response.txHash 
+      : "";
 
+  if (version === 1) {
+    // V1 settlement response
     const settlementJson = JSON.stringify({
-      status: isSuccess ? "success" : "failed",
-      txHash: txHash ?? "",
+      success: isSuccess,
+      transaction: txHash,
     });
     return { "X-PAYMENT-RESPONSE": Buffer.from(settlementJson).toString("base64") };
   }
-  // For V2/x402 - base64 encode the JSON
-  const txHash = "transaction" in response ? response.transaction : response.txHash || "";
-  const isSuccess = "success" in response
-    ? response.success
-    : (response as SettlementResponseV2).status === "success";
-
+  
+  // V2/x402 settlement response
   const settlementJson = JSON.stringify({
-    status: isSuccess ? "success" : "failed",
-    txHash: txHash || "",
+    success: isSuccess,
+    transaction: txHash,
   });
   return { "PAYMENT-RESPONSE": Buffer.from(settlementJson).toString("base64") };
 };

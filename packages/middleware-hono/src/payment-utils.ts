@@ -4,8 +4,28 @@ import type {
   PaymentRequirements,
 } from "@armory-sh/base";
 import { extractPaymentFromHeaders, X402_HEADERS } from "@armory-sh/base";
-import type { X402VerifyOptions } from "@armory-sh/facilitator";
-import { verifyX402Payment as verifyPayment } from "@armory-sh/facilitator";
+import { verifyX402Payment } from "@armory-sh/facilitator";
+
+export type { X402VerifyOptions } from "@armory-sh/facilitator";
+
+// Faremeter payload format (similar to x402 but with different nesting)
+export interface FaremeterPaymentPayload {
+  x402Version: 1;
+  scheme: string;
+  network: string; // network name like "base-sepolia"
+  asset: string; // asset name like "USDC"
+  payload: {
+    signature: `0x${string}`; // 0x-prefixed hex signature
+    authorization: {
+      from: string;
+      to: string;
+      value: string;
+      validAfter: string;
+      validBefore: string;
+      nonce: `0x${string}`;
+    };
+  };
+}
 
 // Legacy V1 payload type for backward compatibility
 export interface LegacyPaymentPayloadV1 {
@@ -31,7 +51,7 @@ export interface LegacyPaymentPayloadV2 {
 }
 
 // Union type for all payload formats
-export type AnyPaymentPayload = X402PaymentPayload | LegacyPaymentPayloadV1 | LegacyPaymentPayloadV2;
+export type AnyPaymentPayload = X402PaymentPayload | FaremeterPaymentPayload | LegacyPaymentPayloadV1 | LegacyPaymentPayloadV2;
 
 export type PaymentVersion = 1 | 2;
 
@@ -88,6 +108,29 @@ function isLegacyV2(payload: unknown): payload is LegacyPaymentPayloadV2 {
   );
 }
 
+/**
+ * Detect if a payload is Faremeter format
+ * Faremeter uses x402Version: 1 with nested payload structure
+ */
+function isFaremeterPayload(payload: unknown): payload is FaremeterPaymentPayload {
+  if (typeof payload !== "object" || payload === null) {
+    return false;
+  }
+  const p = payload as Record<string, unknown>;
+  return (
+    "x402Version" in p &&
+    p.x402Version === 1 &&
+    "scheme" in p &&
+    "network" in p &&
+    "asset" in p &&
+    "payload" in p &&
+    typeof p.payload === "object" &&
+    p.payload !== null &&
+    "signature" in (p.payload as Record<string, unknown>) &&
+    "authorization" in (p.payload as Record<string, unknown>)
+  );
+}
+
 export const decodePayload = (
   headerValue: string
 ): { payload: AnyPaymentPayload; version: PaymentVersion } => {
@@ -105,13 +148,19 @@ export const decodePayload = (
     throw new Error("Invalid payment payload");
   }
 
-  // Check for x402 format first
+  // Check for x402 format first (standard x402 SDK)
   // If it was a JSON string, pass the JSON object; otherwise pass the raw base64
   const headers = new Headers();
   headers.set(X402_HEADERS.PAYMENT, isJsonString ? JSON.stringify(parsed) : headerValue);
   const x402Payload = extractPaymentFromHeaders(headers);
   if (x402Payload) {
     return { payload: x402Payload, version: 2 };
+  }
+
+  // Check for Faremeter format (Faremeter SDK)
+  // Faremeter uses similar structure but different nesting
+  if (isFaremeterPayload(parsed)) {
+    return { payload: parsed, version: 1 };
   }
 
   // Check for legacy formats
@@ -135,7 +184,7 @@ export const verifyWithFacilitator = async (
   facilitatorUrl: string,
   payload: AnyPaymentPayload,
   requirements: X402PaymentRequirements,
-  verifyOptions?: X402VerifyOptions
+  verifyOptions?: { chainId?: number; rpcUrl?: string }
 ): Promise<PaymentVerificationResult> => {
   try {
     const response = await fetch(`${facilitatorUrl}/verify`, {
@@ -166,7 +215,7 @@ export const verifyWithFacilitator = async (
 export const verifyLocally = async (
   payload: AnyPaymentPayload,
   requirements: X402PaymentRequirements,
-  verifyOptions?: X402VerifyOptions
+  verifyOptions?: { chainId?: number; rpcUrl?: string }
 ): Promise<PaymentVerificationResult> => {
   // For legacy formats, we'd need to convert to x402 format first
   // For now, return an error indicating facilitator is required for legacy formats
@@ -177,7 +226,9 @@ export const verifyLocally = async (
     };
   }
 
-  const result = await verifyPayment(payload as X402PaymentPayload, requirements, verifyOptions);
+  // Faremeter format is compatible with x402 verification
+  // since it uses the same nested payload.payload.authorization structure
+  const result = await verifyX402Payment(payload as X402PaymentPayload, requirements, verifyOptions);
 
   if (!result.success) {
     return {
@@ -197,7 +248,7 @@ export const verifyPaymentWithRetry = async (
   payload: AnyPaymentPayload,
   requirements: X402PaymentRequirements,
   facilitatorUrl?: string,
-  verifyOptions?: X402VerifyOptions
+  verifyOptions?: { chainId?: number; rpcUrl?: string }
 ): Promise<PaymentVerificationResult> =>
   facilitatorUrl
     ? verifyWithFacilitator(facilitatorUrl, payload, requirements, verifyOptions)
@@ -212,6 +263,14 @@ export const extractPayerAddress = (payload: AnyPaymentPayload): string => {
     const x402Payload = payload as X402PaymentPayload;
     if ("authorization" in x402Payload.payload) {
       return x402Payload.payload.authorization.from;
+    }
+  }
+
+  // Faremeter format (nested payload.payload.authorization.from)
+  if ("x402Version" in payload) {
+    const faremeterPayload = payload as FaremeterPaymentPayload;
+    if ("payload" in faremeterPayload && "authorization" in faremeterPayload.payload) {
+      return faremeterPayload.payload.authorization.from;
     }
   }
 

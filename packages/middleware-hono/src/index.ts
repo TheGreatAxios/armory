@@ -113,7 +113,7 @@ export const acceptPaymentsViaArmory = (
       return c.json({
         error: "Payment required",
         x402Version: version,
-        requirements
+        accepts: [requirements]
       });
     }
 

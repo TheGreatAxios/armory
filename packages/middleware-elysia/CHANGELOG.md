@@ -1,5 +1,17 @@
 # @armory-sh/middleware-elysia
 
+## 0.3.11
+
+### Patch Changes
+
+- Fix Structure
+
+## 0.3.10
+
+### Patch Changes
+
+- d5977fa: Fix Compatiblity
+
 ## 0.3.9
 
 ### Patch Changes

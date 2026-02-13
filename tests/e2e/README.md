@@ -1,6 +1,40 @@
-# E2E Tests
+# E2E Middleware Compatibility Tests
 
-End-to-end tests that verify Armory middleware works with external x402 SDKs.
+End-to-end tests that verify Armory middleware works with external x402 SDKs and Faremeter SDK.
+
+## Test Matrix
+
+Tests all middleware packages against both Faremeter and x402 clients:
+
+| Middleware | Faremeter | x402 |
+|------------|-----------|-------|
+| middleware-hono | ✅ | ✅ |
+| middleware-express | ✅ | ✅ |
+| middleware-elysia | ✅ | ✅ |
+| middleware-bun | ✅ | ✅ |
+
+## Running Tests
+
+```bash
+# Run all middleware compatibility tests
+bun test tests/e2e/middleware-compat-test.ts
+```
+
+## Prerequisites
+
+1. Install dependencies:
+```bash
+bun install
+```
+
+2. Get testnet USDC:
+   - Base Sepolia: https://faucet.quicknode.com/base/sepolia
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TEST_PRIVATE_KEY` | Private key with testnet USDC | (required) |
 
 ## Prerequisites
 

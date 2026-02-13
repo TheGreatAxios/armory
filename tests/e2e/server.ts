@@ -22,22 +22,20 @@ export function createTestServer() {
   app.use(
     "/api/*",
     acceptPaymentsViaArmory({
-      payToAddress: PAYMENT_ADDRESS,
-      token: {
-        symbol: "USDC",
-        name: "USD Coin",
-        version: "2",
-        contractAddress: USDC_CONTRACT,
-        chainId: 84532,
-        decimals: 6,
+      payTo: PAYMENT_ADDRESS as `0x${string}`,
+      amount: "1.0",
+      accept: {
+        networks: ["base-sepolia"],
+        tokens: ["usdc"],
+        facilitators: [{
+          url: "https://facilitator.payai.network",
+        }],
       },
-      amount: "1000000", // 1 USDC
-      network: "base-sepolia",
     })
   );
 
   // Test endpoint
-  app.get("/api/test", (c) => {
+  app.get("/api/test", (c: any) => {
     const payment = c.get("payment");
     return c.json({
       success: true,
@@ -50,7 +48,7 @@ export function createTestServer() {
   });
 
   // Protected endpoint
-  app.get("/api/premium", (c) => {
+  app.get("/api/premium", (c: any) => {
     return c.json({
       data: "This is premium content",
     });

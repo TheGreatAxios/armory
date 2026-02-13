@@ -3,8 +3,9 @@ import type {
   X402PaymentRequirements,
 } from "@armory-sh/base";
 import { extractPaymentFromHeaders, X402_HEADERS } from "@armory-sh/base";
-import type { X402VerifyOptions } from "@armory-sh/facilitator";
-import { verifyX402Payment as verifyPayment } from "@armory-sh/facilitator";
+import { verifyX402Payment } from "@armory-sh/facilitator";
+
+export type { X402VerifyOptions } from "@armory-sh/facilitator";
 
 // Legacy V1 payload type for backward compatibility
 export interface LegacyPaymentPayloadV1 {
@@ -134,7 +135,7 @@ export const verifyWithFacilitator = async (
   facilitatorUrl: string,
   payload: AnyPaymentPayload,
   requirements: X402PaymentRequirements,
-  verifyOptions?: X402VerifyOptions
+  verifyOptions?: { chainId?: number; rpcUrl?: string }
 ): Promise<PaymentVerificationResult> => {
   try {
     const response = await fetch(`${facilitatorUrl}/verify`, {
@@ -165,7 +166,7 @@ export const verifyWithFacilitator = async (
 export const verifyLocally = async (
   payload: AnyPaymentPayload,
   requirements: X402PaymentRequirements,
-  verifyOptions?: X402VerifyOptions
+  verifyOptions?: { chainId?: number; rpcUrl?: string }
 ): Promise<PaymentVerificationResult> => {
   // For legacy formats, we'd need to convert to x402 format first
   // For now, return an error indicating facilitator is required for legacy formats
@@ -176,7 +177,8 @@ export const verifyLocally = async (
     };
   }
 
-  const result = await verifyPayment(payload as X402PaymentPayload, requirements, verifyOptions);
+  // Use the verifier
+  const result = await verifyX402Payment(payload as X402PaymentPayload, requirements, verifyOptions);
 
   if (!result.success) {
     return {
@@ -196,7 +198,7 @@ export const verifyPaymentWithRetry = async (
   payload: AnyPaymentPayload,
   requirements: X402PaymentRequirements,
   facilitatorUrl?: string,
-  verifyOptions?: X402VerifyOptions
+  verifyOptions?: { chainId?: number; rpcUrl?: string }
 ): Promise<PaymentVerificationResult> =>
   facilitatorUrl
     ? verifyWithFacilitator(facilitatorUrl, payload, requirements, verifyOptions)

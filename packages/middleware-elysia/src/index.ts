@@ -56,7 +56,7 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
 
         if (!paymentHeader) {
           return errorResponse(
-            { error: "Payment required", requirements },
+            { error: "Payment required", accepts: [requirements] },
             402,
             { [headers.required]: encodeRequirements(requirements) }
           );
