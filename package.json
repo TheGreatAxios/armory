@@ -10,7 +10,7 @@
   "scripts": {
     "test": "bun test packages/*/src/**/*.test.ts",
     "test:all": "bun test packages/*/src/**/*.test.ts tests/**/*.test.ts",
-    "test:e2e": "bun test tests/e2e/e2e.test.ts",
+    "test:e2e": "bun test tests/e2e/*.test.ts",
     "test:e2e:legacy": "cd tests && bun test e2e.middleware-compat.test",
     "build": "turbo run build",
     "changeset": "changeset",
