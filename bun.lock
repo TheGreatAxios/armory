@@ -91,7 +91,7 @@
     },
     "packages/middleware": {
       "name": "@armory-sh/middleware",
-      "version": "0.2.2",
+      "version": "0.3.0",
       "dependencies": {
         "@armory-sh/base": "workspace:*",
         "@armory-sh/facilitator": "workspace:*",

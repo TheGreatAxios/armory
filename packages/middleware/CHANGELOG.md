@@ -1,5 +1,11 @@
 # @armory-sh/middleware
 
+## 0.3.0
+
+### Minor Changes
+
+- Add multi-price support - configure different amounts per network, token, or facilitator.
+
 ## 0.2.2
 
 ### Patch Changes
