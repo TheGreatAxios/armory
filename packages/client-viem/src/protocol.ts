@@ -40,7 +40,7 @@ import {
   EIP712_TYPES,
   normalizeNetworkName,
 } from "@armory-sh/base";
-import { PaymentError } from "./errors";
+import { PaymentError, SigningError } from "./errors";
 
 // ============================================================================
 // Type Guards
@@ -175,7 +175,7 @@ async function signTypedData(
   message: Record<string, unknown>
 ): Promise<Hash> {
   if (wallet.type === "account" && !wallet.account.signTypedData) {
-    throw new PaymentError("Account does not support signTypedData");
+    throw new SigningError("Account does not support signTypedData");
   }
   const params = {
     domain,

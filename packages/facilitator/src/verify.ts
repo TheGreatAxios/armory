@@ -19,37 +19,45 @@ import type { NonceTracker } from "./nonce/types.js";
 const isX402V1 = (payload: PaymentPayload): payload is X402PaymentPayloadV1 =>
   isX402V1Payload(payload);
 
+const isX402V2 = (payload: PaymentPayload): payload is PaymentPayloadV2 =>
+  isX402V2Payload(payload);
+
 const isLegacyV1 = (payload: PaymentPayload): payload is LegacyPaymentPayloadV1 =>
   isLegacyV1Payload(payload);
 
 const extractFrom = (payload: PaymentPayload): string => {
   if (isX402V1(payload)) return payload.payload.authorization.from;
   if (isLegacyV1(payload)) return payload.from;
-  return payload.payload.authorization.from;
+  if (isX402V2(payload)) return payload.payload.authorization.from;
+  throw new InvalidPayloadError("Invalid payload structure: cannot extract 'from' address");
 };
 
 const extractTo = (payload: PaymentPayload): string => {
   if (isX402V1(payload)) return payload.payload.authorization.to;
   if (isLegacyV1(payload)) return payload.to;
-  return payload.payload.authorization.to;
+  if (isX402V2(payload)) return payload.payload.authorization.to;
+  throw new InvalidPayloadError("Invalid payload structure: cannot extract 'to' address");
 };
 
 const extractValue = (payload: PaymentPayload): string => {
   if (isX402V1(payload)) return payload.payload.authorization.value;
   if (isLegacyV1(payload)) return payload.amount;
-  return payload.payload.authorization.value;
+  if (isX402V2(payload)) return payload.payload.authorization.value;
+  throw new InvalidPayloadError("Invalid payload structure: cannot extract amount");
 };
 
 const extractNonce = (payload: PaymentPayload): string => {
   if (isX402V1(payload)) return payload.payload.authorization.nonce;
   if (isLegacyV1(payload)) return payload.nonce;
-  return payload.payload.authorization.nonce;
+  if (isX402V2(payload)) return payload.payload.authorization.nonce;
+  throw new InvalidPayloadError("Invalid payload structure: cannot extract nonce");
 };
 
 const extractExpiry = (payload: PaymentPayload): number => {
   if (isX402V1(payload)) return parseInt(payload.payload.authorization.validBefore, 10);
   if (isLegacyV1(payload)) return payload.expiry;
-  return parseInt(payload.payload.authorization.validBefore, 10);
+  if (isX402V2(payload)) return parseInt(payload.payload.authorization.validBefore, 10);
+  throw new InvalidPayloadError("Invalid payload structure: cannot extract expiry");
 };
 
 const extractChainId = (payload: PaymentPayload): number => {

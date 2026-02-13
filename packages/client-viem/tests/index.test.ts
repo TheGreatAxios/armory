@@ -68,12 +68,13 @@ test("createPayment generates v1 payment payload", async () => {
   );
 
   expect(payment).toBeDefined();
-  expect(payment).toHaveProperty("from");
-  expect(payment).toHaveProperty("to");
-  expect(payment).toHaveProperty("amount", "1.5");
-  expect(payment).toHaveProperty("v");
-  expect(payment).toHaveProperty("r");
-  expect(payment).toHaveProperty("s");
+  // x402 V1 format has nested structure
+  expect(payment).toHaveProperty("x402Version", 1);
+  expect(payment).toHaveProperty("scheme");
+  expect(payment).toHaveProperty("network");
+  expect(payment).toHaveProperty("payload");
+  expect(payment.payload).toHaveProperty("signature");
+  expect(payment.payload).toHaveProperty("authorization");
 });
 
 test("createPayment generates v2 payment payload", async () => {
@@ -87,35 +88,35 @@ test("createPayment generates v2 payment payload", async () => {
   );
 
   expect(payment).toBeDefined();
-  expect(payment).toHaveProperty("from");
-  expect(payment).toHaveProperty("to");
-  expect(payment).toHaveProperty("amount", "1.5");
-  expect(payment).toHaveProperty("signature");
-  expect(payment.signature).toHaveProperty("v");
-  expect(payment.signature).toHaveProperty("r");
-  expect(payment.signature).toHaveProperty("s");
+  // x402 V2 format
+  expect(payment).toHaveProperty("x402Version", 2);
+  expect(payment).toHaveProperty("accepted");
+  expect(payment).toHaveProperty("payload");
+  expect(payment.payload).toHaveProperty("signature");
+  expect(payment.payload).toHaveProperty("authorization");
 });
 
 test("signPayment signs v1 payload", async () => {
   const client = createX402Client({ wallet: mockWallet, version: 1 });
 
   const unsigned = {
-    from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
-    to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0" as const,
+    to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const,
     amount: "1.0",
     nonce: "1234567890",
     expiry: 1735718400,
     chainId: 8453,
-    contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const,
     network: "base",
   };
 
   const signed = await client.signPayment(unsigned);
 
   expect(signed).toBeDefined();
-  expect(signed).toHaveProperty("v");
-  expect(signed).toHaveProperty("r");
-  expect(signed).toHaveProperty("s");
+  // Returns x402 V1 format
+  expect(signed).toHaveProperty("x402Version", 1);
+  expect(signed).toHaveProperty("payload");
+  expect(signed.payload).toHaveProperty("signature");
 });
 
 test("nonceGenerator is used for payments", async () => {
@@ -130,7 +131,10 @@ test("nonceGenerator is used for payments", async () => {
     8453
   );
 
-  expect(payment).toHaveProperty("nonce", "1234567890");
+  // Nonce is in the authorization, nested in payload
+  expect(payment).toHaveProperty("payload");
+  expect(payment.payload).toHaveProperty("authorization");
+  expect(payment.payload.authorization).toHaveProperty("nonce");
 });
 
 // ========================================
@@ -150,11 +154,18 @@ test("fetch handles 402 response with v1 payment", async () => {
           headers: {
             "X-PAYMENT-REQUIRED": Buffer.from(
               JSON.stringify({
-                amount: "1.0",
+                x402Version: 1,
+                scheme: "exact",
                 network: "base",
-                contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                expiry: 1735718400,
+                accepts: [{
+                  network: "base",
+                  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                  payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                  maxAmountRequired: "1.0",
+                  resource: "https://api.example.com/data",
+                  description: "Test payment",
+                  maxTimeoutSeconds: 3600,
+                }]
               })
             ).toString("base64"),
           },
@@ -166,7 +177,7 @@ test("fetch handles 402 response with v1 payment", async () => {
         status: 200,
         headers: {
           "X-PAYMENT-RESPONSE": Buffer.from(
-            JSON.stringify({ success: true, txHash: "0xabc123", timestamp: Date.now() })
+            JSON.stringify({ success: true, network: "base", txHash: "0xabc123", timestamp: Date.now() })
           ).toString("base64"),
         },
       })
@@ -191,12 +202,16 @@ test("fetch handles 402 response with v2 payment", async () => {
           status: 402,
           headers: {
             "PAYMENT-REQUIRED": JSON.stringify({
-              amount: "1.0",
-              to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-              chainId: "eip155:8453",
-              assetId: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-              nonce: `${Date.now()}`,
-              expiry: 1735718400,
+              x402Version: 2,
+              resource: "https://api.example.com/data",
+              accepts: [{
+                to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                amount: "1.0",
+                network: "eip155:8453",
+                asset: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                nonce: `${Date.now()}`,
+                expiry: 1735718400,
+              }]
             }),
           },
         })
@@ -230,8 +245,7 @@ test("fetch passes through non-402 responses", async () => {
 
 test("createX402Transport returns fetch function", () => {
   const transport = createX402Transport({
-    transport: {} as any,
-    payment: { wallet: mockWallet },
+    wallet: mockWallet,
   });
 
   expect(typeof transport).toBe("function");
@@ -325,11 +339,18 @@ test("full payment flow: 402 -> payment -> success", async () => {
           headers: {
             "X-PAYMENT-REQUIRED": Buffer.from(
               JSON.stringify({
-                amount: "2.5",
+                x402Version: 1,
+                scheme: "exact",
                 network: "base",
-                contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                expiry: 1735718400,
+                accepts: [{
+                  network: "base",
+                  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                  payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                  maxAmountRequired: "2.5",
+                  resource: "https://api.example.com/protected",
+                  description: "Test resource",
+                  maxTimeoutSeconds: 3600,
+                }]
               })
             ).toString("base64"),
           },
@@ -341,7 +362,7 @@ test("full payment flow: 402 -> payment -> success", async () => {
         status: 200,
         headers: {
           "X-PAYMENT-RESPONSE": Buffer.from(
-            JSON.stringify({ success: true, txHash: "0xtx123", timestamp: Date.now() })
+            JSON.stringify({ success: true, network: "base", txHash: "0xtx123", timestamp: Date.now() })
           ).toString("base64"),
         },
       })
@@ -370,12 +391,16 @@ test("payment flow with v2 protocol", async () => {
           status: 402,
           headers: {
             "PAYMENT-REQUIRED": JSON.stringify({
-              amount: "1.0",
-              to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-              chainId: "eip155:8453",
-              assetId: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-              nonce: `${Date.now()}`,
-              expiry: 1735718400,
+              x402Version: 2,
+              resource: "https://api.example.com/v2/resource",
+              accepts: [{
+                to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                amount: "1.0",
+                network: "eip155:8453",
+                asset: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                nonce: `${Date.now()}`,
+                expiry: 1735718400,
+              }]
             }),
           },
         })
@@ -422,8 +447,9 @@ test("payment flow with custom expiry and nonce", async () => {
     customExpiry
   );
 
-  expect(payment).toHaveProperty("nonce", customNonce);
-  expect(payment).toHaveProperty("expiry", customExpiry);
+  // x402 V1 format has nested structure, nonce is converted to hex
+  expect(payment.payload.authorization.nonce).toBe("0x0000000000000000000000000000000000000000000000000000000999888777");
+  expect(payment.payload.authorization.validBefore).toBe(customExpiry.toString());
 });
 
 // ========================================
@@ -596,11 +622,18 @@ test("PaymentError includes error details", async () => {
           headers: {
             "X-PAYMENT-REQUIRED": Buffer.from(
               JSON.stringify({
-                amount: "1.0",
+                x402Version: 1,
+                scheme: "exact",
                 network: "base",
-                contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                expiry: 1735718400,
+                accepts: [{
+                  network: "base",
+                  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                  payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                  maxAmountRequired: "1.0",
+                  resource: "https://api.example.com/invalid-sig",
+                  description: "Test resource",
+                  maxTimeoutSeconds: 3600,
+                }]
               })
             ).toString("base64"),
           },
@@ -612,7 +645,7 @@ test("PaymentError includes error details", async () => {
         status: 402,
         headers: {
           "X-PAYMENT-RESPONSE": Buffer.from(
-            JSON.stringify({ success: false, error: "Invalid signature" })
+            JSON.stringify({ success: false, network: "base", errorReason: "Invalid signature" })
           ).toString("base64"),
         },
       })

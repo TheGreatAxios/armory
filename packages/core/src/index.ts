@@ -92,7 +92,14 @@ export {
   isX402PaymentRequiredV1,
   isX402PaymentPayloadV1,
   isLegacyPaymentPayloadV1,
+  encodePaymentPayloadLegacy,
+  decodePaymentPayloadLegacy,
+  encodeSettlementResponseLegacy,
+  decodeSettlementResponseLegacy,
 } from "./types/v1";
+
+// Backward compatibility aliases
+export { encodePaymentPayloadLegacy as encodePaymentPayload, decodePaymentPayloadLegacy as decodePaymentPayload } from "./types/v1";
 
 // ============================================
 // V2 types and functions (x402 V2 compatible)
@@ -117,6 +124,7 @@ export {
   V2_HEADERS,
   isCAIP2ChainId,
   isCAIPAssetId,
+  isAddress,
   isPaymentRequiredV2,
   isPaymentPayloadV2,
   assetIdToAddress,

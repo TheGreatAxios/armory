@@ -182,28 +182,28 @@ export function decodeX402SettlementResponseV1(encoded: string): X402SettlementR
 /**
  * @deprecated Use encodeX402PaymentPayloadV1 instead
  */
-export function encodePaymentPayload(payload: LegacyPaymentPayloadV1): string {
+export function encodePaymentPayloadLegacy(payload: LegacyPaymentPayloadV1): string {
   return Buffer.from(JSON.stringify(payload)).toString("base64");
 }
 
 /**
  * @deprecated Use decodeX402PaymentPayloadV1 instead
  */
-export function decodePaymentPayload(encoded: string): LegacyPaymentPayloadV1 {
+export function decodePaymentPayloadLegacy(encoded: string): LegacyPaymentPayloadV1 {
   return JSON.parse(Buffer.from(encoded, "base64").toString("utf-8")) as LegacyPaymentPayloadV1;
 }
 
 /**
  * @deprecated Use encodeX402SettlementResponseV1 instead
  */
-export function encodeSettlementResponse(response: LegacySettlementResponseV1): string {
+export function encodeSettlementResponseLegacy(response: LegacySettlementResponseV1): string {
   return Buffer.from(JSON.stringify(response)).toString("base64");
 }
 
 /**
  * @deprecated Use decodeX402SettlementResponseV1 instead
  */
-export function decodeSettlementResponse(encoded: string): LegacySettlementResponseV1 {
+export function decodeSettlementResponseLegacy(encoded: string): LegacySettlementResponseV1 {
   return JSON.parse(Buffer.from(encoded, "base64").toString("utf-8")) as LegacySettlementResponseV1;
 }
 

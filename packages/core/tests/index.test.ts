@@ -9,6 +9,7 @@ import {
   type PaymentPayload,
   isV1,
   isV2,
+  isLegacyV1Payload,
   getNetworkConfig,
   getNetworkByChainId,
   detectPaymentVersion,
@@ -99,7 +100,7 @@ test("type guards work correctly", () => {
     assetId: "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" as const,
   };
 
-  expect(isV1(v1Payload)).toBe(true);
+  expect(isLegacyV1Payload(v1Payload)).toBe(true);
   expect(isV2(v1Payload)).toBe(false);
   expect(isV1(v2Payload)).toBe(false);
   expect(isV2(v2Payload)).toBe(true);

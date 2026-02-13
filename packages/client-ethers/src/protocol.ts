@@ -415,5 +415,15 @@ export async function parsePaymentRequirements(response: Response): Promise<unkn
  * @deprecated Use detectX402Version instead
  */
 export function detectProtocolVersion(requirements: unknown): 1 | 2 {
-  return isX402V1Requirements(requirements) ? 1 : 2;
+  // Check for x402 V2 format (has x402Version === 2)
+  if (typeof requirements === "object" && requirements !== null) {
+    if ("x402Version" in requirements && (requirements as { x402Version: number }).x402Version === 2) {
+      return 2;
+    }
+    // Check for legacy V2 format (has chainId/assetId, no contractAddress)
+    if ("chainId" in requirements && "assetId" in requirements && !("contractAddress" in requirements)) {
+      return 2;
+    }
+  }
+  return 1;
 }

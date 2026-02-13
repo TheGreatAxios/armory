@@ -176,6 +176,9 @@ const extractX402V1Params = (payload: X402PaymentPayloadV1): {
   s: `0x${string}`;
   chainId: number;
 } => {
+  if (!payload.payload || !payload.payload.authorization || !payload.payload.signature) {
+    throw new InvalidPaymentError("Invalid x402 V1 payload: missing payload.authorization or payload.signature");
+  }
   const { authorization, signature: fullSig } = payload.payload;
 
   // Parse signature from combined hex format (0x + r + s + v)
@@ -256,6 +259,9 @@ const extractV2Params = (payload: PaymentPayloadV2): {
   s: `0x${string}`;
   chainId: number;
 } => {
+  if (!payload.payload || !payload.payload.authorization || !payload.payload.signature) {
+    throw new InvalidPaymentError("Invalid x402 V2 payload: missing payload.authorization or payload.signature");
+  }
   const { authorization, signature: fullSig } = payload.payload;
 
   // Parse signature from combined hex format (0x + r + s + v)
