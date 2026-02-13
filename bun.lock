@@ -51,7 +51,7 @@
     },
     "packages/client-web3": {
       "name": "@armory-sh/client-web3",
-      "version": "0.2.9",
+      "version": "0.2.6",
       "dependencies": {
         "@armory-sh/base": "^0.2.9",
         "web3": "4.16.0",
@@ -91,7 +91,7 @@
     },
     "packages/middleware": {
       "name": "@armory-sh/middleware",
-      "version": "0.3.7",
+      "version": "0.3.4",
       "dependencies": {
         "@armory-sh/middleware-bun": "workspace:*",
         "@armory-sh/middleware-elysia": "workspace:*",
