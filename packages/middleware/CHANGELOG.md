@@ -1,5 +1,15 @@
 # @armory-sh/middleware
 
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies
+  - @armory-sh/middleware-bun@0.3.3
+  - @armory-sh/middleware-elysia@0.3.3
+  - @armory-sh/middleware-express@0.3.3
+  - @armory-sh/middleware-hono@0.3.3
+
 ## 0.3.2
 
 ### Patch Changes
