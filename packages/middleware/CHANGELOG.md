@@ -6,6 +6,12 @@
 
 - Automated release
 
+## 0.3.4
+
+### Patch Changes
+
+- Automated release
+
 ## 0.3.7
 
 ### Patch Changes
