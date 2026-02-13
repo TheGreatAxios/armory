@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-bun",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -12,7 +12,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },

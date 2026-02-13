@@ -82,7 +82,7 @@ if (changed) {
   log("\n📝 Changes to commit:", blue);
   run("git status --short");
 
-  run("git add .changeset package.json bun.lockb packages/*/package.json packages/*/CHANGELOG.md 2>/dev/null || git add .changeset package.json bun.lockb packages/*/package.json");
+  run("git add .changeset package.json bun.lock packages/*/package.json packages/*/CHANGELOG.md 2>/dev/null || git add .changeset package.json bun.lock packages/*/package.json");
   run('git commit -m "chore: release"');
   success("Version changes committed");
 }
