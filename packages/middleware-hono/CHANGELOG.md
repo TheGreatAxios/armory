@@ -1,20 +1,5 @@
 # @armory-sh/middleware-hono
 
-## 0.3.13
-
-### Patch Changes
-
-- Automated release
-- Updated dependencies
-  - @armory-sh/base@0.2.12
-
-## 0.3.12
-
-### Patch Changes
-
-- Updated dependencies
-  - @armory-sh/base@0.2.12
-
 ## 0.3.11
 
 ### Patch Changes

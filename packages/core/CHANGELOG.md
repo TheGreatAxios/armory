@@ -1,17 +1,5 @@
 # @armory-sh/base
 
-## 0.2.12
-
-### Patch Changes
-
-- Automated release
-
-## 0.2.12
-
-### Patch Changes
-
-- Automated release
-
 ## 0.2.11
 
 ### Patch Changes
