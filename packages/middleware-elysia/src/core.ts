@@ -13,6 +13,7 @@ import {
   getNetworkByChainId,
   encodeSettlementResponse,
   encodePaymentPayload,
+  normalizeNetworkName,
 } from "@armory-sh/base";
 import type {
   MiddlewareConfig,
@@ -22,12 +23,55 @@ import type {
   HttpRequest,
 } from "./types";
 
-const getNetworkName = (network: string | number): string => {
-  if (typeof network === "string") return network;
-  const net = getNetworkByChainId(network);
-  if (!net) throw new Error(`No network found for chainId: ${network}`);
-  return net.name.toLowerCase().replace(" mainnet", "").replace(" sepolia", "-sepolia");
+/**
+ * Convert eip155 format to slug, or slug to slug (no-op)
+ * Handles both "eip155:84532" and "base-sepolia" inputs
+ */
+const toSlug = (network: string | number): string => {
+  if (typeof network === "number") {
+    const net = getNetworkByChainId(network);
+    if (!net) throw new Error(`No network found for chainId: ${network}`);
+    return normalizeNetworkName(net.name);
+  }
+
+  // Handle eip155 format input
+  if (network.startsWith("eip155:")) {
+    const chainId = parseInt(network.split(":")[1], 10);
+    const net = getNetworkByChainId(chainId);
+    if (!net) throw new Error(`No network found for chainId: ${chainId}`);
+    return normalizeNetworkName(net.name);
+  }
+
+  return normalizeNetworkName(network);
 };
+
+/**
+ * Convert slug to eip155 format
+ */
+const toEip155 = (network: string | number): string => {
+  if (typeof network === "number") {
+    const net = getNetworkByChainId(network);
+    if (!net) throw new Error(`No network found for chainId: ${network}`);
+    return net.caip2Id;
+  }
+
+  // Already in eip155 format
+  if (network.startsWith("eip155:")) {
+    const net = getNetworkConfig(network);
+    if (!net) throw new Error(`No network found for: ${network}`);
+    return net.caip2Id;
+  }
+
+  // Slug input - convert to eip155
+  const slug = normalizeNetworkName(network);
+  const net = getNetworkConfig(slug);
+  if (!net) throw new Error(`No network found for: ${slug}`);
+  return net.caip2Id;
+};
+
+const getNetworkName = (network: string | number): string => toSlug(network);
+
+const getChainId = (network: string | number): string => toEip155(network);
 
 const createV1Requirements = (
   config: MiddlewareConfig,
@@ -57,7 +101,7 @@ const createV2Requirements = (
   return {
     amount: config.amount,
     to: config.payTo as PayToV2,
-    chainId: network.caip2Id as `eip155:${string}`,
+    chainId: getChainId(config.network) as `eip155:${string}`,
     assetId: network.caipAssetId as `eip155:${string}/erc20:${string}`,
     nonce: `${Date.now()}-${crypto.randomUUID()}`,
     expiry,

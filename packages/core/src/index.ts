@@ -194,6 +194,7 @@ export {
   isResolvedNetwork,
   isResolvedToken,
   createError,
+  normalizeNetworkName,
 } from "./validation";
 
 // ============================================

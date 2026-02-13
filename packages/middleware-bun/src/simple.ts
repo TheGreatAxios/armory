@@ -25,6 +25,7 @@ import {
   isValidationError,
   getNetworkConfig,
   getNetworkByChainId,
+  normalizeNetworkName,
 } from "@armory-sh/base";
 import {
   createPaymentRequirements,
@@ -146,7 +147,7 @@ export const resolveMiddlewareConfig = (
 
   // Enrich configs with pricing info
   const enrichedConfigs: ResolvedPaymentConfigWithPricing[] = result.config.map((c) => {
-    const networkName = c.network.config.name;
+    const networkName = normalizeNetworkName(normalizeNetworkName(c.network.config.name));
     const tokenSymbol = c.token.config.symbol;
 
     // Check each facilitator for pricing
@@ -211,7 +212,7 @@ export const getRequirements = (
   return createPaymentRequirements(
     {
       payTo: matchingConfig.payTo,
-      network: matchingConfig.network.config.name,
+      network: normalizeNetworkName(normalizeNetworkName(matchingConfig.network.config.name)),
       amount: matchingConfig.amount,
       facilitator: config.facilitators[0],
     },
@@ -234,7 +235,7 @@ export const getPrimaryConfig = (resolved: ResolvedMiddlewareConfig): Middleware
 
   return {
     payTo: primary.payTo,
-    network: primary.network.config.name,
+    network: normalizeNetworkName(normalizeNetworkName(primary.network.config.name)),
     amount: primary.amount,
     facilitator: resolved.facilitators[0],
     settlementMode: "verify",
@@ -245,7 +246,7 @@ export const getPrimaryConfig = (resolved: ResolvedMiddlewareConfig): Middleware
  * Get all supported networks from config
  */
 export const getSupportedNetworks = (config: ResolvedMiddlewareConfig): string[] => {
-  const networks = new Set(config.configs.map((c) => c.network.config.name));
+  const networks = new Set(config.configs.map((c) => normalizeNetworkName(normalizeNetworkName(c.network.config.name))));
   return Array.from(networks);
 };
 

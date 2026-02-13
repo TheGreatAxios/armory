@@ -48,7 +48,7 @@ export const createError = (
 /**
  * Normalize network name to match registry keys
  */
-const normalizeNetworkName = (name: string): string =>
+export const normalizeNetworkName = (name: string): string =>
   name.toLowerCase()
     .replace(/\s+/g, "-")
     .replace("-mainnet", "")
