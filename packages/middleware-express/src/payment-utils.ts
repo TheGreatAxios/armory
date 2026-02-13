@@ -98,9 +98,11 @@ export const decodePayload = (
 ): { payload: AnyPaymentPayload; version: PaymentVersion } => {
   // Try to parse as JSON first
   let parsed: unknown;
+  let isJsonString = false;
   try {
     if (headerValue.startsWith("{")) {
       parsed = JSON.parse(headerValue);
+      isJsonString = true;
     } else {
       parsed = JSON.parse(atob(headerValue));
     }
@@ -109,8 +111,9 @@ export const decodePayload = (
   }
 
   // Check for x402 format first
+  // If it was a JSON string, pass the JSON object; otherwise pass the raw base64
   const headers = new Headers();
-  headers.set(X402_HEADERS.PAYMENT, headerValue);
+  headers.set(X402_HEADERS.PAYMENT, isJsonString ? JSON.stringify(parsed) : headerValue);
   const x402Payload = extractPaymentFromHeaders(headers);
   if (x402Payload) {
     return { payload: x402Payload, version: 2 };

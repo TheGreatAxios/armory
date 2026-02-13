@@ -96,7 +96,7 @@ export const acceptPaymentsViaArmory = (
     const paymentHeader =
       c.req.header(V1_HEADERS.PAYMENT) ||
       c.req.header(V2_HEADERS.PAYMENT_SIGNATURE) ||
-      c.req.header("X-Payment"); // Fallback for case variations
+      c.req.header("X-PAYMENT"); // Fallback for case variations
 
     const resourceUrl = c.req.url;
 

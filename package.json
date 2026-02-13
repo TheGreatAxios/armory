@@ -9,11 +9,11 @@
   ],
   "scripts": {
     "test": "bun test packages/*/src/**/*.test.ts",
+    "test:all": "bun test packages/*/src/**/*.test.ts tests/**/*.test.ts",
     "build": "turbo run build",
     "changeset": "changeset",
     "ci:version": "changeset version && bun update",
-    "ci:publish": "for dir in packages/*; do (cd \"$dir\" && bun publish || true); done && changeset tag",
-    "release": "bun scripts/release.mjs"
+    "ci:publish": "for dir in packages/*; do (cd \"$dir\" && bun publish || true); done && changeset tag"
   },
   "private": true,
   "version": "",
