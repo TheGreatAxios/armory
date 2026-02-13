@@ -270,7 +270,7 @@ if (changedPackages.length === 0) {
 
   log("\n📝 Auto-committing changes...", blue);
   run("git add .");
-  run('git commit -m "chore: prepare release"');
+  run('git commit --no-gpg-sign -m "chore: prepare release"');
   success("Changes committed");
 
   // Step 3: Auto-create changeset
@@ -298,7 +298,7 @@ const versionChanged = run("git status --porcelain", { silent: true }).trim();
 if (versionChanged) {
   log("\n📝 Committing version changes...", blue);
   run("git add .changeset package.json bun.lock packages/*/package.json packages/*/CHANGELOG.md 2>/dev/null || git add .changeset package.json bun.lock packages/*/package.json");
-  run('git commit -m "chore: version bump"');
+  run('git commit --no-gpg-sign -m "chore: version bump"');
   success("Version changes committed");
 }
 
