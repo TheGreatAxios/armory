@@ -21,6 +21,7 @@ import type {
   PaymentRequirementsV2,
   SettlementResponseV2,
   PaymentRequiredV2,
+  Address,
 } from "./v2";
 
 // ============================================================================
@@ -45,10 +46,62 @@ export type PaymentRequirements =
  */
 export type SettlementResponse = X402SettlementResponseV1 | SettlementResponseV2 | LegacySettlementResponseV1;
 
+// ============================================================================
+// Facilitator Communication Types (shared across middleware packages)
+// ============================================================================
+
+/**
+ * Configuration for connecting to a facilitator service
+ */
+export interface FacilitatorConfig {
+  url: string;
+  createHeaders?: () => Record<string, string>;
+}
+
+/**
+ * Result from facilitator verification
+ */
+export interface FacilitatorVerifyResult {
+  success: boolean;
+  payerAddress?: string;
+  balance?: string;
+  requiredAmount?: string;
+  error?: string;
+}
+
+/**
+ * Result from facilitator settlement
+ */
+export interface FacilitatorSettleResult {
+  success: boolean;
+  txHash?: string;
+  error?: string;
+}
+
+/**
+ * Settlement mode - verify only, settle only, or both
+ */
+export type SettlementMode = "verify" | "settle" | "async";
+
+/**
+ * Payment destination - address, CAIP-2 chain ID, or CAIP asset ID
+ */
+export type PayToAddress = Address | CAIP2ChainId | CAIPAssetId;
+
 /**
  * All x402 compatible payment required response types
  */
 export type PaymentRequired = X402PaymentRequiredV1 | PaymentRequiredV2;
+
+/**
+ * CAIP-2 chain ID type (e.g., eip155:8453)
+ */
+export type CAIP2ChainId = `eip155:${string}`;
+
+/**
+ * CAIP-2 asset ID type (e.g., eip155:8453/erc20:0xa0b8691...)
+ */
+export type CAIPAssetId = `eip155:${string}/erc20:${string}`;
 
 // ============================================================================
 // Version Detection
@@ -70,7 +123,7 @@ export function isX402V1Payload(obj: unknown): obj is X402PaymentPayloadV1 {
 }
 
 /**
- * Check if payload is x402 V2 format
+ * Check if payload is x402 V2 format (Coinbase format)
  */
 export function isX402V2Payload(obj: unknown): obj is PaymentPayloadV2 {
   return (
@@ -78,7 +131,8 @@ export function isX402V2Payload(obj: unknown): obj is PaymentPayloadV2 {
     obj !== null &&
     "x402Version" in obj &&
     (obj as PaymentPayloadV2).x402Version === 2 &&
-    "accepted" in obj &&
+    "scheme" in obj &&
+    "network" in obj &&
     "payload" in obj
   );
 }

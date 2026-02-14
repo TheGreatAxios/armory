@@ -1,5 +1,4 @@
 import type { Context } from "elysia";
-import type { VerifyPaymentOptions } from "@armory-sh/facilitator";
 import type {
   PaymentPayload,
   PaymentRequirements,
@@ -17,7 +16,6 @@ import {
 export interface PaymentMiddlewareConfig {
   requirements: PaymentRequirements;
   facilitatorUrl?: string;
-  verifyOptions?: VerifyPaymentOptions;
   skipVerification?: boolean;
 }
 
@@ -43,11 +41,12 @@ const errorResponse = (
   });
 
 export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
-  const { requirements, facilitatorUrl, verifyOptions, skipVerification = false } = config;
+  const { requirements, facilitatorUrl, skipVerification = false } = config;
   const version = getRequirementsVersion(requirements);
   const headers = getHeadersForVersion(version);
 
   return {
+    name: "armory-payment",
     beforeHandle: async (
       context: Context & { store: Record<string, unknown> }
     ): Promise<unknown> => {
@@ -83,7 +82,7 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
 
         const verifyResult = skipVerification
           ? { success: true, payerAddress: extractPayerAddress(payload) }
-          : await verifyPaymentWithRetry(payload, requirements, facilitatorUrl, verifyOptions);
+          : await verifyPaymentWithRetry(payload, requirements, facilitatorUrl);
 
         if (!verifyResult.success) {
           return errorResponse(

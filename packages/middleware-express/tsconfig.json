@@ -1,12 +1,9 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "composite": false,
-    "noEmit": true,
-    "moduleResolution": "bundler",
-    "paths": {
-      "@armory-sh/base": ["../core/src"],
-      "@armory-sh/facilitator": ["../facilitator/src"]
-    }
-  }
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

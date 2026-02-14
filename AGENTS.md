@@ -1,82 +1,109 @@
-# X-402 Protocol Libraries
+# Armory - Agent Guidelines
 
-- **Project**: armory/x402
-- **Goal**: TypeScript libraries for X-402 payment protocol (EIP-3009)
-
----
-
-## Overview
-
-X-402 is a payment protocol built on EIP-3009 (transferWithAuthorization). Enables server-to-client payments via HTTP headers.
-
-**Protocol Versions:**
-- **v1**: `X-PAYMENT` header (legacy)
-- **v2**: `PAYMENT-SIGNATURE` header (CAIP-2/CAIP-10 compliant)
+**Project Name**: Armory
+**Domain**: x402 Payment Protocol (EIP-3009)
+**Goal**: TypeScript libraries for crypto payments - enable server-to-client payments via HTTP headers
 
 ---
 
-## Monorepo Structure
+## Project Goals
 
-```
-packages/
-├── core/           # Protocol types, encoding, EIP-712, network configs
-├── tokens/         # Pre-configured token objects
-├── facilitator/    # Server-side payment settlement & verification
-├── middleware/     # HTTP middleware (Express, Hono, Bun, Elysia)
-├── client-viem/    # Viem-based payment client
-├── client-ethers/  # Ethers.js v6 payment client
-└── client-web3/    # Web3.js payment client
-```
-
-**Workspace**: Bun with `workspace:*` protocol dependencies
+1. **Easiest x402 library** - Simple, intuitive APIs for both clients and merchants
+2. **Minimal dependencies** - Keep packages lightweight
+3. **Developer experience** - Clear errors, flexible inputs, full TypeScript support
 
 ---
 
-## Global Commands
+## Code Style
 
-```bash
-# Install all workspace dependencies
-bun install
+- **TypeScript strict mode** - No `any`, use proper typing
+- **ES Modules** - Use `import { x } from 'y'` at top of files
+- **No IIFE** - Use named functions
+- **No dynamic imports** - All imports at compile time
+- **Avoid closures** - Prefer explicit function parameters over captured variables
+- **No OOP classes** - Prefer functional patterns
+- **Modular exports** - Export functions individually
 
-# Typecheck all packages
-bun run check-types  # (if configured)
+### TypeScript Rules
 
-# Run all tests
-bun test
+```typescript
+// ✅ GOOD - Proper typing
+interface PaymentPayload {
+  chainId: number
+  amount: string
+  payTo: `0x${string}`
+}
 
-# Build all packages
-bun run build
+// ❌ BAD - any type
+function process(data: any): any { /* ... */ }
 ```
 
+### Code Patterns
+
+```typescript
+// ✅ GOOD - ESM at top, named function
+import { foo } from 'bar'
+import { baz } from 'qux'
+
+function init() { /* ... */ }
+init()
+
+// ❌ BAD - IIFE
+(function() { /* ... */ })()
+
+// ❌ BAD - dynamic import
+const foo = await import('bar')
+
+// ❌ BAD - closure capturing variables
+function createHandler() {
+  const captured = 'state'
+  return function() { /* uses captured */ }
+}
+
+// ✅ GOOD - explicit parameters
+function handler(state: string) { /* uses state param */ }
+```
+
 ---
 
-## Key Technologies
+## Package-Specific Guidelines
 
-- **Runtime**: Bun
-- **Language**: TypeScript (strict mode)
-- **Ethereum**: Viem v2
-- **Protocol**: EIP-3009 (USDC transferWithAuthorization)
-- **Testing**: Bun test runner
+### @armory-sh/base (core)
+
+- Protocol types (v1, v2, unified)
+- Encoding/decoding (Base64URL)
+- EIP-712 typed data
+- Network configs
+- Token registry
+
+### @armory-sh/facilitator
+
+- Payment verification
+- On-chain settlement
+- Queue (Memory/Redis)
+- Nonce tracking
+- HTTP server
+
+### @armory-sh/tokens
+
+- Pre-configured token objects
+- Token registry integration
+
+### Middleware Packages
+
+- Accept payment headers
+- Verify/settle via facilitator
+- Return payment response headers
+
+### Client Packages
+
+- Create payment requests
+- Handle x402 headers
+- Parse responses
 
 ---
 
 ## Protocol Reference
-
-### EIP-3009 transferWithAuthorization
-
-Allows off-chain authorization for token transfers:
-
-```typescript
-interface TransferWithAuthorization {
-  from: Address
-  to: Address
-  value: bigint
-  validAfter: uint256
-  validBefore: uint256
-  nonce: bytes32
-  signature: bytes
-}
-```
 
 ### Headers
 
@@ -85,107 +112,89 @@ interface TransferWithAuthorization {
 | v1 | `X-PAYMENT` | `X-PAYMENT-RESPONSE` |
 | v2 | `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
 
-### Payment Flow
+### Supported Networks
 
-1. Client creates payment payload (EIP-712 signed)
-2. Client sends request with payment header
-3. Server verifies signature, balance, nonce, validity
-4. Server settles payment via USDC contract
-5. Server responds with settlement header (txHash)
+- Ethereum (1)
+- Base (8453)
+- Base Sepolia (84532)
+- SKALE Base (1187947933)
+- SKALE Base Sepolia (324705682)
+- Ethereum Sepolia (11155111)
 
----
+### Supported Tokens
 
-## Package-Specific Guidelines
-
-See package-specific AGENTS.md files:
-- `packages/core/AGENTS.md`
-- `packages/tokens/AGENTS.md`
-- `packages/facilitator/AGENTS.md`
-- `packages/middleware/AGENTS.md`
-- `packages/client-viem/AGENTS.md`
-- `packages/client-ethers/AGENTS.md`
-- `packages/client-web3/AGENTS.md`
+USDC, EURC, USDT, WBTC, WETH across supported networks
 
 ---
 
-## Code Standards
+## Input Formats
 
-- **Full type safety** - No `any`, use `unknown` with guards
-- **ES Modules only** - No CommonJS
-- **Functional over OOP** - Small functions, clear naming
-- **No IIFE** - Named functions or top-level statements
-- **Test first** - Write tests for new features
-
----
-
-## Token Objects
-
-### Using Token Objects (Recommended)
-
-The `@armory/tokens` package provides pre-configured token objects for common ERC-20 tokens:
-
+**Networks** - Any format accepted:
 ```typescript
-import { TOKENS, registerToken } from "@armory/tokens";
-import { registerToken as registerCoreToken } from "@armory/base";
-
-// Use pre-configured tokens
-const usdcBase = TOKENS.USDC_BASE;
-
-// Register for use with protocol
-registerCoreToken(usdcBase);
-
-// Create payment with token object
-const payment = await client.createPayment({
-  token: usdcBase,
-  amount: "1.5",
-  payToAddress,
-});
+'base'              // name
+8453                // chain ID
+'eip155:8453'       // CAIP-2
 ```
 
-### Registering Custom Tokens
-
+**Tokens** - Any format accepted:
 ```typescript
-import { registerToken } from "@armory/base";
-
-registerToken({
-  symbol: "MYTOKEN",
-  name: "My Custom Token",
-  version: "1",
-  contractAddress: "0x...",
-  chainId: 8453,
-  decimals: 18,
-});
+'usdc'              // symbol (case-insensitive)
+'0x8335...'         // EVM address
+'eip155:8453/erc20:0x8335...'  // CAIP Asset ID
 ```
-
-### Legacy Individual Fields
-
-```typescript
-// Legacy approach (still supported)
-const payment = await client.createPayment(
-  "1.5",        // amount in USDC
-  payToAddress, // recipient address
-  usdcAddress,  // USDC contract address
-  8453          // chain ID (Base)
-);
-```
-
-## Network Support
-
-Supported networks (via `@armory/base`):
-
-- **Ethereum**: Mainnet, Sepolia
-- **Polygon**: Mainnet, Amoy
-- **Optimism**: Mainnet, Sepolia
-- **Arbitrum**: Mainnet, Sepolia
-- **Base**: Mainnet, Sepolia
-
-Pre-configured tokens available via `@armory/tokens` package.
 
 ---
 
-## External References
+## Testing
 
-- **EIP-3009**: https://eips.ethereum.org/EIPS/eip-3009
-- **Viem Docs**: https://viem.sh
-- **CAIP Standards**: https://chainagnostic.org
-- **USDC Contracts**: https://github.com/centre-devs/centre-tokens
+- **NEVER skip tests** - Do not use `test.skip`, `describe.skip`, or `test.todo`
+- All tests must run - if a test is broken, fix it or remove it
+
+### Unit Tests
+
+- Use basic mocked tests - no external internet calls
+- Mock blockchain calls, HTTP requests, and external services
+- Keep tests simple and fast
+
+```bash
+# Run all tests
+bun test
+
+# Run specific package tests
+bun test packages/core
+bun test packages/facilitator
+
+# Watch mode
+bun test --watch
+```
+
+### E2E Tests
+
+- Use 3rd party facilitator for integration testing
+- No mocking in e2e tests - test real flows
+
+```bash
+# Run e2e tests
+bun test:e2e
+```
+
+---
+
+## Publishing
+
+Uses Changesets for versioning:
+
+```bash
+bun run changeset    # Create changeset
+bun run ci:version   # Version packages
+bun run ci:publish   # Publish to npm
+```
+
+---
+
+## Key Conventions
+
+1. **Package naming**: Use `@armory-sh/` scope for npm
+2. **Exports**: Use both `bun` (for dev) and `default` (for dist) in exports
+3. **Versioning**: All packages share same version via changesets
+4. **Workspace**: Uses `workspace:*` for internal dependencies

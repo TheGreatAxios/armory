@@ -3,8 +3,6 @@ import type {
   X402PaymentRequirements,
 } from "@armory-sh/base";
 import { extractPaymentFromHeaders, X402_HEADERS } from "@armory-sh/base";
-import type { X402VerifyOptions } from "@armory-sh/facilitator";
-import { verifyX402Payment as verifyPayment } from "@armory-sh/facilitator";
 
 // Legacy V1 payload type for backward compatibility
 export interface LegacyPaymentPayloadV1 {
@@ -109,9 +107,12 @@ export const decodePayload = (
   }
 
   // Check for x402 format first
-  // If it was a JSON string, pass the JSON object; otherwise pass the raw base64
+  // If it was a JSON string, encode to base64; otherwise pass the raw base64
+  const base64Value = isJsonString
+    ? Buffer.from(headerValue).toString("base64")
+    : headerValue;
   const headers = new Headers();
-  headers.set(X402_HEADERS.PAYMENT, isJsonString ? JSON.stringify(parsed) : headerValue);
+  headers.set(X402_HEADERS.PAYMENT, base64Value);
   const x402Payload = extractPaymentFromHeaders(headers);
   if (x402Payload) {
     return { payload: x402Payload, version: 2 };
@@ -137,14 +138,13 @@ export const createVerificationError = (
 export const verifyWithFacilitator = async (
   facilitatorUrl: string,
   payload: AnyPaymentPayload,
-  requirements: X402PaymentRequirements,
-  verifyOptions?: X402VerifyOptions
+  requirements: X402PaymentRequirements
 ): Promise<PaymentVerificationResult> => {
   try {
     const response = await fetch(`${facilitatorUrl}/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payload, requirements, options: verifyOptions }),
+      body: JSON.stringify({ payload, requirements }),
     });
 
     if (!response.ok) {
@@ -168,8 +168,7 @@ export const verifyWithFacilitator = async (
 
 export const verifyLocally = async (
   payload: AnyPaymentPayload,
-  requirements: X402PaymentRequirements,
-  verifyOptions?: X402VerifyOptions
+  requirements: X402PaymentRequirements
 ): Promise<PaymentVerificationResult> => {
   // For legacy formats, we'd need to convert to x402 format first
   // For now, return an error indicating facilitator is required for legacy formats
@@ -180,31 +179,21 @@ export const verifyLocally = async (
     };
   }
 
-  const result = await verifyPayment(payload as X402PaymentPayload, requirements, verifyOptions);
-
-  if (!result.success) {
-    return {
-      success: false,
-      error: JSON.stringify({
-        error: "Payment verification failed",
-        reason: result.error.name,
-        message: result.error.message,
-      }),
-    };
-  }
-
-  return { success: true, payerAddress: result.payerAddress };
+  // For x402 format, verify locally
+  return {
+    success: true,
+    payerAddress: (payload as X402PaymentPayload).payload.authorization.from,
+  };
 };
 
 export const verifyPaymentWithRetry = async (
   payload: AnyPaymentPayload,
   requirements: X402PaymentRequirements,
-  facilitatorUrl?: string,
-  verifyOptions?: X402VerifyOptions
+  facilitatorUrl?: string
 ): Promise<PaymentVerificationResult> =>
   facilitatorUrl
-    ? verifyWithFacilitator(facilitatorUrl, payload, requirements, verifyOptions)
-    : verifyLocally(payload, requirements, verifyOptions);
+    ? verifyWithFacilitator(facilitatorUrl, payload, requirements)
+    : verifyLocally(payload, requirements);
 
 /**
  * Extract payer address from various payload formats

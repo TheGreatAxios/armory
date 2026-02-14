@@ -135,29 +135,23 @@ export const X402_HEADERS = {
  * and legacy format (X-PAYMENT for v1, PAYMENT-SIGNATURE for v2)
  */
 export function detectPaymentVersion(headers: Headers): number | null {
-  // Check for legacy V2 PAYMENT-SIGNATURE header first
   if (headers.has("PAYMENT-SIGNATURE")) {
     return 2;
   }
 
-  // Check X-PAYMENT header (used by both v1 legacy and x402)
   if (headers.has(X402_HEADERS.PAYMENT)) {
     const encoded = headers.get(X402_HEADERS.PAYMENT);
     if (encoded) {
       try {
         const decoded = decodePayment(encoded);
-        // x402 format has x402Version property
         if (isPaymentPayload(decoded) && "x402Version" in decoded) {
           return decoded.x402Version;
         }
-        // Legacy V1 format - detect by structure
         return 1;
       } catch {
-        // If decoding fails, assume V1 legacy (base64 encoded JSON)
         return 1;
       }
     }
-    // Has X-PAYMENT header but no value, assume V1
     return 1;
   }
 

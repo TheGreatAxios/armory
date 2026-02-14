@@ -132,39 +132,29 @@ const registerToken = (token: TokenConfig): TokenConfig => {
   return token;
 };
 
-// Get token by chainId and contract address
 export const getToken = (
   chainId: number,
   contractAddress: string
 ): TokenConfig | undefined => tokenRegistry.get(tokenKey(chainId, contractAddress));
 
-// Get all tokens
 export const getAllTokens = (): TokenConfig[] => Array.from(tokenRegistry.values());
 
-// Get tokens by symbol
 export const getTokensBySymbol = (symbol: string): TokenConfig[] =>
   Array.from(tokenRegistry.values()).filter((t) => t.symbol === symbol);
 
-// Get tokens by chain
 export const getTokensByChain = (chainId: number): TokenConfig[] =>
   Array.from(tokenRegistry.values()).filter((t) => t.chainId === chainId);
 
-// Get USDC tokens
 export const getUSDCTokens = (): TokenConfig[] => getTokensBySymbol("USDC");
 
-// Get EURC tokens
 export const getEURCTokens = (): TokenConfig[] => getTokensBySymbol("EURC");
 
-// Get SKL tokens
 export const getSKLTokens = (): TokenConfig[] => getTokensBySymbol("SKL");
 
-// Get USDT tokens
 export const getUSDTTokens = (): TokenConfig[] => getTokensBySymbol("USDT");
 
-// Get WBTC tokens
 export const getWBTCTokens = (): TokenConfig[] => getTokensBySymbol("WBTC");
 
-// Get WETH tokens
 export const getWETHTokens = (): TokenConfig[] => getTokensBySymbol("WETH");
 
 // Token collections

@@ -6,8 +6,8 @@
 import type {
   NetworkConfig,
   CustomToken,
-} from "./types/networks.js";
-import type { CAIPAssetId } from "./types/v2.js";
+} from "./types/networks";
+import type { CAIPAssetId } from "./types/v2";
 import type {
   NetworkId,
   TokenId,
@@ -18,14 +18,14 @@ import type {
   ResolvedPaymentConfig,
   ValidationError,
   PaymentErrorCode,
-} from "./types/simple.js";
+} from "./types/simple";
 import {
   NETWORKS,
   getNetworkConfig,
   getNetworkByChainId,
   getCustomToken,
   getAllCustomTokens,
-} from "./types/networks.js";
+} from "./types/networks";
 
 // ═══════════════════════════════════════════════════════════════
 // Error Creation
@@ -45,23 +45,16 @@ export const createError = (
 // Network Resolution & Validation
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Normalize network name to match registry keys
- */
 export const normalizeNetworkName = (name: string): string =>
   name.toLowerCase()
     .replace(/\s+/g, "-")
     .replace("-mainnet", "")
-    .replace(/-mainnet/, "") // Handle "Base-Mainnet" format
+    .replace(/-mainnet/, "")
     .replace("mainnet-", "")
     .replace(/-sepolia$/, "-sepolia")
-    .replace(/^-|-$/g, ""); // Remove leading/trailing dashes
+    .replace(/^-|-$/g, "");
 
-/**
- * Resolve a network identifier to a network config
- */
 export const resolveNetwork = (input: NetworkId): ResolvedNetwork | ValidationError => {
-  // If already a NetworkConfig, validate and use it
   if (typeof input === "object" && input !== null && "chainId" in input) {
     const config = input as NetworkConfig;
     if (!config.chainId || !config.usdcAddress || !config.caip2Id) {
@@ -74,7 +67,6 @@ export const resolveNetwork = (input: NetworkId): ResolvedNetwork | ValidationEr
     };
   }
 
-  // Number = chain ID
   if (typeof input === "number") {
     const config = getNetworkByChainId(input);
     if (!config) {
@@ -92,9 +84,7 @@ export const resolveNetwork = (input: NetworkId): ResolvedNetwork | ValidationEr
     };
   }
 
-  // String - could be name or CAIP-2
   if (typeof input === "string") {
-    // Check if CAIP-2 format
     if (input.startsWith("eip155:")) {
       const parts = input.split(":");
       if (parts.length !== 2 || isNaN(Number(parts[1]))) {
@@ -112,7 +102,6 @@ export const resolveNetwork = (input: NetworkId): ResolvedNetwork | ValidationEr
       };
     }
 
-    // Network name
     const normalizedName = normalizeNetworkName(input);
     const config = getNetworkConfig(normalizedName);
     if (!config) {
@@ -133,41 +122,27 @@ export const resolveNetwork = (input: NetworkId): ResolvedNetwork | ValidationEr
   return createError("UNKNOWN_NETWORK", `Invalid network identifier type: ${typeof input}`, { value: input });
 };
 
-/**
- * Get all available network names
- */
 export const getAvailableNetworks = (): string[] => Object.keys(NETWORKS);
 
 // ═══════════════════════════════════════════════════════════════
 // Token Resolution & Validation
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Normalize token symbol to uppercase
- */
 const normalizeTokenSymbol = (symbol: string): string => symbol.toUpperCase();
 
-/**
- * Check if a string is a valid EVM address (0x + 40 hex chars)
- */
 const isEvmAddress = (value: string): boolean =>
   /^0x[a-fA-F0-9]{40}$/.test(value);
 
-/**
- * Resolve a token identifier to a token config
- */
 export const resolveToken = (
   input: TokenId,
   network?: ResolvedNetwork
 ): ResolvedToken | ValidationError => {
-  // If already a CustomToken, validate it
   if (typeof input === "object" && input !== null && "contractAddress" in input) {
     const config = input as CustomToken;
     if (!config.chainId || !config.contractAddress || !config.symbol) {
       return createError("VALIDATION_FAILED", "Invalid token config", { value: config });
     }
 
-    // Validate token is on the specified network
     if (network && config.chainId !== network.config.chainId) {
       return createError(
         "TOKEN_NOT_ON_NETWORK",
@@ -191,13 +166,10 @@ export const resolveToken = (
     };
   }
 
-  // String - could be EVM address, symbol, or CAIP Asset ID
   if (typeof input === "string") {
-    // Check if raw EVM address (0x...)
     if (isEvmAddress(input)) {
       const contractAddress = input as `0x${string}`;
 
-      // If network specified, use it
       if (network) {
         const customToken = getCustomToken(network.config.chainId, contractAddress);
         const config = customToken || {
@@ -219,7 +191,6 @@ export const resolveToken = (
         };
       }
 
-      // No network specified - try to find token in registry
       const customTokens = getAllCustomTokens();
       const matchingToken = customTokens.find(
         (t) => t.contractAddress.toLowerCase() === contractAddress.toLowerCase()
@@ -241,7 +212,6 @@ export const resolveToken = (
         };
       }
 
-      // Address not found in registry and no network specified
       return createError(
         "UNKNOWN_TOKEN",
         `Token address "${contractAddress}" not found in registry. Please specify a network.`,
@@ -249,7 +219,6 @@ export const resolveToken = (
       );
     }
 
-    // Check if CAIP Asset ID format
     if (input.includes("/erc20:")) {
       const parts = input.split("/");
       if (parts.length !== 2) {
@@ -263,7 +232,6 @@ export const resolveToken = (
         return tokenNetwork;
       }
 
-      // Check if this is a custom token
       const customToken = getCustomToken(chainId, contractAddress);
       const config = customToken || {
         symbol: "CUSTOM",
@@ -282,12 +250,9 @@ export const resolveToken = (
       };
     }
 
-    // Token symbol - look it up in the token registry
     const normalizedSymbol = normalizeTokenSymbol(input);
 
-    // If network is specified, look for token on that network
     if (network) {
-      // First check custom tokens
       const customTokens = getAllCustomTokens();
       const matchingToken = customTokens.find(
         (t) => t.symbol.toUpperCase() === normalizedSymbol && t.chainId === network.config.chainId
@@ -302,7 +267,6 @@ export const resolveToken = (
         };
       }
 
-      // Fall back to network's USDC address
       return {
         input,
         config: {
@@ -318,7 +282,6 @@ export const resolveToken = (
       };
     }
 
-    // No network specified - find first matching token
     const customTokens = getAllCustomTokens();
     const matchingToken = customTokens.find((t) => t.symbol.toUpperCase() === normalizedSymbol);
 
@@ -335,7 +298,6 @@ export const resolveToken = (
       };
     }
 
-    // Default to Base USDC if no match
     const baseNetwork = resolveNetwork("base");
     if ("code" in baseNetwork) {
       return baseNetwork;
@@ -359,9 +321,6 @@ export const resolveToken = (
   return createError("UNKNOWN_TOKEN", `Invalid token identifier type: ${typeof input}`, { value: input });
 };
 
-/**
- * Get all available token symbols
- */
 export const getAvailableTokens = (): string[] => {
   const customTokens = getAllCustomTokens();
   const symbols = new Set(customTokens.map((t) => t.symbol.toUpperCase()));
@@ -372,22 +331,17 @@ export const getAvailableTokens = (): string[] => {
 // Facilitator Resolution & Validation
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Resolve a facilitator configuration
- */
 export const resolveFacilitator = (
   input: FacilitatorConfig,
   supportedNetworks?: ResolvedNetwork[],
   supportedTokens?: ResolvedToken[]
 ): ResolvedFacilitator | ValidationError => {
-  // Validate URL
   try {
     new URL(input.url);
   } catch {
     return createError("VALIDATION_FAILED", `Invalid facilitator URL: ${input.url}`, { value: input.url });
   }
 
-  // Resolve networks
   const networks: ResolvedNetwork[] = [];
   if (input.networks) {
     for (const network of input.networks) {
@@ -401,18 +355,16 @@ export const resolveFacilitator = (
     networks.push(...supportedNetworks);
   }
 
-  // Resolve tokens
   const tokens: ResolvedToken[] = [];
   if (input.tokens) {
     for (const token of input.tokens) {
       for (const network of networks.length > 0 ? networks : supportedNetworks || []) {
         const resolved = resolveToken(token, network);
         if ("code" in resolved) {
-          // Token might not be on this network, try next
           continue;
         }
         tokens.push(resolved);
-        break; // Found token on a network
+        break;
       }
     }
   } else if (supportedTokens) {
@@ -427,15 +379,11 @@ export const resolveFacilitator = (
   };
 };
 
-/**
- * Check if a facilitator supports a specific network/token combination
- */
 export const checkFacilitatorSupport = (
   facilitator: ResolvedFacilitator,
   network: ResolvedNetwork,
   token: ResolvedToken
 ): ValidationError | { supported: true } => {
-  // Check if facilitator declares supported networks
   if (facilitator.networks.length > 0) {
     const networkSupported = facilitator.networks.some(
       (n) => n.config.chainId === network.config.chainId
@@ -454,7 +402,6 @@ export const checkFacilitatorSupport = (
     }
   }
 
-  // Check if facilitator declares supported tokens
   if (facilitator.tokens.length > 0) {
     const tokenSupported = facilitator.tokens.some(
       (t) =>
@@ -482,9 +429,6 @@ export const checkFacilitatorSupport = (
 // Full Configuration Validation
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Validate a complete payment configuration
- */
 export const validatePaymentConfig = (
   network: NetworkId,
   token: TokenId,
@@ -492,19 +436,16 @@ export const validatePaymentConfig = (
   payTo: string = "0x0000000000000000000000000000000000000000",
   amount: string = "1.0"
 ): ResolvedPaymentConfig | ValidationError => {
-  // Resolve network
   const resolvedNetwork = resolveNetwork(network);
   if ("code" in resolvedNetwork) {
     return resolvedNetwork;
   }
 
-  // Resolve token on this network
   const resolvedToken = resolveToken(token, resolvedNetwork);
   if ("code" in resolvedToken) {
     return resolvedToken;
   }
 
-  // Resolve facilitators
   const resolvedFacilitators: ResolvedFacilitator[] = [];
   if (facilitators) {
     const facilitatorArray = Array.isArray(facilitators) ? facilitators : [facilitators];
@@ -514,7 +455,6 @@ export const validatePaymentConfig = (
         return resolved;
       }
 
-      // Check if facilitator actually supports this network/token combination
       const supportCheck = checkFacilitatorSupport(resolved, resolvedNetwork, resolvedToken);
       if ("code" in supportCheck) {
         return supportCheck;
@@ -534,9 +474,6 @@ export const validatePaymentConfig = (
   };
 };
 
-/**
- * Validate multi-accept configuration (for merchants)
- */
 export const validateAcceptConfig = (
   options: {
     networks?: NetworkId[];
@@ -551,13 +488,9 @@ export const validateAcceptConfig = (
   | { success: false; error: ValidationError } => {
   const { networks: networkInputs, tokens: tokenInputs, facilitators, version = "auto" } = options;
 
-  // Default to all networks if none specified
   const networkIds = networkInputs?.length ? networkInputs : Object.keys(NETWORKS);
-
-  // Default to USDC if no tokens specified
   const tokenIds = tokenInputs?.length ? tokenInputs : ["usdc"];
 
-  // Resolve all networks
   const networks: ResolvedNetwork[] = [];
   for (const networkId of networkIds) {
     const resolved = resolveNetwork(networkId);
@@ -567,18 +500,17 @@ export const validateAcceptConfig = (
     networks.push(resolved);
   }
 
-  // Resolve all tokens on all networks
   const tokens: ResolvedToken[] = [];
   for (const tokenId of tokenIds) {
     let found = false;
     for (const network of networks) {
       const resolved = resolveToken(tokenId, network);
       if ("code" in resolved) {
-        continue; // Try next network
+        continue;
       }
       tokens.push(resolved);
       found = true;
-      break; // Found on this network
+      break;
     }
     if (!found) {
       return {
@@ -592,7 +524,6 @@ export const validateAcceptConfig = (
     }
   }
 
-  // Resolve facilitators
   const facilitatorArray = facilitators ? (Array.isArray(facilitators) ? facilitators : [facilitators]) : [];
   const resolvedFacilitators: ResolvedFacilitator[] = [];
   for (const facilitator of facilitatorArray) {
@@ -603,7 +534,6 @@ export const validateAcceptConfig = (
     resolvedFacilitators.push(resolved);
   }
 
-  // Create all valid combinations
   const configs: ResolvedPaymentConfig[] = [];
   for (const network of networks) {
     for (const token of tokens) {

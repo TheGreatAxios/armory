@@ -350,10 +350,11 @@ describe("Type Guard Cross-Compatibility", () => {
   });
 
   test("isV2 (alias for isX402V2Payload) correctly identifies V2 payment payloads", () => {
-    // V2 payment payload would have x402Version: 2 and accepted/payload fields
+    // V2 payment payload must have x402Version: 2, scheme, network, and payload fields
     const v2PaymentPayload = {
       x402Version: 2,
-      accepted: v2Requirements,
+      scheme: "exact",
+      network: "eip155:84532",
       payload: {
         signature: v1PaymentPayload.payload.signature,
         authorization: v1PaymentPayload.payload.authorization,
@@ -377,7 +378,8 @@ describe("Type Guard Cross-Compatibility", () => {
   test("isV1 returns false for V2 payloads", () => {
     const v2PaymentPayload = {
       x402Version: 2,
-      accepted: v2Requirements,
+      scheme: "exact",
+      network: "eip155:84532",
       payload: {},
     };
     expect(isV1(v2PaymentPayload)).toBe(false);

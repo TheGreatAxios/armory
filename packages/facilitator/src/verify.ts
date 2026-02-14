@@ -78,15 +78,13 @@ const extractChainId = (payload: PaymentPayload): number => {
   }
   if (isLegacyV1(payload)) return payload.chainId;
   // V2 CAIP-2 format: eip155:{chainId}
-  const match = payload.accepted.network.match(/^eip155:(\d+)$/);
-  if (!match) throw new InvalidPayloadError(`Invalid CAIP-2 chain ID: ${payload.accepted.network}`);
+  const match = payload.network.match(/^eip155:(\d+)$/);
+  if (!match) throw new InvalidPayloadError(`Invalid CAIP-2 chain ID: ${payload.network}`);
   return parseInt(match[1], 10);
 };
 
 const extractContractAddress = (payload: PaymentPayload): string => {
   if (isX402V1(payload)) {
-    // For x402 V1, we need to get the contract address from the asset in requirements
-    // or use a default USDC address based on network
     const networkToAddress: Record<string, string> = {
       "base": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
       "base-sepolia": "0x036bd51497f7f969ef59aBaadF254486EA431C8e",
@@ -102,13 +100,10 @@ const extractContractAddress = (payload: PaymentPayload): string => {
     return networkToAddress[payload.network] ?? "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
   }
   if (isLegacyV1(payload)) return payload.contractAddress;
-  // For V2, extract from the accepted.asset or from assetId if available
-  const assetId = (payload as any).assetId as string | undefined;
-  if (assetId) {
-    const match = assetId.match(/^eip155:\d+\/erc20:(0x[a-fA-F0-9]{40})$/);
+  if (isX402V2(payload) && payload.assetId) {
+    const match = payload.assetId.match(/^eip155:\d+\/erc20:(0x[a-fA-F0-9]{40})$/);
     if (match) return match[1];
   }
-  // Fallback to USDC on Base
   return "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
 };
 

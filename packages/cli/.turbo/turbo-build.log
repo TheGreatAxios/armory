@@ -1,11 +1,10 @@
-
-[0m[2m[35m$[0m [2m[1mtsup[0m
-[34mCLI[39m Building entry: src/cli.ts
-[34mCLI[39m Using tsconfig: tsconfig.json
-[34mCLI[39m tsup v8.5.1
-[34mCLI[39m Using tsup config: /Users/thegreataxios/projects/armory/packages/cli/tsup.config.ts
-[34mCLI[39m Target: esnext
-[34mCLI[39m Cleaning output folder
-[34mESM[39m Build start
-[32mESM[39m [1mdist/cli.js [22m[32m8.83 KB[39m
-[32mESM[39m ⚡️ Build success in 3ms
+$ tsup
+CLI Building entry: src/cli.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: /Users/thegreataxios/projects/armory/packages/cli/tsup.config.ts
+CLI Target: esnext
+CLI Cleaning output folder
+ESM Build start
+ESM dist/cli.js 8.83 KB
+ESM ⚡️ Build success in 5ms

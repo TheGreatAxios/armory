@@ -131,8 +131,8 @@ const extractChainId = (payload: PaymentPayload): number => {
     return payload.chainId;
   }
   // V2 format - chainId is in CAIP-2 format
-  const match = payload.accepted.network.match(/^eip155:(\d+)$/);
-  if (!match) throw new Error(`Invalid CAIP-2 chain ID: ${payload.accepted.network}`);
+  const match = payload.network.match(/^eip155:(\d+)$/);
+  if (!match) throw new Error(`Invalid CAIP-2 chain ID: ${payload.network}`);
   return parseInt(match[1], 10);
 };
 

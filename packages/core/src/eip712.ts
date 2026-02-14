@@ -22,6 +22,8 @@ export interface TransferWithAuthorization {
   nonce: bigint;
 }
 
+export type TransferWithAuthorizationRecord = TransferWithAuthorization & Record<string, unknown>;
+
 export type TypedDataField = { name: string; type: string };
 
 export type EIP712Types = {
@@ -61,7 +63,7 @@ export const createTransferWithAuthorization = (
     validBefore: bigint | number;
     nonce: bigint | number;
   }
-): TransferWithAuthorization => ({
+): TransferWithAuthorizationRecord => ({
   from: params.from,
   to: params.to,
   value: BigInt(params.value),

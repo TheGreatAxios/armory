@@ -290,7 +290,7 @@ const extractV2Params = (payload: PaymentPayloadV2): {
     v,
     r,
     s,
-    chainId: parseCAIP2ChainId(payload.accepted.network),
+    chainId: parseCAIP2ChainId(payload.network),
   };
 };
 

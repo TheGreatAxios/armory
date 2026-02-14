@@ -1,10 +1,24 @@
 # @armory-sh/base
 
-Core protocol library for X-402. Types, encoding, EIP-712, network configs.
+Core protocol library for x402. Types, encoding, EIP-712, network configs.
+
+---
+
+## Code Style
+
+- **TypeScript strict mode** - No `any`, use proper typing
+- **ES Modules** - Use `import { x } from 'y'` at top of files
+- **No IIFE** - Use named functions
+- **No dynamic imports** - All imports at compile time
+- **Avoid closures** - Prefer explicit function parameters over captured variables
+- **No OOP classes** - Prefer functional patterns
+- **Modular exports** - Export functions individually
 
 ---
 
 ## Package Commands
+
+- **NEVER skip tests** - Do not use `test.skip`, `describe.skip`, or `test.todo`
 
 ```bash
 # From /packages/core

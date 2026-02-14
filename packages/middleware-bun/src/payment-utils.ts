@@ -3,9 +3,11 @@ import type {
   X402PaymentRequirements,
 } from "@armory-sh/base";
 import { extractPaymentFromHeaders, X402_HEADERS } from "@armory-sh/base";
-import { verifyX402Payment } from "@armory-sh/facilitator";
 
-export type { X402VerifyOptions } from "@armory-sh/facilitator";
+export interface X402VerifyOptions {
+  chainId?: number;
+  rpcUrl?: string;
+}
 
 // Legacy V1 payload type for backward compatibility
 export interface LegacyPaymentPayloadV1 {
@@ -106,9 +108,12 @@ export const decodePayload = (
   }
 
   // Check for x402 format first
-  // If it was a JSON string, pass the JSON object; otherwise pass the raw base64
+  // If it was a JSON string, encode to base64; otherwise pass the raw base64
+  const base64Value = isJsonString
+    ? Buffer.from(headerValue).toString("base64")
+    : headerValue;
   const headers = new Headers();
-  headers.set(X402_HEADERS.PAYMENT, isJsonString ? JSON.stringify(parsed) : headerValue);
+  headers.set(X402_HEADERS.PAYMENT, base64Value);
   const x402Payload = extractPaymentFromHeaders(headers);
   if (x402Payload) {
     return { payload: x402Payload, version: 2 };
@@ -163,46 +168,14 @@ export const verifyWithFacilitator = async (
   }
 };
 
-export const verifyLocally = async (
+export const verifyPayment = async (
   payload: AnyPaymentPayload,
   requirements: X402PaymentRequirements,
+  facilitatorUrl: string,
   verifyOptions?: { chainId?: number; rpcUrl?: string }
 ): Promise<PaymentVerificationResult> => {
-  // For legacy formats, we'd need to convert to x402 format first
-  // For now, return an error indicating facilitator is required for legacy formats
-  if (isLegacyV1(payload) || isLegacyV2(payload)) {
-    return {
-      success: false,
-      error: "Local verification not supported for legacy payload formats. Use a facilitator.",
-    };
-  }
-
-  // Use the verifier
-  const result = await verifyX402Payment(payload as X402PaymentPayload, requirements, verifyOptions);
-
-  if (!result.success) {
-    return {
-      success: false,
-      error: JSON.stringify({
-        error: "Payment verification failed",
-        reason: result.error.name,
-        message: result.error.message,
-      }),
-    };
-  }
-
-  return { success: true, payerAddress: result.payerAddress };
+  return verifyWithFacilitator(facilitatorUrl, payload, requirements, verifyOptions);
 };
-
-export const verifyPaymentWithRetry = async (
-  payload: AnyPaymentPayload,
-  requirements: X402PaymentRequirements,
-  facilitatorUrl?: string,
-  verifyOptions?: { chainId?: number; rpcUrl?: string }
-): Promise<PaymentVerificationResult> =>
-  facilitatorUrl
-    ? verifyWithFacilitator(facilitatorUrl, payload, requirements, verifyOptions)
-    : verifyLocally(payload, requirements, verifyOptions);
 
 /**
  * Extract payer address from various payload formats

@@ -95,7 +95,7 @@ export const armoryPay = async <T = unknown>(
     if (isValidationError(config)) {
       return {
         success: false,
-        code: config.code as any,
+        code: config.code,
         message: config.message,
         details: config,
       };

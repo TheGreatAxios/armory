@@ -30,6 +30,8 @@ export type PayToV2 =
       callback?: string;
     };
 
+export type PayToAddress = Address | PayToV2;
+
 export interface Extensions {
   [key: string]: unknown;
 }
@@ -135,17 +137,19 @@ export interface SchemePayloadV2 {
 
 /**
  * Payment payload sent by client
- * Matches x402 V2 PaymentPayload spec
+ * Matches x402 V2 PaymentPayload spec (Coinbase format)
  */
 export interface PaymentPayloadV2 {
   /** Protocol version identifier */
   x402Version: 2;
-  /** Resource being accessed (echoed from server) */
-  resource?: ResourceInfo;
-  /** Selected payment requirement from server's accepts array */
-  accepted: PaymentRequirementsV2;
+  /** Payment scheme (e.g., "exact") */
+  scheme: string;
+  /** Network identifier in CAIP-2 format */
+  network: string;
   /** Scheme-specific payment data */
   payload: SchemePayloadV2;
+  /** Resource being accessed (optional, echoed from server) */
+  resource?: ResourceInfo;
   /** Protocol extensions data */
   extensions?: Extensions;
 }
@@ -217,7 +221,8 @@ export function isPaymentPayloadV2(obj: unknown): obj is PaymentPayloadV2 {
     obj !== null &&
     "x402Version" in obj &&
     (obj as PaymentPayloadV2).x402Version === 2 &&
-    "accepted" in obj &&
+    "scheme" in obj &&
+    "network" in obj &&
     "payload" in obj
   );
 }

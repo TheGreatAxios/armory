@@ -245,7 +245,6 @@ async function verifyX402Signature(
     },
   });
 
-  // Parse signature from hex format
   const sig = parseSignatureV2(payload.payload.signature as `0x${string}`);
 
   return await recoverAddress({

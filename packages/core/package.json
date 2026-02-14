@@ -27,6 +27,7 @@
     "directory": "packages/core"
   },
   "dependencies": {
+    "arktype": "^2.1.29",
     "viem": "2.45.0"
   },
   "devDependencies": {
@@ -36,6 +37,7 @@
   },
   "scripts": {
     "build": "tsup && tsc --emitDeclarationOnly",
-    "test": "bun test"
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
   }
 }

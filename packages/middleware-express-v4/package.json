@@ -1,0 +1,12 @@
+{
+  "name": "@armory-sh/middleware-express-v4",
+  "version": "0.3.13",
+  "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
+  "module": "index.ts",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "bun test tests/**/*.test.ts"
+  }
+}

@@ -102,3 +102,6 @@ export type { X402Transport } from "./transport";
 
 // EIP-3009 signing utilities
 export { signEIP3009, signEIP3009WithDomain, signPayment, recoverEIP3009Signer } from "./eip3009";
+
+// X402 Client factory
+export { createX402Client, type X402Client } from "./client";

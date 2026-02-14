@@ -41,6 +41,46 @@ export interface FacilitatorConfig {
 }
 
 /**
+ * Result from facilitator verification
+ */
+export interface FacilitatorVerifyResult {
+  success: boolean;
+  payerAddress?: string;
+  balance?: string;
+  requiredAmount?: string;
+  error?: string;
+}
+
+/**
+ * Result from facilitator settlement
+ */
+export interface FacilitatorSettleResult {
+  success: boolean;
+  txHash?: string;
+  error?: string;
+}
+
+/**
+ * Settlement mode - verify only, settle only, or both
+ */
+export type SettlementMode = "verify" | "settle" | "async";
+
+/**
+ * CAIP-2 chain ID type (e.g., eip155:8453)
+ */
+export type CAIP2ChainId = `eip155:${string}`;
+
+/**
+ * CAIP-2 asset ID type (e.g., eip155:8453/erc20:0xa0b8691...)
+ */
+export type CAIP2AssetId = `eip155:${string}/erc20:${string}`;
+
+/**
+ * Payment destination - address, CAIP-2 chain ID, or CAIP asset ID
+ */
+export type PayToAddress = `0x${string}` | CAIP2ChainId | CAIP2AssetId;
+
+/**
  * Pricing configuration for a specific network/token/facilitator combination
  */
 export interface PricingConfig {

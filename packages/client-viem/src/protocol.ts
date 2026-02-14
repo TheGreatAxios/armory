@@ -58,7 +58,6 @@ export type X402Wallet =
  * Detect x402 protocol version from response headers
  */
 export function detectX402Version(response: Response): 1 | 2 {
-  // Check for x402 V2 PAYMENT-REQUIRED header first
   const v2Header = response.headers.get(V2_HEADERS.PAYMENT_REQUIRED);
   if (v2Header) {
     try {
@@ -69,32 +68,23 @@ export function detectX402Version(response: Response): 1 | 2 {
     }
   }
 
-  // Check for x402 V1 X-PAYMENT-REQUIRED header
   const v1Header = response.headers.get(V1_HEADERS.PAYMENT_REQUIRED);
   if (v1Header) {
     try {
       const decoded = safeBase64Decode(v1Header);
       const parsed = JSON.parse(decoded);
       if (parsed.x402Version === 1) return 1;
-      // Legacy format without x402Version defaults to V1
       return 1;
     } catch {
       // Continue to legacy detection
     }
   }
 
-  // Default to V2 for new implementations
   return 2;
 }
 
 // ============================================================================
-// Parse Payment Requirements
-// ============================================================================
 
-/**
- * Parse x402 PAYMENT-REQUIRED header from response
- * Automatically detects V1 or V2 format
- */
 export interface ParsedPaymentRequirements {
   version: 1 | 2;
   requirements: X402PaymentRequirementsV1 | PaymentRequirementsV2;
@@ -110,7 +100,9 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
     }
 
     try {
-      const parsed = JSON.parse(v2Header) as PaymentRequiredV2;
+      // V2 header is also base64-encoded
+      const decoded = safeBase64Decode(v2Header);
+      const parsed = JSON.parse(decoded) as PaymentRequiredV2;
       if (!isX402V2PaymentRequired(parsed)) {
         throw new PaymentError("Invalid x402 V2 payment required format");
       }
@@ -177,6 +169,7 @@ async function signTypedData(
   if (wallet.type === "account" && !wallet.account.signTypedData) {
     throw new SigningError("Account does not support signTypedData");
   }
+
   const params = {
     domain,
     types,
@@ -185,13 +178,13 @@ async function signTypedData(
   } as const;
 
   if (wallet.type === "account") {
-    return wallet.account.signTypedData(params as any);
+    return wallet.account.signTypedData(params);
   }
 
   return wallet.walletClient.signTypedData({
     ...params,
     account: wallet.walletClient.account,
-  } as any);
+  });
 }
 
 /**
@@ -278,7 +271,6 @@ export async function createX402V1Payment(
     ? { ...domain, name: domainName ?? domain.name, version: domainVersion ?? domain.version }
     : domain;
 
-  // Create EIP-3009 authorization
   const authorization: EIP3009AuthorizationV1 = {
     from: fromAddress,
     to: requirements.payTo,
@@ -288,7 +280,6 @@ export async function createX402V1Payment(
     nonce,
   };
 
-  // Sign the authorization
   const value = createTransferWithAuthorization({
     from: authorization.from,
     to: authorization.to,
@@ -298,7 +289,7 @@ export async function createX402V1Payment(
     nonce: BigInt(authorization.nonce),
   });
 
-  const signature = await signTypedData(wallet, customDomain, EIP712_TYPES, value as unknown as Record<string, unknown>);
+  const signature = await signTypedData(wallet, customDomain, EIP712_TYPES, value);
   const { v, r, s } = parseSignature(signature);
 
   const payload: X402SchemePayloadV1 = {
@@ -335,7 +326,6 @@ export async function createX402V2Payment(
     ? { ...domain, name: domainName ?? domain.name, version: domainVersion ?? domain.version }
     : domain;
 
-  // Create EIP-3009 authorization
   const authorization: EIP3009Authorization = {
     from: fromAddress,
     to: requirements.payTo,
@@ -345,7 +335,6 @@ export async function createX402V2Payment(
     nonce,
   };
 
-  // Sign the authorization
   const value = createTransferWithAuthorization({
     from: authorization.from,
     to: authorization.to,
@@ -355,7 +344,7 @@ export async function createX402V2Payment(
     nonce: BigInt(authorization.nonce),
   });
 
-  const signature = await signTypedData(wallet, customDomain, EIP712_TYPES, value as unknown as Record<string, unknown>);
+  const signature = await signTypedData(wallet, customDomain, EIP712_TYPES, value);
   const { v, r, s } = parseSignature(signature);
 
   const payload: SchemePayloadV2 = {
@@ -365,7 +354,8 @@ export async function createX402V2Payment(
 
   return {
     x402Version: 2,
-    accepted: requirements,
+    scheme: requirements.scheme,
+    network: requirements.network,
     payload,
   };
 }

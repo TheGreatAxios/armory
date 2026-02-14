@@ -315,7 +315,8 @@ export async function createX402V2Payment(
 
   return {
     x402Version: 2,
-    accepted: requirements,
+    scheme: requirements.scheme,
+    network: requirements.network,
     payload,
   };
 }

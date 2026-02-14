@@ -3,7 +3,6 @@ import type {
   PaymentPayload,
   PaymentRequirements,
 } from "./payment-utils";
-import type { VerifyPaymentOptions } from "@armory-sh/facilitator";
 import {
   getRequirementsVersion,
   getHeadersForVersion,
@@ -16,7 +15,6 @@ import {
 export interface PaymentMiddlewareConfig {
   requirements: PaymentRequirements;
   facilitatorUrl?: string;
-  verifyOptions?: VerifyPaymentOptions;
   skipVerification?: boolean;
 }
 
@@ -35,13 +33,14 @@ const sendError = (
   headers: Record<string, string>,
   body: unknown
 ): void => {
-  res.status(status);
+  // Express v5: use res.statusCode instead of res.status()
+  res.statusCode = status;
   Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
   res.json(body);
 };
 
 export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
-  const { requirements, facilitatorUrl, verifyOptions, skipVerification = false } = config;
+  const { requirements, facilitatorUrl, skipVerification = false } = config;
   const version = getRequirementsVersion(requirements);
   const headers = getHeadersForVersion(version);
 
@@ -71,7 +70,7 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
       const payerAddress = skipVerification
         ? extractPayerAddress(payload)
         : await (async () => {
-            const result = await verifyPaymentWithRetry(payload, requirements, facilitatorUrl, verifyOptions);
+            const result = await verifyPaymentWithRetry(payload, requirements, facilitatorUrl);
             if (!result.success) {
               sendError(res, 402, { [headers.required]: encodeRequirements(requirements) }, { error: result.error });
               throw new Error("Verification failed");

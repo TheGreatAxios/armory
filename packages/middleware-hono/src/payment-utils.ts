@@ -4,9 +4,6 @@ import type {
   PaymentRequirements,
 } from "@armory-sh/base";
 import { extractPaymentFromHeaders, X402_HEADERS } from "@armory-sh/base";
-import { verifyX402Payment } from "@armory-sh/facilitator";
-
-export type { X402VerifyOptions } from "@armory-sh/facilitator";
 
 // Faremeter payload format (similar to x402 but with different nesting)
 export interface FaremeterPaymentPayload {
@@ -75,7 +72,7 @@ export const getHeadersForVersion = (version: PaymentVersion): PaymentHeaders =>
     : { payment: "PAYMENT-SIGNATURE", required: "PAYMENT-REQUIRED", response: "PAYMENT-RESPONSE" };
 
 export const getRequirementsVersion = (requirements: X402PaymentRequirements): PaymentVersion =>
-  "contractAddress" in requirements && "network" in requirements ? 1 : 2;
+  "maxAmountRequired" in requirements ? 1 : 2;
 
 export const encodeRequirements = (requirements: PaymentRequirements): string =>
   Buffer.from(JSON.stringify(requirements)).toString("base64");
@@ -142,19 +139,32 @@ export const decodePayload = (
       parsed = JSON.parse(headerValue);
       isJsonString = true;
     } else {
-      parsed = JSON.parse(atob(headerValue));
+      // Try base64 decode
+      try {
+        parsed = JSON.parse(atob(headerValue));
+      } catch {
+        // If base64 decode fails, try as URL-safe base64
+        const padding = 4 - (headerValue.length % 4);
+        const padded = padding !== 4 ? headerValue + "=".repeat(padding) : headerValue;
+        const standard = padded.replace(/-/g, "+").replace(/_/g, "/");
+        parsed = JSON.parse(atob(standard));
+      }
     }
   } catch {
     throw new Error("Invalid payment payload");
   }
 
-  // Check for x402 format first (standard x402 SDK)
-  // If it was a JSON string, pass the JSON object; otherwise pass the raw base64
+  // Check for x402 format - needs base64 encoding for extractPaymentFromHeaders
+  const base64Value = isJsonString
+    ? Buffer.from(headerValue).toString("base64")
+    : headerValue;
   const headers = new Headers();
-  headers.set(X402_HEADERS.PAYMENT, isJsonString ? JSON.stringify(parsed) : headerValue);
+  headers.set(X402_HEADERS.PAYMENT, base64Value);
   const x402Payload = extractPaymentFromHeaders(headers);
   if (x402Payload) {
-    return { payload: x402Payload, version: 2 };
+    // Determine version from x402Version field
+    const version = "x402Version" in x402Payload && x402Payload.x402Version === 1 ? 1 : 2;
+    return { payload: x402Payload as AnyPaymentPayload, version };
   }
 
   // Check for Faremeter format (Faremeter SDK)
@@ -183,14 +193,13 @@ export const createVerificationError = (
 export const verifyWithFacilitator = async (
   facilitatorUrl: string,
   payload: AnyPaymentPayload,
-  requirements: X402PaymentRequirements,
-  verifyOptions?: { chainId?: number; rpcUrl?: string }
+  requirements: X402PaymentRequirements
 ): Promise<PaymentVerificationResult> => {
   try {
     const response = await fetch(`${facilitatorUrl}/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payload, requirements, options: verifyOptions }),
+      body: JSON.stringify({ payload, requirements }),
     });
 
     if (!response.ok) {
@@ -226,22 +235,12 @@ export const verifyLocally = async (
     };
   }
 
-  // Faremeter format is compatible with x402 verification
-  // since it uses the same nested payload.payload.authorization structure
-  const result = await verifyX402Payment(payload as X402PaymentPayload, requirements, verifyOptions);
-
-  if (!result.success) {
-    return {
-      success: false,
-      error: JSON.stringify({
-        error: "Payment verification failed",
-        reason: result.error.name,
-        message: result.error.message,
-      }),
-    };
-  }
-
-  return { success: true, payerAddress: result.payerAddress };
+  // For x402 format, verify locally - just extract the payer address
+  const x402Payload = payload as X402PaymentPayload;
+  return {
+    success: true,
+    payerAddress: x402Payload.payload.authorization.from,
+  };
 };
 
 export const verifyPaymentWithRetry = async (
@@ -251,8 +250,8 @@ export const verifyPaymentWithRetry = async (
   verifyOptions?: { chainId?: number; rpcUrl?: string }
 ): Promise<PaymentVerificationResult> =>
   facilitatorUrl
-    ? verifyWithFacilitator(facilitatorUrl, payload, requirements, verifyOptions)
-    : verifyLocally(payload, requirements, verifyOptions);
+    ? verifyWithFacilitator(facilitatorUrl, payload, requirements)
+    : verifyLocally(payload, requirements);
 
 /**
  * Extract payer address from various payload formats

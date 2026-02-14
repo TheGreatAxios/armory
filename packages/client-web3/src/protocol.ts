@@ -236,8 +236,9 @@ export const createX402V2Payment = (params: {
 
   return {
     x402Version: 2,
+    scheme: params.accepted.scheme,
+    network: params.accepted.network,
     resource: params.resource,
-    accepted: params.accepted,
     payload: {
       signature: params.signature,
       authorization,

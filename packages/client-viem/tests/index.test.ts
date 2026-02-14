@@ -90,7 +90,7 @@ test("createPayment generates v2 payment payload", async () => {
   expect(payment).toBeDefined();
   // x402 V2 format
   expect(payment).toHaveProperty("x402Version", 2);
-  expect(payment).toHaveProperty("accepted");
+  expect(payment).toHaveProperty("scheme");
   expect(payment).toHaveProperty("payload");
   expect(payment.payload).toHaveProperty("signature");
   expect(payment.payload).toHaveProperty("authorization");
@@ -197,11 +197,8 @@ test("fetch handles 402 response with v2 payment", async () => {
   global.fetch = mock(() => {
     callCount++;
     if (callCount === 1) {
-      return Promise.resolve(
-        new Response("Payment Required", {
-          status: 402,
-          headers: {
-            "PAYMENT-REQUIRED": JSON.stringify({
+      // Base64 encode the PAYMENT-REQUIRED header (V2 format)
+      const paymentRequired = JSON.stringify({
               x402Version: 2,
               resource: "https://api.example.com/data",
               accepts: [{
@@ -212,7 +209,14 @@ test("fetch handles 402 response with v2 payment", async () => {
                 nonce: `${Date.now()}`,
                 expiry: 1735718400,
               }]
-            }),
+            });
+      const encoded = Buffer.from(paymentRequired).toString("base64");
+
+      return Promise.resolve(
+        new Response("Payment Required", {
+          status: 402,
+          headers: {
+            "PAYMENT-REQUIRED": encoded,
           },
         })
       );
@@ -386,11 +390,8 @@ test("payment flow with v2 protocol", async () => {
   const mockFetch = mock(() => {
     callCount++;
     if (callCount === 1) {
-      return Promise.resolve(
-        new Response("Payment Required", {
-          status: 402,
-          headers: {
-            "PAYMENT-REQUIRED": JSON.stringify({
+      // Base64 encode the PAYMENT-REQUIRED header (V2 format)
+      const paymentRequired = JSON.stringify({
               x402Version: 2,
               resource: "https://api.example.com/v2/resource",
               accepts: [{
@@ -401,7 +402,14 @@ test("payment flow with v2 protocol", async () => {
                 nonce: `${Date.now()}`,
                 expiry: 1735718400,
               }]
-            }),
+            });
+      const encoded = Buffer.from(paymentRequired).toString("base64");
+
+      return Promise.resolve(
+        new Response("Payment Required", {
+          status: 402,
+          headers: {
+            "PAYMENT-REQUIRED": encoded,
           },
         })
       );
