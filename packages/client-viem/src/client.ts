@@ -55,13 +55,11 @@ const toProtocolWallet = (wallet: X402Wallet): ProtocolWallet =>
     ? { type: "account", account: wallet.account }
     : { type: "walletClient", walletClient: wallet.walletClient };
 
-// Generate random nonce
 const generateNonce = (nonceGenerator?: () => string): `0x${string}` => {
   const nonce = nonceGenerator?.() ?? Date.now().toString();
   return nonce.startsWith("0x") ? (nonce as `0x${string}`) : `0x${nonce.padStart(64, "0")}`;
 };
 
-// Check settlement response
 const checkSettlement = (response: Response, version: 1 | 2): void => {
   const v1Header = response.headers.get(V1_HEADERS.PAYMENT_RESPONSE);
   const v2Header = response.headers.get(V2_HEADERS.PAYMENT_RESPONSE);
@@ -74,7 +72,6 @@ const checkSettlement = (response: Response, version: 1 | 2): void => {
       }
     } catch (error) {
       if (error instanceof PaymentError) throw error;
-      // Ignore invalid settlement headers
     }
   } else if (version === 2 && v2Header) {
     try {
@@ -84,12 +81,10 @@ const checkSettlement = (response: Response, version: 1 | 2): void => {
       }
     } catch (error) {
       if (error instanceof PaymentError) throw error;
-      // Ignore invalid settlement headers
     }
   }
 };
 
-// Add payment header to request
 const addPaymentHeader = (
   headers: Headers,
   payment: X402PaymentPayloadV1 | PaymentPayloadV2,
@@ -102,7 +97,6 @@ const addPaymentHeader = (
   }
 };
 
-// Create fetch function with payment handling
 const createFetch = (
   wallet: X402Wallet,
   config: Omit<X402ClientConfig, "wallet">
@@ -137,14 +131,12 @@ const createFetch = (
         console.log(`[X402] Detected protocol v${detectedVersion}`);
       }
 
-      // Parse payment requirements
       const parsed = parsePaymentRequired(response);
 
       if (debug) {
         console.log(`[X402] Payment requirements:`, parsed.requirements);
       }
 
-      // Create payment payload
       const fromAddress = getAddress();
       const nonce = generateNonce(nonceGenerator);
       const validBefore = Math.floor(Date.now() / 1000) + (config.defaultExpiry ?? DEFAULT_EXPIRY);
@@ -163,7 +155,6 @@ const createFetch = (
         console.log(`[X402] Created payment payload`);
       }
 
-      // Retry request with payment header
       const headers = new Headers(init?.headers);
       addPaymentHeader(headers, payment, parsed.version);
 
@@ -210,15 +201,12 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
       const nonce = generateNonce(nonceGenerator);
       const validBefore = expiry ?? Math.floor(Date.now() / 1000) + defaultExpiry;
 
-      // Determine target version
       const targetVersion = version === "auto" ? 1 : version;
 
-      // Get network info
       const networkConfig = getNetworkByChainId(chainId);
       const networkSlug = networkConfig ? normalizeNetworkName(networkConfig.name) : `eip155:${chainId}`;
 
       if (targetVersion === 1) {
-        // Create V1 requirements
         const requirements: X402PaymentRequirementsV1 = {
           scheme: "exact",
           network: networkSlug,
@@ -234,7 +222,6 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
         return createX402Payment(protocolWallet, parsed, from, nonce, validBefore, domainName, domainVersion);
       }
 
-      // Create V2 requirements
       const requirements: PaymentRequirementsV2 = {
         scheme: "exact",
         network: `eip155:${chainId}` as const,

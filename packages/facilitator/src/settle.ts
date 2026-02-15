@@ -181,12 +181,10 @@ const extractX402V1Params = (payload: X402PaymentPayloadV1): {
   }
   const { authorization, signature: fullSig } = payload.payload;
 
-  // Parse signature from combined hex format (0x + r + s + v)
   const r = `0x${fullSig.slice(2, 66)}` as `0x${string}`;
   const s = `0x${fullSig.slice(66, 130)}` as `0x${string}`;
   const v = parseInt(fullSig.slice(130, 132), 16);
 
-  // Get chain ID from network name
   const networkToChainId: Record<string, number> = {
     "base": 8453,
     "base-sepolia": 84532,
@@ -264,7 +262,6 @@ const extractV2Params = (payload: PaymentPayloadV2): {
   }
   const { authorization, signature: fullSig } = payload.payload;
 
-  // Parse signature from combined hex format (0x + r + s + v)
   const r = `0x${fullSig.slice(2, 66)}` as `0x${string}`;
   const s = `0x${fullSig.slice(66, 130)}` as `0x${string}`;
   const v = parseInt(fullSig.slice(130, 132), 16);

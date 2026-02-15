@@ -133,30 +133,25 @@ export const resolveMiddlewareConfig = (
       }
     : accept;
 
-  // Validate accept configuration
   const result = validateAcceptConfig(acceptOptions, payTo, amount);
   if (!result.success) {
     return result.error;
   }
 
-  // Convert to core facilitator configs
   const facilitatorConfigs: CoreFacilitatorConfig[] = result.config[0]?.facilitators.map((f) => ({
     url: f.url,
     createHeaders: f.input.headers,
   })) ?? [];
 
-  // Enrich configs with pricing info
   const enrichedConfigs: ResolvedPaymentConfigWithPricing[] = result.config.map((c) => {
     const networkName = normalizeNetworkName(normalizeNetworkName(c.network.config.name));
     const tokenSymbol = c.token.config.symbol;
 
-    // Check each facilitator for pricing
     const facilitatorPricing: { url: string; pricing?: PricingConfig }[] = c.facilitators.map((f) => {
       const pricingConfig = findPricingConfig(pricing, networkName, tokenSymbol, f.url);
       return { url: f.url, pricing: pricingConfig };
     });
 
-    // Get default pricing for this network/token
     const defaultPricing = findPricingConfig(pricing, networkName, tokenSymbol, "");
 
     return {

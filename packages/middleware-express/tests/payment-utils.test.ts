@@ -12,26 +12,25 @@ import {
 import { createX402V2Payload } from "../../core/src/fixtures/payloads";
 import { createX402V2Requirements } from "../../core/src/fixtures/requirements";
 
-describe("Express payment-utils: getHeadersForVersion", () => {
+describe("[middleware-express]: getHeadersForVersion", () => {
   test("returns V1 headers for version 1", () => {
     const headers = getHeadersForVersion(1);
     expect(headers.payment).toBe("X-PAYMENT");
     expect(headers.required).toBe("X-PAYMENT-REQUIRED");
-    expect(headers.response).toBe("X-PAYMENT-VERIFIED");
+    expect(headers.response).toBe("X-PAYMENT-RESPONSE");
   });
 
   test("returns V2 headers for version 2", () => {
     const headers = getHeadersForVersion(2);
     expect(headers.payment).toBe("PAYMENT-SIGNATURE");
     expect(headers.required).toBe("PAYMENT-REQUIRED");
-    expect(headers.response).toBe("PAYMENT-VERIFIED");
+    expect(headers.response).toBe("PAYMENT-RESPONSE");
   });
 });
 
-describe("Express payment-utils: decodePayload", () => {
+describe("[middleware-express]: decodePayload", () => {
   test("decodes x402 V2 JSON payload", () => {
     const payload = createX402V2Payload("test_express_decode");
-    // Must be base64 encoded for decodePayload
     const headerValue = Buffer.from(JSON.stringify(payload)).toString('base64');
     const result = decodePayload(headerValue);
 
@@ -44,7 +43,7 @@ describe("Express payment-utils: decodePayload", () => {
   });
 });
 
-describe("Express payment-utils: extractPayerAddress", () => {
+describe("[middleware-express]: extractPayerAddress", () => {
   test("extracts address from x402 V2 payload", () => {
     const payload = createX402V2Payload();
     const address = extractPayerAddress(payload as any);

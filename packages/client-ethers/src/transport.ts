@@ -70,11 +70,9 @@ const handlePaymentRequired = async (
   }
 
   try {
-    // Parse payment requirements using new x402 protocol functions
     const parsed = parsePaymentRequired(response);
     const from = await state.signer.getAddress();
 
-    // Create x402 payment payload
     const payload = await createX402Payment(state.signer, parsed, from as `0x${string}`);
     const encoded = encodeX402Payment(payload);
     const headerName = getPaymentHeaderName(parsed.version);

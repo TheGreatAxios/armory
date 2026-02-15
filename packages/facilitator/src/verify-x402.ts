@@ -312,35 +312,29 @@ export async function verifyX402Payment(
   options: X402VerifyOptions = {}
 ): Promise<X402VerificationResult> {
   try {
-    // Validate payload structure
     validateX402Payload(payload);
     validateX402Requirements(requirements);
 
     const auth = payload.payload.authorization;
     
-    // Verify signature
     const payerAddress = await verifyX402Signature(
       payload,
       requirements.asset as Address,
       options
     );
 
-    // Verify payer matches 'from' address
     if (payerAddress.toLowerCase() !== auth.from.toLowerCase()) {
       throw new X402InvalidSignatureError(
         `Signer address ${payerAddress} does not match from address ${auth.from}`
       );
     }
 
-    // Check validity window
     checkX402ValidityWindow(auth, options.expiryGracePeriod ?? 0);
 
-    // Check nonce
     if (!options.skipNonceCheck) {
       checkX402Nonce(auth.nonce, options.nonceTracker);
     }
 
-    // Check balance if needed
     const requiredAmount = BigInt(requirements.maxAmountRequired);
     
     if (options.skipBalanceCheck) {

@@ -11,7 +11,7 @@ import { Hono } from "hono";
 import { acceptPaymentsViaArmory } from "../src/index";
 import { DEFAULT_PAYMENT_CONFIG } from "../../core/src/fixtures/config";
 
-describe("Hono Middleware Integration", () => {
+describe("[middleware-hono]: Hono Middleware Integration", () => {
   test("returns 402 when no payment header provided", async () => {
     const app = new Hono();
     app.use("/*", acceptPaymentsViaArmory(DEFAULT_PAYMENT_CONFIG));

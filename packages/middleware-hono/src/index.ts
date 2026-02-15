@@ -92,11 +92,10 @@ export const acceptPaymentsViaArmory = (
   };
 
   return async (c: Context, next: Next) => {
-    // Check for payment header (supports both x402 V1 and V2)
     const paymentHeader =
       c.req.header(V1_HEADERS.PAYMENT) ||
       c.req.header(V2_HEADERS.PAYMENT_SIGNATURE) ||
-      c.req.header("X-PAYMENT"); // Fallback for case variations
+      c.req.header("X-PAYMENT");
 
     const resourceUrl = c.req.url;
 
@@ -149,7 +148,6 @@ export const acceptPaymentsViaArmory = (
       c.header("X-Payment-Verified", "true");
       c.header("X-Payer-Address", payerAddress);
 
-      // Create proper x402 settlement response
       const settlementResponse = {
         success: true,
         transaction: "",

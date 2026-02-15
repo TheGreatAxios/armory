@@ -1,4 +1,5 @@
 import type { Context } from "elysia";
+import { Elysia } from "elysia";
 import type {
   PaymentPayload,
   PaymentRequirements,
@@ -17,6 +18,7 @@ export interface PaymentMiddlewareConfig {
   requirements: PaymentRequirements;
   facilitatorUrl?: string;
   skipVerification?: boolean;
+  defaultVersion?: 1 | 2;
 }
 
 export interface PaymentInfo {
@@ -41,23 +43,35 @@ const errorResponse = (
   });
 
 export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
-  const { requirements, facilitatorUrl, skipVerification = false } = config;
-  const version = getRequirementsVersion(requirements);
+  const { requirements, facilitatorUrl, skipVerification = false, defaultVersion } = config;
+  const version = defaultVersion ?? getRequirementsVersion(requirements);
   const headers = getHeadersForVersion(version);
 
-  return {
-    name: "armory-payment",
-    beforeHandle: async (
-      context: Context & { store: Record<string, unknown> }
-    ): Promise<unknown> => {
+  return new Elysia({ name: "armory-payment" })
+    .derive(() => ({
+      payment: undefined as PaymentInfo | undefined,
+    }))
+    .onBeforeHandle(async ({ payment, request }) => {
       try {
-        const paymentHeader = context.request.headers.get(headers.payment);
+        const paymentHeader = request.headers.get(headers.payment);
 
         if (!paymentHeader) {
+          // For V1, use legacy base64-encoded format
+          // For V2/x402, use proper PaymentRequired format
+          const requiredValue = version === 1
+            ? Buffer.from(JSON.stringify(requirements)).toString("base64")
+            : JSON.stringify({
+                x402Version: version,
+                resource: {
+                  url: request.url,
+                  description: "API Access",
+                },
+                accepts: [requirements],
+              });
           return errorResponse(
             { error: "Payment required", accepts: [requirements] },
             402,
-            { [headers.required]: encodeRequirements(requirements) }
+            { [headers.required]: requiredValue }
           );
         }
 
@@ -94,17 +108,20 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
 
         const payerAddress = verifyResult.payerAddress!;
 
-        context.store.payment = { payload, payerAddress, version, verified: !skipVerification };
-        context.set.headers = {
-          ...context.set.headers,
-          ...createResponseHeaders(payerAddress, version),
-        };
+        (payment as PaymentInfo) = { payload, payerAddress, version, verified: !skipVerification };
       } catch (error) {
         return errorResponse({
           error: "Payment middleware error",
           message: error instanceof Error ? error.message : "Unknown error",
         }, 500);
       }
-    },
-  };
+    })
+    .onAfterHandle(({ payment }) => {
+      if (payment) {
+        const { payerAddress, version } = payment;
+        return {
+          headers: createResponseHeaders(payerAddress, version),
+        };
+      }
+    });
 };

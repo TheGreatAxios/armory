@@ -107,8 +107,6 @@ export const decodePayload = (
     throw new Error("Invalid payment payload");
   }
 
-  // Check for x402 format first
-  // If it was a JSON string, encode to base64; otherwise pass the raw base64
   const base64Value = isJsonString
     ? Buffer.from(headerValue).toString("base64")
     : headerValue;
@@ -119,7 +117,6 @@ export const decodePayload = (
     return { payload: x402Payload, version: 2 };
   }
 
-  // Check for legacy formats
   if (isLegacyV1(parsed)) {
     return { payload: parsed, version: 1 };
   }

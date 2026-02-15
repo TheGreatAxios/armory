@@ -31,7 +31,7 @@
     "typescript": "5.9.3"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsup",
     "test": "bun test"
   }
 }

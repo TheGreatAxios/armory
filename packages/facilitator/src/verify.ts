@@ -100,9 +100,13 @@ const extractContractAddress = (payload: PaymentPayload): string => {
     return networkToAddress[payload.network] ?? "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
   }
   if (isLegacyV1(payload)) return payload.contractAddress;
-  if (isX402V2(payload) && payload.assetId) {
-    const match = payload.assetId.match(/^eip155:\d+\/erc20:(0x[a-fA-F0-9]{40})$/);
-    if (match) return match[1];
+  // For V2, assetId might be in extensions or need to be derived from network
+  if (isX402V2(payload)) {
+    const assetId = (payload as any).assetId;
+    if (assetId) {
+      const match = assetId.match(/^eip155:\d+\/erc20:(0x[a-fA-F0-9]{40})$/);
+      if (match) return match[1];
+    }
   }
   return "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
 };
@@ -366,7 +370,6 @@ const getTokenDomain = (
     return { name: options.token.name, version: options.token.version };
   }
 
-  // Check for custom token in registry
   const customToken = getCustomToken(chainId, contractAddress);
   if (customToken) {
     return { name: customToken.name, version: customToken.version };

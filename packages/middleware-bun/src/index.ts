@@ -28,32 +28,36 @@ export interface BunMiddlewareConfig extends MiddlewareConfig {
 type PaymentVersion = 1 | 2;
 
 type ParsedPayment = {
-  payload: PaymentPayload;
+  payload: PaymentPayload | any;
   version: PaymentVersion;
   payerAddress: string;
 };
 
 const parsePaymentHeader = async (request: Request): Promise<ParsedPayment | null> => {
-  // Check for x402 V2 payment (Coinbase compatible) - PAYMENT-SIGNATURE header
+  // Try V2/x402 PAYMENT-SIGNATURE header first
   const paymentSig = request.headers.get("PAYMENT-SIGNATURE");
   if (paymentSig) {
     try {
-      const payload = decodePayment(paymentSig);
+      const payload = decodePayment(paymentSig) as any;
       if (isExactEvmPayload(payload)) {
-        return { payload, version: 2, payerAddress: payload.payload.authorization.from };
+        return { payload: payload as PaymentPayload | any, version: 2, payerAddress: payload.authorization.from };
       }
     } catch {
       // Fall through to legacy handling
     }
   }
 
-  // Check for V1 payment header (Faremeter and legacy x402)
+  // Try X-PAYMENT header (V1/Faremeter)
   const xPayment = request.headers.get("X-PAYMENT");
   if (xPayment) {
     try {
-      const payload = decodePayment(xPayment);
+      const payload = decodePayment(xPayment) as any;
       if (isExactEvmPayload(payload)) {
-        return { payload, version: 2, payerAddress: payload.payload.authorization.from };
+        return { payload: payload as PaymentPayload | any, version: 2, payerAddress: payload.authorization.from };
+      }
+      // For V1/Faremeter, check if it has a 'from' field (payer address)
+      if (payload && typeof payload === "object" && "from" in payload && typeof payload.from === "string") {
+        return { payload, version: 1, payerAddress: payload.from };
       }
     } catch {
       // Fall through to legacy handling

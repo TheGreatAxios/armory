@@ -34,7 +34,7 @@
     "bun-types": "latest"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsup",
     "test": "bun test"
   }
 }

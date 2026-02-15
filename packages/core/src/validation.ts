@@ -3,6 +3,7 @@
  * Ensures networks, tokens, and facilitators are compatible
  */
 
+import { type as arkType } from "arktype";
 import type {
   NetworkConfig,
   CustomToken,
@@ -19,6 +20,24 @@ import type {
   ValidationError,
   PaymentErrorCode,
 } from "./types/simple";
+
+// ═══════════════════════════════════════════════════════════════
+// ArkType Schemas
+// ═══════════════════════════════════════════════════════════════
+
+export const CustomTokenSchema = arkType({
+  symbol: "string",
+  name: "string",
+  version: "string",
+  contractAddress: "/^0x[a-fA-F0-9]{40}$/",
+  chainId: "number.integer > 0",
+  decimals: "number.integer >= 0?",
+});
+
+const NetworkIdSchema = arkType("string | number | object");
+
+const TokenIdSchema = arkType("string | number | object");
+
 import {
   NETWORKS,
   getNetworkConfig,
@@ -54,14 +73,23 @@ export const normalizeNetworkName = (name: string): string =>
     .replace(/-sepolia$/, "-sepolia")
     .replace(/^-|-$/g, "");
 
-export const resolveNetwork = (input: NetworkId): ResolvedNetwork | ValidationError => {
+export const resolveNetwork = (input: unknown): ResolvedNetwork | ValidationError => {
+  const inputCheck = NetworkIdSchema(input);
+  if (inputCheck instanceof arkType.errors) {
+    return createError(
+      "VALIDATION_FAILED",
+      "Invalid network input type",
+      { value: input, validOptions: ["string (name/CAIP-2)", "number (chainId)", "NetworkConfig"] }
+    );
+  }
+
   if (typeof input === "object" && input !== null && "chainId" in input) {
     const config = input as NetworkConfig;
     if (!config.chainId || !config.usdcAddress || !config.caip2Id) {
       return createError("INVALID_CAIP_FORMAT", "Invalid network config", { value: config });
     }
     return {
-      input,
+      input: input as unknown as NetworkId,
       config,
       caip2: config.caip2Id as `eip155:${number}`,
     };
@@ -134,9 +162,18 @@ const isEvmAddress = (value: string): boolean =>
   /^0x[a-fA-F0-9]{40}$/.test(value);
 
 export const resolveToken = (
-  input: TokenId,
+  input: unknown,
   network?: ResolvedNetwork
 ): ResolvedToken | ValidationError => {
+  const inputCheck = TokenIdSchema(input);
+  if (inputCheck instanceof arkType.errors) {
+    return createError(
+      "VALIDATION_FAILED",
+      "Invalid token input type",
+      { value: input, validOptions: ["string (symbol/address/CAIP Asset)", "number (deprecated)", "CustomToken"] }
+    );
+  }
+
   if (typeof input === "object" && input !== null && "contractAddress" in input) {
     const config = input as CustomToken;
     if (!config.chainId || !config.contractAddress || !config.symbol) {
@@ -159,7 +196,7 @@ export const resolveToken = (
     const caipAsset = `eip155:${config.chainId}/erc20:${config.contractAddress}` as CAIPAssetId;
 
     return {
-      input,
+      input: input as unknown as TokenId,
       config,
       caipAsset,
       network: tokenNetwork,
@@ -255,7 +292,7 @@ export const resolveToken = (
     if (network) {
       const customTokens = getAllCustomTokens();
       const matchingToken = customTokens.find(
-        (t) => t.symbol.toUpperCase() === normalizedSymbol && t.chainId === network.config.chainId
+        (t) => t.symbol?.toUpperCase() === normalizedSymbol && t.chainId === network.config.chainId
       );
 
       if (matchingToken) {
@@ -283,7 +320,7 @@ export const resolveToken = (
     }
 
     const customTokens = getAllCustomTokens();
-    const matchingToken = customTokens.find((t) => t.symbol.toUpperCase() === normalizedSymbol);
+    const matchingToken = customTokens.find((t) => t.symbol?.toUpperCase() === normalizedSymbol);
 
     if (matchingToken) {
       const tokenNetwork = resolveNetwork(matchingToken.chainId);

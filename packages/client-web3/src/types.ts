@@ -59,6 +59,7 @@ export interface X402TransportOptions {
 }
 
 export interface Web3X402Client {
+  fetch(url: string | Request, init?: RequestInit): Promise<Response>;
   getAccount(): Web3Account;
   getNetwork(): NetworkConfig;
   getVersion(): 1 | 2;

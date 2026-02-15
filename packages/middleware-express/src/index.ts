@@ -49,7 +49,7 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
       const paymentHeader = req.headers[headers.payment.toLowerCase()] as string | undefined;
 
       if (!paymentHeader) {
-        sendError(res, 402, { [headers.required]: encodeRequirements(requirements), "Content-Type": "application/json" }, { error: "Payment required", accepts: [requirements] });
+        sendError(res, 402, { [headers.required]: encodeRequirements(requirements, req.url || req.originalUrl), "Content-Type": "application/json" }, { error: "Payment required", accepts: [requirements] });
         return;
       }
 

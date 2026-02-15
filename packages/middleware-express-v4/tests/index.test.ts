@@ -5,7 +5,7 @@
 import { test, expect, describe } from "bun:test";
 import { getHeadersForVersion, extractPayerAddress } from "../src/payment-utils";
 
-describe("Express-v4 payment-utils", () => {
+describe("[middleware-express-v4]: Express-v4 payment-utils", () => {
   test("getHeadersForVersion returns V2 headers", () => {
     const headers = getHeadersForVersion(2);
     expect(headers.payment).toBe("PAYMENT-SIGNATURE");

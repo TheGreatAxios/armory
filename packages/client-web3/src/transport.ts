@@ -65,36 +65,28 @@ const handlePaymentRequired = async (
   response: Response,
   client: Web3X402Client
 ): Promise<Headers> => {
-  // Detect protocol version from response
   const version = detectX402Version(response, client.getVersion());
 
-  // Parse payment requirements using protocol functions
   const parsed = await parsePaymentRequired(response, version);
 
-  // Select the first "exact" scheme requirements
   const selectedRequirements = selectSchemeRequirements(parsed.requirements, "exact");
 
   if (!selectedRequirements) {
     throw new Error("No supported payment scheme found in requirements");
   }
 
-  // Convert requirements to client format based on version
   let result;
 
   if (version === 1 && isX402V1Requirements(selectedRequirements)) {
-    // V1 requirements
     const req = selectedRequirements as PaymentRequirementsV1;
     result = await client.handlePaymentRequired(req);
   } else if (version === 2 && isX402V2Requirements(selectedRequirements)) {
-    // V2 requirements
     const req = selectedRequirements as PaymentRequirementsV2;
     result = await client.handlePaymentRequired(req);
   } else {
-    // Fallback - try to handle with raw requirements
     result = await client.handlePaymentRequired(selectedRequirements as PaymentRequirementsV1 | PaymentRequirementsV2);
   }
 
-  // Create appropriate payment headers based on version
   return createPaymentHeaders(result.payload, version);
 };
 
@@ -133,7 +125,6 @@ export const createX402Transport = (options: X402TransportOptions): X402Transpor
         try {
           const response = await fetch(url, init);
 
-          // Check for 402 Payment Required using protocol detection
           if (isPaymentRequiredResponse(response) && autoSign) {
             const paymentHeaders = await handlePaymentRequired(response, client);
             const newInit = mergePaymentHeaders(init, paymentHeaders);

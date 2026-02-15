@@ -144,10 +144,6 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
   }
 }
 
-// ============================================================================
-// Create x402 Payment Payloads
-// ============================================================================
-
 /**
  * Get wallet address from X402Wallet
  */
@@ -265,7 +261,6 @@ export async function createX402V1Payment(
   const network = getNetworkSlug(requirements.network);
   const contractAddress = requirements.asset;
 
-  // Create EIP-712 domain
   const domain = createEIP712Domain(extractChainId(requirements.network), contractAddress);
   const customDomain = domainName || domainVersion
     ? { ...domain, name: domainName ?? domain.name, version: domainVersion ?? domain.version }
@@ -320,7 +315,6 @@ export async function createX402V2Payment(
   const contractAddress = requirements.asset;
   const network = requirements.network;
 
-  // Create EIP-712 domain
   const domain = createEIP712Domain(extractChainId(network), contractAddress);
   const customDomain = domainName || domainVersion
     ? { ...domain, name: domainName ?? domain.name, version: domainVersion ?? domain.version }

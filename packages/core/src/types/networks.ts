@@ -1,3 +1,6 @@
+import { type as arkType } from "arktype";
+import { CustomTokenSchema } from "../validation";
+
 export interface NetworkConfig {
   name: string;
   chainId: number;
@@ -13,7 +16,7 @@ export interface CustomToken {
   version: string;
   contractAddress: `0x${string}`;
   chainId: number;
-  decimals: number;
+  decimals?: number;
 }
 
 const tokenRegistry = new Map<string, CustomToken>();
@@ -79,9 +82,13 @@ export const getMainnets = (): NetworkConfig[] =>
 export const getTestnets = (): NetworkConfig[] =>
   Object.values(NETWORKS).filter((c) => c.name.toLowerCase().includes("sepolia"));
 
-export const registerToken = (token: CustomToken): CustomToken => {
-  tokenRegistry.set(tokenKey(token.chainId, token.contractAddress), token);
-  return token;
+export const registerToken = (token: unknown): CustomToken => {
+  const validated = CustomTokenSchema(token);
+  if (validated instanceof arkType.errors) {
+    throw new Error(`Invalid token: ${validated.summary}`);
+  }
+  tokenRegistry.set(tokenKey(validated.chainId, validated.contractAddress), validated);
+  return validated;
 };
 
 export const getCustomToken = (

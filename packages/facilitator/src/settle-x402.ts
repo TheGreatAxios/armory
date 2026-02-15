@@ -212,19 +212,15 @@ export async function settleX402Payment(
 ): Promise<X402SettlementResult> {
   const { paymentPayload, walletClient, contractAddress } = params;
 
-  // Validate the payload
   validatePaymentPayload(paymentPayload);
 
   const auth = paymentPayload.payload.authorization;
   const signature = paymentPayload.payload.signature;
 
-  // Check authorization hasn't expired
   checkAuthorizationExpiry(auth.validBefore);
 
-  // Get chain ID from network
   const chainId = getChainIdFromNetwork(paymentPayload.network);
 
-  // Find network configuration
   let networkConfig = null;
   for (const net of Object.values(NETWORKS)) {
     if (net.chainId === chainId) {
@@ -239,7 +235,6 @@ export async function settleX402Payment(
 
   const tokenAddress = contractAddress ?? (networkConfig?.usdcAddress as Address);
 
-  // Parse signature into v, r, s components
   const sig = parseSignatureV2(signature as `0x${string}`);
 
   try {

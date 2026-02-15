@@ -1,28 +1,8 @@
 import type {
   X402PaymentPayload,
   X402PaymentRequirements,
-  PaymentRequirements,
 } from "@armory-sh/base";
 import { extractPaymentFromHeaders, X402_HEADERS } from "@armory-sh/base";
-
-// Faremeter payload format (similar to x402 but with different nesting)
-export interface FaremeterPaymentPayload {
-  x402Version: 1;
-  scheme: string;
-  network: string; // network name like "base-sepolia"
-  asset: string; // asset name like "USDC"
-  payload: {
-    signature: `0x${string}`; // 0x-prefixed hex signature
-    authorization: {
-      from: string;
-      to: string;
-      value: string;
-      validAfter: string;
-      validBefore: string;
-      nonce: `0x${string}`;
-    };
-  };
-}
 
 // Legacy V1 payload type for backward compatibility
 export interface LegacyPaymentPayloadV1 {
@@ -32,7 +12,7 @@ export interface LegacyPaymentPayloadV1 {
   payTo: string;
   from: string;
   expiry: number;
-  signature: string; // 0x-prefixed hex signature
+  signature: string;
 }
 
 // Legacy V2 payload type for backward compatibility
@@ -44,11 +24,11 @@ export interface LegacyPaymentPayloadV2 {
   assetId: string;
   nonce: string;
   expiry: number;
-  signature: string; // 0x-prefixed hex signature
+  signature: string;
 }
 
 // Union type for all payload formats
-export type AnyPaymentPayload = X402PaymentPayload | FaremeterPaymentPayload | LegacyPaymentPayloadV1 | LegacyPaymentPayloadV2;
+export type AnyPaymentPayload = X402PaymentPayload | LegacyPaymentPayloadV1 | LegacyPaymentPayloadV2;
 
 export type PaymentVersion = 1 | 2;
 
@@ -74,12 +54,9 @@ export const getHeadersForVersion = (version: PaymentVersion): PaymentHeaders =>
 export const getRequirementsVersion = (requirements: X402PaymentRequirements): PaymentVersion =>
   "maxAmountRequired" in requirements ? 1 : 2;
 
-export const encodeRequirements = (requirements: PaymentRequirements): string =>
-  Buffer.from(JSON.stringify(requirements)).toString("base64");
+export const encodeRequirements = (requirements: X402PaymentRequirements): string =>
+  JSON.stringify(requirements);
 
-/**
- * Detect if a payload is legacy V1 format
- */
 function isLegacyV1(payload: unknown): payload is LegacyPaymentPayloadV1 {
   return (
     typeof payload === "object" &&
@@ -91,9 +68,6 @@ function isLegacyV1(payload: unknown): payload is LegacyPaymentPayloadV1 {
   );
 }
 
-/**
- * Detect if a payload is legacy V2 format
- */
 function isLegacyV2(payload: unknown): payload is LegacyPaymentPayloadV2 {
   return (
     typeof payload === "object" &&
@@ -105,33 +79,9 @@ function isLegacyV2(payload: unknown): payload is LegacyPaymentPayloadV2 {
   );
 }
 
-/**
- * Detect if a payload is Faremeter format
- * Faremeter uses x402Version: 1 with nested payload structure
- */
-function isFaremeterPayload(payload: unknown): payload is FaremeterPaymentPayload {
-  if (typeof payload !== "object" || payload === null) {
-    return false;
-  }
-  const p = payload as Record<string, unknown>;
-  return (
-    "x402Version" in p &&
-    p.x402Version === 1 &&
-    "scheme" in p &&
-    "network" in p &&
-    "asset" in p &&
-    "payload" in p &&
-    typeof p.payload === "object" &&
-    p.payload !== null &&
-    "signature" in (p.payload as Record<string, unknown>) &&
-    "authorization" in (p.payload as Record<string, unknown>)
-  );
-}
-
 export const decodePayload = (
   headerValue: string
 ): { payload: AnyPaymentPayload; version: PaymentVersion } => {
-  // Try to parse as JSON first
   let parsed: unknown;
   let isJsonString = false;
   try {
@@ -139,22 +89,23 @@ export const decodePayload = (
       parsed = JSON.parse(headerValue);
       isJsonString = true;
     } else {
-      // Try base64 decode
-      try {
-        parsed = JSON.parse(atob(headerValue));
-      } catch {
-        // If base64 decode fails, try as URL-safe base64
-        const padding = 4 - (headerValue.length % 4);
-        const padded = padding !== 4 ? headerValue + "=".repeat(padding) : headerValue;
-        const standard = padded.replace(/-/g, "+").replace(/_/g, "/");
-        parsed = JSON.parse(atob(standard));
-      }
+      parsed = JSON.parse(atob(headerValue));
     }
   } catch {
     throw new Error("Invalid payment payload");
   }
 
-  // Check for x402 format - needs base64 encoding for extractPaymentFromHeaders
+  // Check for x402Version to detect version first
+  if (typeof parsed === "object" && parsed !== null && "x402Version" in parsed) {
+    const version = (parsed as { x402Version: number }).x402Version;
+    if (version === 1) {
+      return { payload: parsed as AnyPaymentPayload, version: 1 };
+    }
+    if (version === 2) {
+      return { payload: parsed as AnyPaymentPayload, version: 2 };
+    }
+  }
+
   const base64Value = isJsonString
     ? Buffer.from(headerValue).toString("base64")
     : headerValue;
@@ -162,18 +113,9 @@ export const decodePayload = (
   headers.set(X402_HEADERS.PAYMENT, base64Value);
   const x402Payload = extractPaymentFromHeaders(headers);
   if (x402Payload) {
-    // Determine version from x402Version field
-    const version = "x402Version" in x402Payload && x402Payload.x402Version === 1 ? 1 : 2;
-    return { payload: x402Payload as AnyPaymentPayload, version };
+    return { payload: x402Payload, version: 2 };
   }
 
-  // Check for Faremeter format (Faremeter SDK)
-  // Faremeter uses similar structure but different nesting
-  if (isFaremeterPayload(parsed)) {
-    return { payload: parsed, version: 1 };
-  }
-
-  // Check for legacy formats
   if (isLegacyV1(parsed)) {
     return { payload: parsed, version: 1 };
   }
@@ -185,79 +127,7 @@ export const decodePayload = (
   throw new Error("Unrecognized payment payload format");
 };
 
-export const createVerificationError = (
-  message: string,
-  details?: unknown
-): string => JSON.stringify({ error: message, details });
-
-export const verifyWithFacilitator = async (
-  facilitatorUrl: string,
-  payload: AnyPaymentPayload,
-  requirements: X402PaymentRequirements
-): Promise<PaymentVerificationResult> => {
-  try {
-    const response = await fetch(`${facilitatorUrl}/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payload, requirements }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      return { success: false, error: JSON.stringify(error) };
-    }
-
-    const result = await response.json() as { success: boolean; error?: string; payerAddress?: string };
-    if (!result.success) {
-      return { success: false, error: result.error ?? "Verification failed" };
-    }
-
-    return { success: true, payerAddress: result.payerAddress ?? "" };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown facilitator error",
-    };
-  }
-};
-
-export const verifyLocally = async (
-  payload: AnyPaymentPayload,
-  requirements: X402PaymentRequirements,
-  verifyOptions?: { chainId?: number; rpcUrl?: string }
-): Promise<PaymentVerificationResult> => {
-  // For legacy formats, we'd need to convert to x402 format first
-  // For now, return an error indicating facilitator is required for legacy formats
-  if (isLegacyV1(payload) || isLegacyV2(payload)) {
-    return {
-      success: false,
-      error: "Local verification not supported for legacy payload formats. Use a facilitator.",
-    };
-  }
-
-  // For x402 format, verify locally - just extract the payer address
-  const x402Payload = payload as X402PaymentPayload;
-  return {
-    success: true,
-    payerAddress: x402Payload.payload.authorization.from,
-  };
-};
-
-export const verifyPaymentWithRetry = async (
-  payload: AnyPaymentPayload,
-  requirements: X402PaymentRequirements,
-  facilitatorUrl?: string,
-  verifyOptions?: { chainId?: number; rpcUrl?: string }
-): Promise<PaymentVerificationResult> =>
-  facilitatorUrl
-    ? verifyWithFacilitator(facilitatorUrl, payload, requirements)
-    : verifyLocally(payload, requirements);
-
-/**
- * Extract payer address from various payload formats
- */
 export const extractPayerAddress = (payload: AnyPaymentPayload): string => {
-  // x402 format
   if ("payload" in payload) {
     const x402Payload = payload as X402PaymentPayload;
     if ("authorization" in x402Payload.payload) {
@@ -265,15 +135,6 @@ export const extractPayerAddress = (payload: AnyPaymentPayload): string => {
     }
   }
 
-  // Faremeter format (nested payload.payload.authorization.from)
-  if ("x402Version" in payload) {
-    const faremeterPayload = payload as FaremeterPaymentPayload;
-    if ("payload" in faremeterPayload && "authorization" in faremeterPayload.payload) {
-      return faremeterPayload.payload.authorization.from;
-    }
-  }
-
-  // Legacy V1/V2 format
   if ("from" in payload && typeof payload.from === "string") {
     return payload.from;
   }

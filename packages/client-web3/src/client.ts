@@ -9,6 +9,8 @@ import {
   networkToCaip2,
   combineSignatureV2,
   createNonce,
+  V1_HEADERS,
+  V2_HEADERS,
   type PaymentPayloadV1,
   type PaymentPayloadV2,
   type PaymentRequirementsV1,
@@ -33,6 +35,9 @@ import { createEIP712Domain, createTransferWithAuthorization } from "./eip3009";
 import {
   createX402V1Payment,
   createX402V2Payment,
+  detectX402Version,
+  parsePaymentRequired,
+  selectSchemeRequirements,
   type X402Version,
 } from "./protocol";
 
@@ -141,7 +146,6 @@ const signPaymentV1 = async (
 
   const signature = await signTypedDataWrapper(state.account, domain, message);
 
-  // Create legacy V1 payload for backward compatibility
   const legacyPayload: PaymentPayloadV1 = {
     from,
     to,
@@ -157,6 +161,53 @@ const signPaymentV1 = async (
   };
 
   return { v: signature.v, r: signature.r, s: signature.s, payload: legacyPayload };
+};
+
+/**
+ * Handle payment requirements for V1 or V2 protocol
+ * This is used by both fetch() and handlePaymentRequired()
+ */
+const handlePaymentRequirements = async (
+  requirements: PaymentRequirementsV1 | PaymentRequirementsV2,
+  state: ReturnType<typeof createClientState>
+): Promise<PaymentSignatureResult> => {
+  const version = detectVersionFromRequirements(requirements);
+
+  if (version === 1) {
+    // V1 requirements handling
+    const req = requirements as PaymentRequirementsV1;
+
+    // Handle x402 V1 format
+    if (isX402V1Requirements(req)) {
+      const x402Req = req as X402PaymentRequirementsV1;
+      return signPayment({
+        amount: x402Req.maxAmountRequired,
+        to: x402Req.payTo,
+      }, state);
+    }
+
+    // Handle legacy V1 format
+    const legacyReq = req as LegacyPaymentRequirementsV1;
+    return signPayment({
+      amount: legacyReq.amount,
+      to: legacyReq.payTo,
+      expiry: legacyReq.expiry,
+    }, state);
+  }
+
+  // V2 requirements handling
+  const req = requirements as PaymentRequirementsV2;
+  const to = typeof req.payTo === "string" ? req.payTo : "0x0000000000000000000000000000000000000000";
+  const from = getAddress(state.account);
+
+  return signPaymentV2(state, {
+    from,
+    to,
+    amount: req.amount,
+    nonce: crypto.randomUUID(),
+    expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
+    accepted: req,
+  });
 };
 
 /**
@@ -190,7 +241,6 @@ const signPaymentV2 = async (
   const signature = await signTypedDataWrapper(state.account, domain, message);
   const combinedSig = combineSignatureV2(signature.v, signature.r, signature.s);
 
-  // Create default accepted requirements if not provided
   const defaultAccepted: PaymentRequirementsV2 = accepted ?? {
     scheme: "exact",
     network: network.caip2Id as `eip155:${string}`,
@@ -200,7 +250,6 @@ const signPaymentV2 = async (
     maxTimeoutSeconds: expiry - Math.floor(Date.now() / 1000),
   };
 
-  // Create x402 V2 payment payload
   const x402Payload = createX402V2Payment({
     from,
     to,
@@ -212,7 +261,6 @@ const signPaymentV2 = async (
     accepted: defaultAccepted,
   });
 
-  // Return with the x402 V2 payload
   return {
     signature: {
       v: signature.v,
@@ -226,7 +274,51 @@ const signPaymentV2 = async (
 export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
   const state = createClientState(config);
 
+  const fetch = async (url: string | Request, init?: RequestInit): Promise<Response> => {
+    let response = await fetch(url, init);
+
+    if (response.status === 402) {
+      const version = detectX402Version(response, state.version);
+      const parsed = await parsePaymentRequired(response, version);
+
+      const selectedRequirements = selectSchemeRequirements(parsed.requirements, "exact");
+      if (!selectedRequirements) {
+        throw new Error("No supported payment scheme found in requirements");
+      }
+
+      const from = getAddress(state.account);
+      let result;
+
+      if (version === 1) {
+        result = await handlePaymentRequirements(selectedRequirements as PaymentRequirementsV1, state);
+      } else {
+        const req = selectedRequirements as PaymentRequirementsV2;
+        const to = typeof req.payTo === "string" ? req.payTo : "0x0000000000000000000000000000000000000000";
+        result = await signPaymentV2(state, {
+          from,
+          to,
+          amount: req.amount,
+          nonce: crypto.randomUUID(),
+          expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
+          accepted: req,
+        });
+      }
+
+      const paymentHeaders = new Headers(init?.headers);
+      if (version === 1) {
+        paymentHeaders.set(V1_HEADERS.PAYMENT, encodePaymentV1(result.payload as PaymentPayloadV1));
+      } else {
+        paymentHeaders.set(V2_HEADERS.PAYMENT_SIGNATURE, encodePaymentV2(result.payload as PaymentPayloadV2));
+      }
+
+      response = await fetch(url, { ...init, headers: paymentHeaders });
+    }
+
+    return response;
+  };
+
   return {
+    fetch,
     getAccount: () => state.account,
     getNetwork: () => state.network,
     getVersion: () => state.version,
@@ -268,48 +360,10 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
     handlePaymentRequired: async (
       requirements: PaymentRequirementsV1 | PaymentRequirementsV2
     ): Promise<PaymentSignatureResult> => {
-      // Detect version from requirements structure
-      const version = detectVersionFromRequirements(requirements);
-
-      if (version === 1) {
-        // V1 requirements handling
-        const req = requirements as PaymentRequirementsV1;
-
-        // Handle x402 V1 format
-        if (isX402V1Requirements(req)) {
-          const x402Req = req as X402PaymentRequirementsV1;
-          return signPayment({
-            amount: x402Req.maxAmountRequired,
-            to: x402Req.payTo,
-          }, state);
-        }
-
-        // Handle legacy V1 format
-        const legacyReq = req as LegacyPaymentRequirementsV1;
-        return signPayment({
-          amount: legacyReq.amount,
-          to: legacyReq.payTo,
-          expiry: legacyReq.expiry,
-        }, state);
-      }
-
-      // V2 requirements handling
-      const req = requirements as PaymentRequirementsV2;
-      const to = typeof req.payTo === "string" ? req.payTo : "0x0000000000000000000000000000000000000000";
-      const from = getAddress(state.account);
-
-      return signPaymentV2(state, {
-        from,
-        to,
-        amount: req.amount,
-        nonce: crypto.randomUUID(),
-        expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
-        accepted: req,
-      });
+      return handlePaymentRequirements(requirements, state);
     },
 
     verifySettlement: (response: SettlementResponseV1 | SettlementResponseV2): boolean => {
-      // Check for success field (both V1 and V2 have this)
       if ("success" in response) {
         return response.success;
       }
@@ -322,17 +376,14 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
  * Detect x402 version from requirements object structure
  */
 const detectVersionFromRequirements = (requirements: PaymentRequirementsV1 | PaymentRequirementsV2): X402Version => {
-  // V2 has CAIP-2 network format (eip155:xxx)
   if (isX402V2Requirements(requirements)) {
     return 2;
   }
 
-  // V1 has string network name
   if (isX402V1Requirements(requirements)) {
     return 1;
   }
 
-  // Check for legacy format indicators
   if ("contractAddress" in requirements) {
     return 1;
   }

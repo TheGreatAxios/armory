@@ -9,7 +9,7 @@
     "tests/e2e"
   ],
   "scripts": {
-    "test": "bun test packages/*/src/**/*.test.ts",
+    "test": "turbo run test",
     "test:e2e": "bun test tests/e2e/*.test.ts",
     "test:pay": "bun tests/e2e/pay.ts",
     "build": "turbo run build",

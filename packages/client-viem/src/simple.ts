@@ -85,12 +85,10 @@ export const armoryPay = async <T = unknown>(
   }
 ): Promise<ArmoryPaymentResult<T>> => {
   try {
-    // Convert to X402Wallet
     const x402Wallet: X402Wallet = "account" in wallet
       ? { type: "account", account: wallet.account }
       : { type: "walletClient", walletClient: wallet.walletClient };
 
-    // Validate network and token combination
     const config = validatePaymentConfig(network, token);
     if (isValidationError(config)) {
       return {
@@ -101,7 +99,6 @@ export const armoryPay = async <T = unknown>(
       };
     }
 
-    // Create client
     const client = createX402Client({
       wallet: x402Wallet,
       version: options?.version ?? "auto",
@@ -109,7 +106,6 @@ export const armoryPay = async <T = unknown>(
       debug: options?.debug ?? false,
     });
 
-    // Make request
     const method = options?.method ?? "GET";
     const headers = new Headers(options?.headers ?? {});
 
@@ -124,7 +120,6 @@ export const armoryPay = async <T = unknown>(
       });
     }
 
-    // Check if payment was required and handled
     if (response.status === 402) {
       return {
         success: false,
@@ -144,7 +139,6 @@ export const armoryPay = async <T = unknown>(
 
     const data = await response.json();
 
-    // Check for settlement header
     const txHash = response.headers.get("X-PAYMENT-RESPONSE") ||
                    response.headers.get("PAYMENT-RESPONSE");
 

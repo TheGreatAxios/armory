@@ -36,8 +36,8 @@
     "hono": "^4"
   },
   "scripts": {
-    "build": "tsup",
-    "build:dts": "tsc --declaration --skipLibCheck",
+    "build": "rm -rf dist && tsup",
+    "build:dts": "rm -rf dist && tsc --declaration --skipLibCheck",
     "test": "bun test"
   }
 }

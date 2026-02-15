@@ -150,6 +150,23 @@ USDC, EURC, USDT, WBTC, WETH across supported networks
 - **NEVER skip tests** - Do not use `test.skip`, `describe.skip`, or `test.todo`
 - All tests must run - if a test is broken, fix it or remove it
 
+### Test Naming
+
+Prefix all `describe` blocks with package name:
+
+```typescript
+// ✅ GOOD
+describe("[core]: Network Resolution", () => { ... })
+describe("[client-viem]: createX402Client", () => { ... })
+describe("[middleware-hono]: Payment Headers", () => { ... })
+
+// ❌ BAD
+describe("Network Resolution", () => { ... })
+describe("createX402Client", () => { ... })
+```
+
+This helps LLMs identify which package a test belongs to.
+
 ### Unit Tests
 
 - Use basic mocked tests - no external internet calls
