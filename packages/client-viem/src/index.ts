@@ -10,6 +10,14 @@ export {
   type X402TransportConfig,
 } from "./types";
 
+// Hook system
+export {
+  type ViemPaymentPayloadContext,
+  type ViemHookConfig,
+  type ViemHookRegistry,
+} from "./hooks";
+export { executeHooks, mergeExtensions } from "./hooks-engine";
+
 // Error types
 export { X402ClientError, SigningError, PaymentError } from "./errors";
 
@@ -68,3 +76,12 @@ export type {
 
 // Re-export header constants
 export { V2_HEADERS } from "@armory-sh/base";
+
+// Extension support
+export {
+  parseExtensions,
+  extractExtension,
+  createSIWxProof,
+  addExtensionsToPayload,
+  type ClientExtensionContext,
+} from "./extensions";

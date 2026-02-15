@@ -236,3 +236,69 @@ export interface ValidationError {
   /** Valid options */
   validOptions?: string[];
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Route Configuration Types
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Route pattern type for matching paths
+ */
+export type RoutePattern = string;
+
+/**
+ * Route matcher function type
+ */
+export type RouteMatcher = (path: string) => boolean;
+
+/**
+ * Route configuration with associated config data
+ */
+export interface RouteConfig<T = unknown> {
+  /** Route pattern (e.g., "/api/users", "/api/*", "/api/users/:id") */
+  pattern: RoutePattern;
+  /** Configuration associated with this route */
+  config: T;
+}
+
+/**
+ * Parsed route pattern information
+ */
+export interface ParsedPattern {
+  /** Route segments split by "/" */
+  segments: string[];
+  /** Whether this pattern contains a wildcard */
+  isWildcard: boolean;
+  /** Whether this pattern contains parameters (e.g., :id) */
+  isParametrized: boolean;
+  /** Parameter names extracted from the pattern */
+  paramNames: string[];
+  /** Match priority (higher = more specific) */
+  priority: number;
+}
+
+/**
+ * Route input configuration for middleware
+ */
+export interface RouteInputConfig {
+  /** Single exact route (no wildcards allowed) */
+  route?: string;
+  /** Multiple routes (allows wildcards) */
+  routes?: string[];
+}
+
+/**
+ * Route-specific validation error details
+ */
+export interface RouteValidationError {
+  /** Error code (custom string, not PaymentErrorCode) */
+  code: string;
+  /** Error message */
+  message: string;
+  /** Path to the invalid value */
+  path?: string;
+  /** Invalid value */
+  value?: unknown;
+  /** Valid options */
+  validOptions?: string[];
+}

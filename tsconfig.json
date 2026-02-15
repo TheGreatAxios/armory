@@ -16,6 +16,7 @@
       "@armory-sh/client-ethers": ["./packages/client-ethers/src"],
       "@armory-sh/client-viem": ["./packages/client-viem/src"],
       "@armory-sh/client-web3": ["./packages/client-web3/src"],
+      "@armory-sh/extensions": ["./packages/extensions/src"],
       "@armory-sh/middleware": ["./packages/middleware/src"],
       "@armory-sh/middleware-bun": ["./packages/middleware-bun/src"],
       "@armory-sh/middleware-elysia": ["./packages/middleware-elysia/src"],

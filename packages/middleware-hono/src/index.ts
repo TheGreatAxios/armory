@@ -69,3 +69,11 @@ export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
 };
 
 export { paymentMiddleware, createPaymentRequirements, type PaymentConfig } from "./simple";
+
+export { routeAwarePaymentMiddleware, type RouteAwarePaymentConfig } from "./routes";
+
+export {
+  buildExtensions,
+  extractExtension,
+  type ExtensionConfig,
+} from "./extensions";

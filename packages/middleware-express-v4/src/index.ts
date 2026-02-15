@@ -75,3 +75,5 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
     }
   };
 };
+
+export { routeAwarePaymentMiddleware, type RouteAwarePaymentMiddlewareConfig, type PaymentMiddlewareConfigEntry } from "./routes";

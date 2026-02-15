@@ -7,6 +7,7 @@ import type {
   PaymentPayloadV2,
   CustomToken,
 } from "@armory-sh/base";
+import type { ViemHookRegistry } from "./hooks";
 
 export type X402Wallet =
   | { type: "account"; account: Account }
@@ -29,6 +30,8 @@ export interface X402ClientConfig {
   domainName?: string;
   /** Override EIP-712 domain version for custom tokens */
   domainVersion?: string;
+  /** Extension hooks for handling protocol extensions */
+  hooks?: ViemHookRegistry;
 }
 
 export interface X402Client {
@@ -59,6 +62,8 @@ export interface X402TransportConfig {
   domainName?: string;
   /** Override EIP-712 domain version */
   domainVersion?: string;
+  /** Extension hooks for handling protocol extensions */
+  hooks?: ViemHookRegistry;
 }
 
 export interface PaymentResult {

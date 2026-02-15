@@ -34,6 +34,8 @@ import {
   type ParsedPaymentRequirements,
   type X402Wallet as ProtocolWallet,
 } from "./protocol";
+import type { ViemHookRegistry, PaymentRequiredContext, PaymentPayloadContext } from "./hooks";
+import { executeHooks } from "./hooks-engine";
 
 const DEFAULT_EXPIRY = 3600;
 const DEFAULT_NONCE = (): `0x${string}` => `0x${Date.now().toString(16).padStart(64, "0")}`;
@@ -92,11 +94,12 @@ const createFetch = (
     debug?: boolean;
     domainName?: string;
     domainVersion?: string;
+    hooks?: ViemHookRegistry;
   }
 ) => {
   const protocolWallet = toProtocolWallet(wallet);
   const getAddress = () => getWalletAddress(protocolWallet);
-  const { defaultExpiry, nonceGenerator, debug, domainName, domainVersion } = config;
+  const { defaultExpiry, nonceGenerator, debug, domainName, domainVersion, hooks } = config;
 
   return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     let response = await fetch(input, init);
@@ -116,6 +119,20 @@ const createFetch = (
       const nonce = generateNonce(nonceGenerator);
       const validBefore = Math.floor(Date.now() / 1000) + defaultExpiry;
 
+      const paymentRequiredContext: PaymentRequiredContext = {
+        url: input,
+        requestInit: init,
+        requirements: parsed,
+        serverExtensions: parsed.extra,
+        fromAddress,
+        nonce,
+        validBefore,
+      };
+
+      if (hooks) {
+        await executeHooks(hooks, paymentRequiredContext);
+      }
+
       const payment = await createX402Payment(
         protocolWallet,
         parsed,
@@ -128,6 +145,16 @@ const createFetch = (
 
       if (debug) {
         console.log("[X402] Created payment payload");
+      }
+
+      if (hooks) {
+        const paymentPayloadContext: PaymentPayloadContext = {
+          payload: payment,
+          requirements: parsed,
+          wallet: protocolWallet,
+          paymentContext: paymentRequiredContext,
+        };
+        await executeHooks(hooks, paymentPayloadContext);
       }
 
       const headers = new Headers(init?.headers);
@@ -147,7 +174,7 @@ const createFetch = (
 };
 
 export const createX402Client = (config: X402ClientConfig): X402Client => {
-  const { wallet, version = 2, defaultExpiry = DEFAULT_EXPIRY, nonceGenerator } = config;
+  const { wallet, version = 2, defaultExpiry = DEFAULT_EXPIRY, nonceGenerator, hooks } = config;
   const { domainName, domainVersion } = extractDomainConfig(config);
   const protocolWallet = toProtocolWallet(wallet);
   const getAddress = () => getWalletAddress(protocolWallet);
@@ -158,6 +185,7 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
     debug: config.debug,
     domainName,
     domainVersion,
+    hooks,
   });
 
   return {
@@ -218,6 +246,7 @@ export const createX402Transport = (config: X402TransportConfig): ((input: Reque
     token: config.token,
     domainName: config.domainName,
     domainVersion: config.domainVersion,
+    hooks: config.hooks,
   });
   return client.fetch;
 };

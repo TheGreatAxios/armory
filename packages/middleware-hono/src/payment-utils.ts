@@ -68,7 +68,6 @@ export const decodePayload = (
     }
   }
 
-  // Check for x402 V2 format
   if (isPaymentPayload(payload)) {
     return { payload };
   }

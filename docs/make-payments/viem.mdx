@@ -54,3 +54,79 @@ const result = await armoryPay(
   'usdc'
 );
 ```
+
+## With Extension Hooks
+
+For servers that require protocol extensions (like Sign-In-With-X):
+
+```typescript
+import { createX402Client } from '@armory-sh/client-viem';
+import { createSIWxHook, createPaymentIdHook } from '@armory-sh/extensions';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0x...');
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  hooks: {
+    // Automatically handle SIWX authentication
+    siwx: createSIWxHook({
+      domain: 'example.com',
+      statement: 'Sign in to access premium content'
+    }),
+    // Add payment idempotency
+    paymentId: createPaymentIdHook()
+  }
+});
+
+// Hooks automatically add extensions when server requests them
+const response = await client.fetch('https://api.example.com/protected');
+const data = await response.json();
+```
+
+## Multiple Requests
+
+Reuse the client for multiple requests:
+
+```typescript
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  hooks: {
+    siwx: createSIWxHook()
+  }
+});
+
+// First request - may trigger SIWX signing
+const response1 = await client.fetch('https://api.example.com/data1');
+
+// Subsequent requests - hooks execute as needed
+const response2 = await client.fetch('https://api.example.com/data2');
+```
+
+## Custom Extensions
+
+Create custom hooks for your own extensions:
+
+```typescript
+import { createCustomHook } from '@armory-sh/extensions';
+
+const myExtensionHook = createCustomHook({
+  key: 'my-extension',
+  handler: async (context) => {
+    if (context.payload) {
+      context.payload.extensions = {
+        ...(context.payload.extensions ?? {}),
+        'my-extension': { timestamp: Date.now() }
+      };
+    }
+  },
+  priority: 75
+});
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  hooks: {
+    custom: myExtensionHook
+  }
+});
+```

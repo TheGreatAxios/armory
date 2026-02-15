@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "bun": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./extensions": {
+      "types": "./dist/extensions.d.ts",
+      "bun": "./src/extensions.ts",
+      "default": "./dist/extensions.js"
     }
   },
   "files": [
@@ -28,10 +33,12 @@
     "hono": "^4"
   },
   "dependencies": {
-    "@armory-sh/base": "workspace:*"
+    "@armory-sh/base": "workspace:*",
+    "@armory-sh/extensions": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",
+    "tsup": "^8.5.1",
     "typescript": "5.9.3",
     "hono": "^4"
   },

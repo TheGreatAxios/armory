@@ -9,6 +9,7 @@ TypeScript libraries for the X-402 payment protocol (EIP-3009). Enable server-to
 - **Comprehensive Validation** - Clear errors before you make requests
 - **Multi-Chain Support** - Base, Ethereum, SKALE, and more
 - **Multi-Token Support** - USDC, EURC, USDT, WBTC, WETH, and custom tokens
+- **Route-Based Configuration** - Per-route payment settings for complex APIs
 - **Type-Safe** - Full TypeScript with strict mode
 
 ## Installation
@@ -67,6 +68,19 @@ app.use(acceptPaymentsViaArmory({
     tokens: ['usdc', 'eurc']
   }
 }));
+
+// Route-based - different pricing per endpoint
+app.use('/api/premium/*', acceptPaymentsViaArmory({
+  payTo: '0xYourAddress...',
+  amount: '5.0',  // Higher price for premium routes
+  route: '/api/premium/*'
+}));
+
+app.use('/api/basic/*', acceptPaymentsViaArmory({
+  payTo: '0xYourAddress...',
+  amount: '0.5',  // Lower price for basic routes
+  route: '/api/basic/*'
+}));
 ```
 
 ## All Input Formats
@@ -111,12 +125,14 @@ Pre-configured tokens include USDC, EURC, USDT, WBTC, and WETH across all suppor
 
 | Package | Description |
 |---------|-------------|
-| **@armory-sh/base** | Protocol types, encoding, EIP-712, network configs, validation |
+| **@armory-sh/base** | Protocol types, encoding, EIP-712, network configs, validation, route matching |
 | **@armory-sh/middleware** | HTTP middleware for Bun, Express, Hono, Elysia |
 | **@armory-sh/middleware-express** | Express-specific middleware |
+| **@armory-sh/middleware-express-v4** | Express v4-specific middleware |
 | **@armory-sh/middleware-hono** | Hono-specific middleware |
 | **@armory-sh/middleware-bun** | Bun-specific middleware |
 | **@armory-sh/middleware-elysia** | Elysia-specific middleware |
+| **@armory-sh/middleware-next** | Next.js App Router middleware |
 | **@armory-sh/client-viem** | Viem v2 payment client |
 | **@armory-sh/client-ethers** | Ethers.js v6 payment client |
 | **@armory-sh/client-web3** | Web3.js payment client |

@@ -214,6 +214,24 @@ export {
 } from "./validation";
 
 // ============================================
+// Route matching utilities
+// ============================================
+export type {
+  RoutePattern,
+  RouteMatcher,
+  RouteConfig,
+  ParsedPattern,
+  RouteInputConfig,
+  RouteValidationError,
+} from "./utils/routes";
+export {
+  parseRoutePattern,
+  matchRoute,
+  findMatchingRoute,
+  validateRouteConfig,
+} from "./utils/routes";
+
+// ============================================
 // Encoding functions (V2 only from encoding.ts)
 // ============================================
 export {
@@ -248,6 +266,20 @@ export type {
   ResolvedPaymentConfig,
   ValidationError,
 } from "./types/api";
+
+// ============================================
+// Hook system for extensions
+// ============================================
+export type {
+  PaymentRequiredContext,
+  PaymentPayloadContext,
+  HookResult,
+  OnPaymentRequiredHook,
+  BeforePaymentHook,
+  ExtensionHook,
+  HookConfig,
+  HookRegistry,
+} from "./types/hooks";
 
 // ============================================
 // Fixtures for testing

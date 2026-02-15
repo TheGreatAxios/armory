@@ -9,6 +9,7 @@ import type {
   PaymentRequiredV2,
   ResourceInfo,
   CustomToken,
+  Extensions,
 } from "@armory-sh/base";
 import {
   resolveNetwork,
@@ -21,6 +22,8 @@ import type { ResolvedNetwork, ResolvedToken, ValidationError } from "@armory-sh
 import {
   TOKENS,
 } from "@armory-sh/base";
+import type { ExtensionConfig } from "./extensions";
+import { buildExtensions } from "./extensions";
 
 type NetworkId = string | number;
 type TokenId = string;
@@ -40,6 +43,8 @@ export interface PaymentConfig {
   facilitatorUrl?: string;
   facilitatorUrlByChain?: Record<NetworkId, string>;
   facilitatorUrlByToken?: Record<NetworkId, Record<TokenId, string>>;
+
+  extensions?: ExtensionConfig;
 }
 
 export interface ResolvedSimpleConfig {
@@ -279,6 +284,7 @@ export function paymentMiddleware(config: PaymentConfig) {
         error: "Payment required",
         resource,
         accepts: requirements,
+        extensions: config.extensions ? buildExtensions(config.extensions) : undefined,
       };
 
       c.status(402);

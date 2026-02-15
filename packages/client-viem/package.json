@@ -12,6 +12,11 @@
       "bun": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./extensions": {
+      "types": "./dist/extensions.d.ts",
+      "bun": "./src/extensions.ts",
+      "default": "./dist/extensions.js"
+    },
     "./dist/*": "./dist/*.js"
   },
   "files": [
@@ -28,6 +33,7 @@
   },
   "dependencies": {
     "@armory-sh/base": "^0.2.19",
+    "@armory-sh/extensions": "workspace:*",
     "viem": "2.45.0"
   },
   "devDependencies": {

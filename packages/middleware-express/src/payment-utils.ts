@@ -74,7 +74,6 @@ export const decodePayload = (
     }
   }
 
-  // Check for x402 V2 format
   if (isPaymentPayload(payload)) {
     return { payload };
   }
@@ -87,7 +86,6 @@ export const decodePayload = (
 };
 
 export const extractPayerAddress = (payload: AnyPaymentPayload): string => {
-  // Check for x402 format with nested payload
   if (isPaymentPayload(payload)) {
     const p = payload.payload;
     if (isExactEvmPayload(p) && p.authorization?.from) {
@@ -95,7 +93,6 @@ export const extractPayerAddress = (payload: AnyPaymentPayload): string => {
     }
   }
 
-  // Check for direct `from` field (legacy format)
   if ("from" in payload && typeof payload.from === "string") {
     return payload.from;
   }

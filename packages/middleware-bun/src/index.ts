@@ -28,39 +28,34 @@ export interface BunMiddlewareConfig extends MiddlewareConfig {
 type PaymentVersion = 1 | 2;
 
 type ParsedPayment = {
-  payload: PaymentPayload | any;
+  payload: PaymentPayload;
   version: PaymentVersion;
   payerAddress: string;
 };
 
 const parsePaymentHeader = async (request: Request): Promise<ParsedPayment | null> => {
-  // Try V2/x402 PAYMENT-SIGNATURE header first
   const paymentSig = request.headers.get("PAYMENT-SIGNATURE");
   if (paymentSig) {
     try {
-      const payload = decodePayment(paymentSig) as any;
+      const payload = decodePayment(paymentSig);
       if (isExactEvmPayload(payload)) {
-        return { payload: payload as PaymentPayload | any, version: 2, payerAddress: payload.authorization.from };
+        return { payload: payload as PaymentPayload, version: 2, payerAddress: payload.authorization.from };
       }
     } catch {
-      // Fall through to legacy handling
     }
   }
 
-  // Try X-PAYMENT header (V1/Faremeter)
   const xPayment = request.headers.get("X-PAYMENT");
   if (xPayment) {
     try {
-      const payload = decodePayment(xPayment) as any;
+      const payload = decodePayment(xPayment);
       if (isExactEvmPayload(payload)) {
-        return { payload: payload as PaymentPayload | any, version: 2, payerAddress: payload.authorization.from };
+        return { payload: payload as PaymentPayload, version: 2, payerAddress: payload.authorization.from };
       }
-      // For V1/Faremeter, check if it has a 'from' field (payer address)
       if (payload && typeof payload === "object" && "from" in payload && typeof payload.from === "string") {
         return { payload, version: 1, payerAddress: payload.from };
       }
     } catch {
-      // Fall through to legacy handling
     }
   }
 
@@ -163,3 +158,5 @@ export const createBunMiddleware = (config: BunMiddlewareConfig): BunMiddleware 
     return successResponse(payerAddress, version);
   };
 };
+
+export { createRouteAwareBunMiddleware, type RouteAwareBunMiddlewareConfig } from "./routes";
