@@ -28,7 +28,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/TheGreatAxios/armory",
+    "url": "git+https://github.com/TheGreatAxios/armory.git",
     "directory": "packages/client-viem"
   },
   "dependencies": {

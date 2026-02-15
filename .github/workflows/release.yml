@@ -168,6 +168,13 @@ jobs:
           done
 
       - name: Publish to npm (alpha)
-        run: bun run ci:publish:alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for pkg_json in packages/*/package.json; do
+            dir=$(dirname "$pkg_json")
+            name=$(jq -r '.name' "$pkg_json")
+            version=$(jq -r '.version' "$pkg_json")
+            echo "📦 Publishing ${name}@${version}"
+            npm publish --provenance --access public --tag alpha "$dir" || true
+          done

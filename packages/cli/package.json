@@ -7,7 +7,7 @@
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TheGreatAxios/armory",
+    "url": "git+https://github.com/TheGreatAxios/armory.git",
     "directory": "packages/cli"
   },
   "homepage": "https://github.com/TheGreatAxios/armory#readme",
