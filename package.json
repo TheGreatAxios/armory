@@ -16,9 +16,10 @@
     "build": "turbo run build",
     "changeset": "changeset",
     "ci:version": "changeset version && bun update",
-    "ci:publish": "npm publish --provenance --access public --workspaces && changeset tag",
-    "ci:publish:beta": "npm publish --provenance --access public --tag beta --workspaces && changeset tag",
-    "ci:publish:alpha": "npm publish --provenance --access public --tag alpha --workspaces",
+    "ci:resolve-workspaces": "node scripts/resolve-workspaces.mjs",
+    "ci:publish": "bun run ci:resolve-workspaces && npm publish --provenance --access public --workspaces && changeset tag",
+    "ci:publish:beta": "bun run ci:resolve-workspaces && npm publish --provenance --access public --tag beta --workspaces && changeset tag",
+    "ci:publish:alpha": "bun run ci:resolve-workspaces && npm publish --provenance --access public --tag alpha --workspaces",
     "ci:release": "bun run ci:version && bun run ci:publish",
     "ci:release:beta": "bun run ci:version && bun run ci:publish:beta",
     "ci:release:alpha": "bun run ci:version && bun run ci:publish:alpha"

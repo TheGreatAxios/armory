@@ -167,6 +167,9 @@ jobs:
             echo "  ${name}@${alpha_version}"
           done
 
+      - name: Resolve workspace references
+        run: node scripts/resolve-workspaces.mjs
+
       - name: Publish to npm (alpha)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
