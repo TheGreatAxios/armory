@@ -1,5 +1,61 @@
 # @armory-sh/client-web3
 
+## 0.2.16
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
+## 0.2.15
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
+## 0.2.14
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+## 0.2.13
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
+## 0.2.12
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
+## 0.2.11
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
+## 0.2.10
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
 ## 0.2.9
 
 ### Patch Changes

@@ -1,30 +1,30 @@
 import type { Context } from "elysia";
-import type { VerifyPaymentOptions } from "@armory-sh/facilitator";
+import { Elysia } from "elysia";
+import type {
+  X402PaymentPayload,
+  X402PaymentRequirements,
+} from "@armory-sh/base";
 import type {
   PaymentPayload,
   PaymentRequirements,
 } from "./payment-utils";
 import {
-  getRequirementsVersion,
-  getHeadersForVersion,
   encodeRequirements,
   decodePayload,
   verifyPaymentWithRetry,
   extractPayerAddress,
   createResponseHeaders,
+  PAYMENT_HEADERS,
 } from "./payment-utils";
 
 export interface PaymentMiddlewareConfig {
-  requirements: PaymentRequirements;
+  requirements: X402PaymentRequirements;
   facilitatorUrl?: string;
-  verifyOptions?: VerifyPaymentOptions;
-  skipVerification?: boolean;
 }
 
 export interface PaymentInfo {
-  payload: PaymentPayload;
+  payload: X402PaymentPayload;
   payerAddress: string;
-  version: 1 | 2;
   verified: boolean;
 }
 
@@ -43,29 +43,27 @@ const errorResponse = (
   });
 
 export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
-  const { requirements, facilitatorUrl, verifyOptions, skipVerification = false } = config;
-  const version = getRequirementsVersion(requirements);
-  const headers = getHeadersForVersion(version);
+  const { requirements, facilitatorUrl } = config;
 
-  return {
-    beforeHandle: async (
-      context: Context & { store: Record<string, unknown> }
-    ): Promise<unknown> => {
+  return new Elysia({ name: "armory-payment" })
+    .derive(() => ({
+      payment: undefined as PaymentInfo | undefined,
+    }))
+    .onBeforeHandle(async ({ payment, request }) => {
       try {
-        const paymentHeader = context.request.headers.get(headers.payment);
+        const paymentHeader = request.headers.get(PAYMENT_HEADERS.PAYMENT);
 
         if (!paymentHeader) {
           return errorResponse(
-            { error: "Payment required", requirements },
+            { error: "Payment required", accepts: [requirements] },
             402,
-            { [headers.required]: encodeRequirements(requirements) }
+            { [PAYMENT_HEADERS.REQUIRED]: encodeRequirements(requirements) }
           );
         }
 
-        let payload: PaymentPayload;
-        let payloadVersion: 1 | 2;
+        let payload: X402PaymentPayload;
         try {
-          ({ payload, version: payloadVersion } = decodePayload(paymentHeader));
+          ({ payload } = decodePayload(paymentHeader) as { payload: X402PaymentPayload });
         } catch (error) {
           return errorResponse({
             error: "Invalid payment payload",
@@ -73,39 +71,33 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
           }, 400);
         }
 
-        if (payloadVersion !== version) {
-          return errorResponse({
-            error: "Payment version mismatch",
-            expected: version,
-            received: payloadVersion,
-          }, 400);
-        }
-
-        const verifyResult = skipVerification
-          ? { success: true, payerAddress: extractPayerAddress(payload) }
-          : await verifyPaymentWithRetry(payload, requirements, facilitatorUrl, verifyOptions);
+        const verifyResult = await verifyPaymentWithRetry(payload, requirements, facilitatorUrl);
 
         if (!verifyResult.success) {
           return errorResponse(
             { error: verifyResult.error },
             402,
-            { [headers.required]: encodeRequirements(requirements) }
+            { [PAYMENT_HEADERS.REQUIRED]: encodeRequirements(requirements) }
           );
         }
 
         const payerAddress = verifyResult.payerAddress!;
-
-        context.store.payment = { payload, payerAddress, version, verified: !skipVerification };
-        context.set.headers = {
-          ...context.set.headers,
-          ...createResponseHeaders(payerAddress, version),
-        };
+        (payment as PaymentInfo) = { payload, payerAddress, verified: true };
       } catch (error) {
         return errorResponse({
           error: "Payment middleware error",
           message: error instanceof Error ? error.message : "Unknown error",
         }, 500);
       }
-    },
-  };
+    })
+    .onAfterHandle(({ payment }) => {
+      if (payment) {
+        const { payerAddress } = payment;
+        return {
+          headers: createResponseHeaders(payerAddress),
+        };
+      }
+    });
 };
+
+export { routeAwarePaymentMiddleware, type RouteAwarePaymentMiddlewareConfig, type PaymentMiddlewareConfigEntry, type RouteAwarePaymentInfo } from "./routes";

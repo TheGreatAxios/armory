@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/client-viem",
-  "version": "0.2.12",
+  "version": "0.2.19",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "bun": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./extensions": {
+      "types": "./dist/extensions.d.ts",
+      "bun": "./src/extensions.ts",
+      "default": "./dist/extensions.js"
     },
     "./dist/*": "./dist/*.js"
   },
@@ -27,7 +32,8 @@
     "directory": "packages/client-viem"
   },
   "dependencies": {
-    "@armory-sh/base": "^0.2.12",
+    "@armory-sh/base": "^0.2.20",
+    "@armory-sh/extensions": "workspace:*",
     "viem": "2.45.0"
   },
   "devDependencies": {
@@ -35,7 +41,7 @@
     "bun-types": "latest"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsup",
     "test": "bun test",
     "example": "bun run examples/"
   }

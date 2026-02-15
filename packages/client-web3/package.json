@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/client-web3",
-  "version": "0.2.9",
+  "version": "0.2.16",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -27,7 +27,7 @@
     "directory": "packages/client-web3"
   },
   "dependencies": {
-    "@armory-sh/base": "^0.2.12",
+    "@armory-sh/base": "^0.2.20",
     "web3": "4.16.0",
     "web3-types": "1.10.0"
   },
@@ -36,7 +36,7 @@
     "bun-types": "latest"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsup",
     "test": "bun test",
     "example": "bun run examples/"
   }

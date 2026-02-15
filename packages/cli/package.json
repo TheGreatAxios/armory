@@ -1,6 +1,6 @@
 {
   "name": "armory-cli",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "Scaffold x402 payment-enabled apps",
   "type": "module",
   "license": "MIT",
@@ -33,11 +33,14 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsup",
     "dev": "bun run src/cli.ts",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "test": "bun test"
   },
   "dependencies": {
+    "@armory-sh/base": "workspace:*",
+    "@armory-sh/extensions": "workspace:*",
     "prompts": "2.4.2"
   },
   "devDependencies": {

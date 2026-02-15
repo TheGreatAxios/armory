@@ -9,7 +9,7 @@ Make payments to Armory-protected APIs using Ethers.js wallets.
 ## Basic Payment
 
 ```typescript
-import { armoryPay } from '@armory/client-ethers';
+import { armoryPay } from '@armory-sh/client-ethers';
 import { ethers } from 'ethers';
 
 const signer = new ethers.Wallet('0x...');
@@ -23,6 +23,32 @@ const result = await armoryPay(
 
 console.log(result.data);
 ```
+
+## Armory object workflow
+
+```typescript
+import { createArmory } from '@armory-sh/client-ethers';
+import { ethers } from 'ethers';
+
+const signer = new ethers.Wallet('0x...');
+
+const armory = createArmory({
+  wallet: signer,
+  chains: 'base',
+  tokens: 'usdc',
+  debug: true,
+});
+
+const premium = await armory.post('https://api.example.com/premium', { tier: 'pro' });
+const info = await armory.call('https://api.example.com/data');
+
+console.log(premium.data, info.data);
+```
+
+`createArmory` exposes `.get`, `.post`, `.put`, `.delete`, `.patch`, `.pay`, and `.call`. When a 402 response arrives the object automatically picks the best entry from the server's `accepts[]` array, favoring Base (`8453`), the Base USDC contract (`0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913`), and lower amounts. Leaving `chains`/`tokens` unset lets Armory evaluate any compatible option while still preferring Base/USDC.
+
+Use `.pay(url, { method: 'PATCH', body })` when you need to override the method and `.call(url)` if you just want the default GET request with payment.
+
 
 ## With Provider
 

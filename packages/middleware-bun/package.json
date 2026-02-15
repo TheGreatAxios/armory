@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-bun",
-  "version": "0.3.9",
+  "version": "0.3.18",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -24,15 +24,15 @@
     "directory": "packages/middleware-bun"
   },
   "dependencies": {
-    "@armory-sh/base": "workspace:*",
-    "@armory-sh/facilitator": "workspace:*"
+    "@armory-sh/base": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",
+    "tsup": "^8.5.1",
     "typescript": "5.9.3"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsup",
     "test": "bun test"
   }
 }

@@ -1,19 +1,19 @@
 /**
- * X402 Client Types - V1 and V2 Compatible
+ * X402 Client Types - V2 Only
  */
 
 import type { Address, Account, WalletClient, Transport } from "viem";
 import type {
-  X402PaymentPayloadV1,
   PaymentPayloadV2,
   CustomToken,
 } from "@armory-sh/base";
+import type { ViemHookRegistry } from "./hooks";
 
 export type X402Wallet =
   | { type: "account"; account: Account }
   | { type: "walletClient"; walletClient: WalletClient };
 
-export type X402ProtocolVersion = 1 | 2 | "auto";
+export type X402ProtocolVersion = 2;
 
 /** Token configuration - can use pre-configured tokens from @armory-sh/tokens */
 export type Token = CustomToken;
@@ -30,6 +30,8 @@ export interface X402ClientConfig {
   domainName?: string;
   /** Override EIP-712 domain version for custom tokens */
   domainVersion?: string;
+  /** Extension hooks for handling protocol extensions */
+  hooks?: ViemHookRegistry;
 }
 
 export interface X402Client {
@@ -41,10 +43,10 @@ export interface X402Client {
     contractAddress: Address,
     chainId: number,
     expiry?: number
-  ): Promise<X402PaymentPayloadV1 | PaymentPayloadV2>;
+  ): Promise<PaymentPayloadV2>;
   signPayment(
-    payload: Omit<X402PaymentPayloadV1 | PaymentPayloadV2, "signature" | "v" | "r" | "s">
-  ): Promise<X402PaymentPayloadV1 | PaymentPayloadV2>;
+    payload: UnsignedPaymentPayload
+  ): Promise<PaymentPayloadV2>;
 }
 
 export interface X402TransportConfig {
@@ -60,6 +62,8 @@ export interface X402TransportConfig {
   domainName?: string;
   /** Override EIP-712 domain version */
   domainVersion?: string;
+  /** Extension hooks for handling protocol extensions */
+  hooks?: ViemHookRegistry;
 }
 
 export interface PaymentResult {
@@ -67,4 +71,15 @@ export interface PaymentResult {
   txHash?: string;
   error?: string;
   timestamp: number;
+}
+
+export interface UnsignedPaymentPayload {
+  from: `0x${string}`;
+  to: `0x${string}`;
+  amount: string;
+  nonce: string;
+  expiry: number;
+  chainId: number;
+  contractAddress: `0x${string}`;
+  network: string;
 }

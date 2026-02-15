@@ -26,12 +26,11 @@ import {
   createEIP712Domain,
   EIP712_TYPES,
   encodePayment,
-  X402_HEADERS,
-  safeBase64Encode,
+  PAYMENT_SIGNATURE_HEADER,
+  PAYMENT_RESPONSE_HEADER,
+  PAYMENT_REQUIRED_HEADER,
   safeBase64Decode,
   createNonce,
-  toAtomicUnits,
-  combineSignature,
 } from "@armory-sh/base";
 
 import type { X402Client, X402ClientConfig, X402Wallet } from "./types-x402";
@@ -64,7 +63,7 @@ function getChainIdFromNetwork(network: string): number {
   throw new Error(`Unknown network: ${network}`);
 }
 
-function parseSignatureToHex(signature: Hash): string {
+function parseSignatureToHex(signature: Hash): `0x${string}` {
   // Remove 0x prefix if present
   const sig = signature.startsWith("0x") ? signature.slice(2) : signature;
   // Return full hex with prefix
@@ -86,7 +85,10 @@ async function signTypedData(
   wallet: X402Wallet,
   domain: TypedDataDomain,
   message: ExactEvmAuthorization
-): Promise<string> {
+): Promise<`0x${string}`> {
+  // Convert hex nonce to bigint for viem
+  const nonceBigInt = BigInt(message.nonce);
+  
   const params = {
     domain,
     types: EIP712_TYPES,
@@ -97,7 +99,7 @@ async function signTypedData(
       value: BigInt(message.value),
       validAfter: BigInt(message.validAfter),
       validBefore: BigInt(message.validBefore),
-      nonce: message.nonce,
+      nonce: nonceBigInt,
     },
   };
 
@@ -176,7 +178,7 @@ async function createPaymentPayload(
 }
 
 function extractRequirementsFromResponse(response: Response): X402PaymentRequirements {
-  const encoded = response.headers.get(X402_HEADERS.PAYMENT_REQUIRED);
+  const encoded = response.headers.get(PAYMENT_REQUIRED_HEADER);
   if (!encoded) {
     throw new PaymentError("No payment requirements found in 402 response");
   }
@@ -196,11 +198,11 @@ function extractRequirementsFromResponse(response: Response): X402PaymentRequire
 }
 
 function addPaymentHeader(headers: Headers, payment: X402PaymentPayload): void {
-  headers.set(X402_HEADERS.PAYMENT, encodePayment(payment));
+  headers.set(PAYMENT_SIGNATURE_HEADER, encodePayment(payment));
 }
 
 function checkSettlement(response: Response): void {
-  const encoded = response.headers.get(X402_HEADERS.PAYMENT_RESPONSE);
+  const encoded = response.headers.get(PAYMENT_RESPONSE_HEADER);
   if (!encoded) return;
 
   try {
@@ -289,7 +291,7 @@ export function createX402Client(config: X402ClientConfig): X402Client {
   };
 }
 
-export function createX402Transport(config: X402ClientConfig): typeof fetch {
+export function createX402Transport(config: X402ClientConfig): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
   const client = createX402Client(config);
   return client.fetch;
 }

@@ -1,0 +1,32 @@
+{
+  "name": "e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test **/*.test.ts",
+    "test:payments": "bun test payments/**/*.test.ts",
+    "test:general": "bun test general/**/*.test.ts"
+  },
+  "devDependencies": {
+    "@armory-sh/base": "workspace:*",
+    "@armory-sh/client-ethers": "workspace:*",
+    "@armory-sh/client-viem": "workspace:*",
+    "@armory-sh/client-web3": "workspace:*",
+    "@armory-sh/middleware-bun": "workspace:*",
+    "@armory-sh/middleware-elysia": "workspace:*",
+    "@armory-sh/middleware-express": "workspace:*",
+    "@armory-sh/middleware-express-v4": "workspace:*",
+    "@armory-sh/middleware-hono": "workspace:*",
+    "@faremeter/fetch": "^0.16.0",
+    "@faremeter/payment-evm": "^0.16.0",
+    "@types/express": "^4.17.21",
+    "@x402/fetch": "^2.3.0",
+    "@x402/evm": "^2.3.1",
+    "elysia": "^1.0.0",
+    "ethers": "^6.16.0",
+    "express": "^4.21.0",
+    "hono": "^4.0.0",
+    "viem": "^2.45.0",
+    "web3": "^4.16.0"
+  }
+}

@@ -16,7 +16,7 @@ import {
   resolveMiddlewareConfig,
   getPrimaryConfig,
   type SimpleMiddlewareConfig,
-} from "./simple";
+} from "./middleware-config";
 
 export type BunMiddleware = (request: Request) => Promise<Response | null>;
 
@@ -34,18 +34,31 @@ type ParsedPayment = {
 };
 
 const parsePaymentHeader = async (request: Request): Promise<ParsedPayment | null> => {
-  // Check for x402 payment (Coinbase compatible)
-  const x402Sig = request.headers.get("X402-PAYMENT");
-  if (x402Sig) {
+  const paymentSig = request.headers.get("PAYMENT-SIGNATURE");
+  if (paymentSig) {
     try {
-      const payload = decodePayment(x402Sig);
+      const payload = decodePayment(paymentSig);
       if (isExactEvmPayload(payload)) {
-        return { payload, version: 2, payerAddress: payload.payload.authorization.from };
+        return { payload: payload as PaymentPayload, version: 2, payerAddress: payload.authorization.from };
       }
     } catch {
-      // Fall through to legacy handling
     }
   }
+
+  const xPayment = request.headers.get("X-PAYMENT");
+  if (xPayment) {
+    try {
+      const payload = decodePayment(xPayment);
+      if (isExactEvmPayload(payload)) {
+        return { payload: payload as PaymentPayload, version: 2, payerAddress: payload.authorization.from };
+      }
+      if (payload && typeof payload === "object" && "from" in payload && typeof payload.from === "string") {
+        return { payload, version: 1, payerAddress: payload.from };
+      }
+    } catch {
+    }
+  }
+
   return null;
 };
 
@@ -58,9 +71,10 @@ const toHttpRequest = (request: Request): HttpRequest => {
 const errorResponse = (
   error: string,
   status: number,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
+  accepts?: unknown[]
 ): Response =>
-  new Response(JSON.stringify({ error }), {
+  new Response(JSON.stringify({ error, accepts }), {
     status,
     headers: { "Content-Type": "application/json", ...headers },
   });
@@ -113,7 +127,7 @@ export const createBunMiddleware = (config: BunMiddlewareConfig): BunMiddleware 
 
     if (!paymentResult) {
       const requirements = defaultVersion === 1 ? requirementsV1 : requirementsV2;
-      return errorResponse("Payment required", 402, createPaymentRequiredHeaders(requirements, defaultVersion));
+      return errorResponse("Payment required", 402, createPaymentRequiredHeaders(requirements, defaultVersion), [requirements]);
     }
 
     const { version, payerAddress } = paymentResult;
@@ -122,7 +136,7 @@ export const createBunMiddleware = (config: BunMiddlewareConfig): BunMiddleware 
       const verifyResult = await verifyWithFacilitator(toHttpRequest(request), facilitator);
       if (!verifyResult.success) {
         const requirements = version === 1 ? requirementsV1 : requirementsV2;
-        return errorResponse(`Payment verification failed: ${verifyResult.error}`, 402, createPaymentRequiredHeaders(requirements, version));
+        return errorResponse(`Payment verification failed: ${verifyResult.error}`, 402, createPaymentRequiredHeaders(requirements, version), [requirements]);
       }
     }
 
@@ -144,3 +158,5 @@ export const createBunMiddleware = (config: BunMiddlewareConfig): BunMiddleware 
     return successResponse(payerAddress, version);
   };
 };
+
+export { createRouteAwareBunMiddleware, type RouteAwareBunMiddlewareConfig } from "./routes";

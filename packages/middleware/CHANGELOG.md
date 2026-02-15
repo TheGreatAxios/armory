@@ -1,5 +1,103 @@
 # @armory-sh/middleware
 
+## 0.3.15
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.7
+  - @armory-sh/middleware-elysia@0.3.18
+  - @armory-sh/middleware-hono@0.3.20
+  - @armory-sh/middleware-bun@0.3.18
+
+## 0.3.14
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.6
+  - @armory-sh/middleware-elysia@0.3.17
+  - @armory-sh/middleware-hono@0.3.19
+  - @armory-sh/middleware-bun@0.3.17
+
+## 0.3.13
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.5
+  - @armory-sh/middleware-elysia@0.3.16
+  - @armory-sh/middleware-hono@0.3.18
+  - @armory-sh/middleware-bun@0.3.16
+
+## 0.3.12
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.4
+  - @armory-sh/middleware-elysia@0.3.15
+  - @armory-sh/middleware-hono@0.3.17
+  - @armory-sh/middleware-bun@0.3.15
+
+## 0.3.11
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.3
+  - @armory-sh/middleware-elysia@0.3.14
+  - @armory-sh/middleware-hono@0.3.16
+  - @armory-sh/middleware-bun@0.3.14
+
+## 0.3.10
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.2
+  - @armory-sh/middleware-elysia@0.3.13
+  - @armory-sh/middleware-hono@0.3.15
+  - @armory-sh/middleware-bun@0.3.13
+
+## 0.3.9
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.1
+  - @armory-sh/middleware-elysia@0.3.12
+  - @armory-sh/middleware-hono@0.3.14
+  - @armory-sh/middleware-bun@0.3.12
+
+## 0.3.8
+
+### Patch Changes
+
+- Fix Structure
+- Updated dependencies
+  - @armory-sh/middleware-express@0.3.11
+  - @armory-sh/middleware-elysia@0.3.11
+  - @armory-sh/middleware-hono@0.3.13
+  - @armory-sh/middleware-bun@0.3.11
+
+## 0.3.7
+
+### Patch Changes
+
+- Updated dependencies [d5977fa]
+  - @armory-sh/middleware-express@0.3.10
+  - @armory-sh/middleware-elysia@0.3.10
+  - @armory-sh/middleware-hono@0.3.12
+  - @armory-sh/middleware-bun@0.3.10
+
 ## 0.3.6
 
 ### Patch Changes

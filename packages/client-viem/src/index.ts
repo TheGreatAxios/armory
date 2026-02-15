@@ -10,20 +10,22 @@ export {
   type X402TransportConfig,
 } from "./types";
 
+// Hook system
+export {
+  type ViemPaymentPayloadContext,
+  type ViemHookConfig,
+  type ViemHookRegistry,
+} from "./hooks";
+export { executeHooks, mergeExtensions } from "./hooks-engine";
+
 // Error types
 export { X402ClientError, SigningError, PaymentError } from "./errors";
 
-// Protocol functions for x402 V1 and V2
+// Protocol functions
 export {
   detectX402Version,
   parsePaymentRequired,
-  createX402Payment,
-  createX402V1Payment,
-  createX402V2Payment,
-  encodeX402Payment,
-  getPaymentHeaderName,
   type ParsedPaymentRequirements,
-  type X402Wallet as ProtocolWallet,
 } from "./protocol";
 
 // Simple one-line API
@@ -31,13 +33,27 @@ export {
   armoryPay,
   armoryGet,
   armoryPost,
+  armoryPut,
+  armoryDelete,
+  armoryPatch,
   getWalletAddress,
   validateNetwork,
   validateToken,
   getNetworks,
   getTokens,
-  type SimpleWallet,
-} from "./simple";
+  normalizeWallet,
+  type SimpleWalletInput,
+  type NormalizedWallet,
+} from "./payment-api";
+
+// Armory API
+export {
+  createArmory,
+  type ArmoryConfig,
+  type ArmoryInstance,
+  type PaymentOptions,
+  type HttpMethod,
+} from "./armory-api";
 
 // Re-export simple types from core
 export type {
@@ -47,14 +63,8 @@ export type {
   FacilitatorConfig,
 } from "@armory-sh/base";
 
-// Re-export x402 types for convenience
+// Re-export x402 V2 types for convenience
 export type {
-  X402PaymentPayloadV1,
-  X402PaymentRequirementsV1,
-  X402PaymentRequiredV1,
-  X402SchemePayloadV1,
-  X402SettlementResponseV1,
-  EIP3009AuthorizationV1,
   PaymentPayloadV2,
   PaymentRequirementsV2,
   PaymentRequiredV2,
@@ -65,4 +75,13 @@ export type {
 } from "@armory-sh/base";
 
 // Re-export header constants
-export { V1_HEADERS, V2_HEADERS } from "@armory-sh/base";
+export { V2_HEADERS } from "@armory-sh/base";
+
+// Extension support
+export {
+  parseExtensions,
+  extractExtension,
+  createSIWxProof,
+  addExtensionsToPayload,
+  type ClientExtensionContext,
+} from "./extensions";

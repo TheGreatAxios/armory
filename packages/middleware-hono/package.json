@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-hono",
-  "version": "0.3.11",
+  "version": "0.3.20",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "bun": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./extensions": {
+      "types": "./dist/extensions.d.ts",
+      "bun": "./src/extensions.ts",
+      "default": "./dist/extensions.js"
     }
   },
   "files": [
@@ -29,16 +34,17 @@
   },
   "dependencies": {
     "@armory-sh/base": "workspace:*",
-    "@armory-sh/facilitator": "workspace:*"
+    "@armory-sh/extensions": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",
+    "tsup": "^8.5.1",
     "typescript": "5.9.3",
     "hono": "^4"
   },
   "scripts": {
-    "build": "tsup",
-    "build:dts": "tsc --declaration --skipLibCheck",
+    "build": "rm -rf dist && tsup",
+    "build:dts": "rm -rf dist && tsc --declaration --skipLibCheck",
     "test": "bun test"
   }
 }

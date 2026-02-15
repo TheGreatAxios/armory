@@ -1,8 +1,24 @@
 # @armory-sh/client-viem
 
-X-402 payment client for viem-based EVM wallets.
+x402 payment client for viem-based EVM wallets.
 
-## Local Commands
+---
+
+## Code Style
+
+- **TypeScript strict mode** - No `any`, use proper typing
+- **ES Modules** - Use `import { x } from 'y'` at top of files
+- **No IIFE** - Use named functions
+- **No dynamic imports** - All imports at compile time
+- **Avoid closures** - Prefer explicit function parameters over captured variables
+- **No OOP classes** - Prefer functional patterns
+- **Modular exports** - Export functions individually
+
+---
+
+## Testing
+
+- **NEVER skip tests** - Do not use `test.skip`, `describe.skip`, or `test.todo`
 
 ```bash
 # Run tests
@@ -19,7 +35,7 @@ bun --hot ./src/index.ts
 
 ### Main Functions
 
-- `createX402Client(config)` - Create X-402 client with Account or WalletClient
+- `createX402Client(config)` - Create x402 client with Account or WalletClient
 - `createX402Transport(config)` - Create fetch wrapper with payment handling
 
 ### Types

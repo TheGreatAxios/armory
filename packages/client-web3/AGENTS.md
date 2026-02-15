@@ -1,5 +1,19 @@
 # @armory-sh/client-web3 - AI Agent Context
 
+---
+
+## Code Style
+
+- **TypeScript strict mode** - No `any`, use proper typing
+- **ES Modules** - Use `import { x } from 'y'` at top of files
+- **No IIFE** - Use named functions
+- **No dynamic imports** - All imports at compile time
+- **Avoid closures** - Prefer explicit function parameters over captured variables
+- **No OOP classes** - Prefer functional patterns
+- **Modular exports** - Export functions individually
+
+---
+
 ## Overview
 
 Web3.js client implementation for X402 protocol (micropayments for HTTP APIs). Supports both v1 (X-PAYMENT header) and v2 (PAYMENT-SIGNATURE header) protocols.
@@ -110,6 +124,8 @@ For actual signing, the client expects:
 - Or account with `privateKey` for fallback
 
 ## Test Commands
+
+- **NEVER skip tests** - Do not use `test.skip`, `describe.skip`, or `test.todo`
 
 ```bash
 bun test                    # Run all tests

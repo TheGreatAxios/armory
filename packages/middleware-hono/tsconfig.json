@@ -5,8 +5,9 @@
     "noEmit": true,
     "moduleResolution": "bundler",
     "paths": {
-      "@armory-sh/base": ["../core/src"],
-      "@armory-sh/facilitator": ["../facilitator/src"]
+      "@armory-sh/base": ["../core/src"]
     }
-  }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

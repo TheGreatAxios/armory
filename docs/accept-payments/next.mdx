@@ -1,0 +1,294 @@
+---
+title: "Next.js"
+description: Accept x402 payments in your Next.js App Router application
+---
+
+# Next.js Middleware
+
+Accept x402 payments in your Next.js App Router application using the `@armory-sh/middleware-next` package.
+
+## Installation
+
+```bash
+bun add @armory-sh/middleware-next
+```
+
+## Basic Setup
+
+Create a `middleware.ts` file in your Next.js app root:
+
+```typescript
+// middleware.ts
+import { paymentProxy, x402ResourceServer } from "@armory-sh/middleware-next";
+
+// Create a facilitator client for verification
+const facilitatorClient = {
+  async verify(headers: Headers) {
+    // Verify payment with your facilitator
+    const response = await fetch("https://your-facilitator.com/verify", {
+      method: "POST",
+      headers: Object.fromEntries(headers.entries()),
+    });
+    return response.json();
+  },
+};
+
+// Create the resource server
+const resourceServer = new x402ResourceServer(facilitatorClient);
+
+// Configure payment proxy with per-route settings
+export const proxy = paymentProxy(
+  {
+    "/api/protected": {
+      accepts: {
+        scheme: "exact",
+        price: "1000000",  // $1.00 in atomic units (6 decimals)
+        network: "eip155:8453",
+        payTo: "0xYourAddress...",
+      },
+      description: "Access to protected API",
+    },
+  },
+  resourceServer
+);
+
+// Configure which routes the middleware should run on
+export const config = { matcher: ["/api/protected/:path*"] };
+```
+
+## Route Patterns
+
+Next.js middleware uses the same `matcher` config as standard Next.js middleware:
+
+```typescript
+// Single route
+export const config = { matcher: ["/api/protected"] };
+
+// Wildcard (matches all sub-paths)
+export const config = { matcher: ["/api/protected/:path*"] };
+
+// Multiple routes
+export const config = {
+  matcher: ["/api/users/:path*", "/api/posts/:path*"]
+};
+```
+
+## Per-Route Configuration
+
+Configure different payment requirements for different routes:
+
+```typescript
+export const proxy = paymentProxy(
+  {
+    "/api/basic": {
+      accepts: {
+        scheme: "exact",
+        price: "1000000",  // $1.00
+        network: "eip155:8453",
+        payTo: "0xYourAddress...",
+      },
+      description: "Basic tier access",
+    },
+    "/api/premium": {
+      accepts: {
+        scheme: "exact",
+        price: "5000000",  // $5.00
+        network: "eip155:8453",
+        payTo: "0xYourAddress...",
+      },
+      description: "Premium tier access",
+    },
+    "/api/vip": {
+      accepts: {
+        scheme: "exact",
+        price: "10000000",  // $10.00
+        network: "eip155:8453",
+        payTo: "0xYourAddress...",
+      },
+      description: "VIP tier access",
+    },
+  },
+  resourceServer
+);
+```
+
+## Wildcard Routes
+
+Use wildcards to match multiple routes with a single configuration:
+
+```typescript
+export const proxy = paymentProxy(
+  {
+    "/api/premium/*": {
+      accepts: {
+        scheme: "exact",
+        price: "5000000",  // $5.00
+        network: "eip155:8453",
+        payTo: "0xYourAddress...",
+      },
+      description: "Premium API access",
+    },
+  },
+  resourceServer
+);
+
+export const config = { matcher: ["/api/:path*"] };
+```
+
+## Resource Server
+
+The `x402ResourceServer` manages payment schemes and requirements:
+
+```typescript
+import type { PaymentScheme } from "@armory-sh/middleware-next";
+import type { PaymentRequirementsV2 } from "@armory-sh/base";
+
+// Create custom payment schemes
+const exactScheme: PaymentScheme = {
+  name: "exact",
+  getRequirements: (): PaymentRequirementsV2 => ({
+    scheme: "exact",
+    network: "eip155:8453",
+    amount: "1000000",
+    asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+    payTo: "0xYourAddress..." as `0x${string}`,
+    maxTimeoutSeconds: 300,
+    extra: {},
+  }),
+};
+
+// Register schemes for different chains
+const resourceServer = new x402ResourceServer(facilitatorClient)
+  .register("eip155:8453", exactScheme)  // Base
+  .register("eip155:1", exactScheme);    // Ethereum
+```
+
+## Response Format
+
+When payment is verified, the middleware returns a JSON response:
+
+```json
+{
+  "verified": true,
+  "payerAddress": "0x..."
+}
+```
+
+When payment is required, it returns a 402 response with payment requirements:
+
+```json
+{
+  "error": "Payment required",
+  "accepts": [
+    {
+      "scheme": "exact",
+      "network": "eip155:8453",
+      "amount": "1000000",
+      "asset": "0x8335...",
+      "payTo": "0xYour..."
+    }
+  ]
+}
+```
+
+## Complete Example
+
+```typescript
+// middleware.ts
+import { paymentProxy, x402ResourceServer } from "@armory-sh/middleware-next";
+
+const facilitatorClient = {
+  async verify(headers: Headers) {
+    const response = await fetch("https://facilitator.example.com/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...Object.fromEntries(headers.entries()),
+      },
+      body: JSON.stringify({
+        headers: Object.fromEntries(headers.entries()),
+      }),
+    });
+    return response.json();
+  },
+};
+
+const resourceServer = new x402ResourceServer(facilitatorClient);
+
+export const proxy = paymentProxy(
+  {
+    "/api/data/basic": {
+      accepts: {
+        scheme: "exact",
+        price: "1000000",
+        network: "eip155:8453",
+        payTo: "0xYourAddress...",
+      },
+      description: "Basic data access",
+    },
+    "/api/data/premium": {
+      accepts: {
+        scheme: "exact",
+        price: "5000000",
+        network: "eip155:8453",
+        payTo: "0xYourAddress...",
+      },
+      description: "Premium data access",
+    },
+    "/api/analytics/*": {
+      accepts: {
+        scheme: "exact",
+        price: "10000000",
+        network: "eip155:8453",
+        payTo: "0xYourAddress...",
+      },
+      description: "Analytics access (all endpoints)",
+    },
+  },
+  resourceServer
+);
+
+export const config = {
+  matcher: ["/api/data/:path*", "/api/analytics/:path*"],
+};
+```
+
+## API Routes
+
+Your API routes can check for payment verification:
+
+```typescript
+// app/api/data/premium/route.ts
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(request: NextRequest) {
+  // Payment verification is handled by middleware
+  // If we reach here, payment was verified
+
+  const payerAddress = request.headers.get("X-Payer-Address");
+
+  return NextResponse.json({
+    data: "premium data",
+    accessedBy: payerAddress,
+  });
+}
+```
+
+## Error Handling
+
+The middleware automatically handles common errors:
+
+- **404**: Route not found (no matching payment configuration)
+- **402**: Payment required (no payment header provided)
+- **400**: Invalid payment payload
+- **500**: Configuration error
+
+## Types
+
+```typescript
+import type {
+  HTTPFacilitatorClient,
+  PaymentScheme,
+  RoutePaymentConfig,
+} from "@armory-sh/middleware-next";
+```

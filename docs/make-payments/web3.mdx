@@ -9,7 +9,7 @@ Make payments to Armory-protected APIs using Web3.js wallets.
 ## Basic Payment
 
 ```typescript
-import { armoryPay } from '@armory/client-web3';
+import { armoryPay } from '@armory-sh/client-web3';
 import { Web3 } from 'web3';
 
 const web3 = new Web3('https://...');
@@ -24,6 +24,32 @@ const result = await armoryPay(
 
 console.log(result.data);
 ```
+
+## Armory object workflow
+
+```typescript
+import { createArmory } from '@armory-sh/client-web3';
+import { Web3 } from 'web3';
+
+const web3 = new Web3('https://...');
+const account = web3.eth.accounts.wallet.add('0x...')[0];
+
+const armory = createArmory({
+  wallet: { web3, account },
+  chains: 'base',
+  tokens: 'usdc',
+  debug: true,
+});
+
+const premium = await armory.patch('https://api.example.com/premium', { tier: 'pro' });
+const info = await armory.call('https://api.example.com/data');
+
+console.log(premium.data, info.data);
+```
+
+The `createArmory` object exposes `.get`, `.post`, `.put`, `.delete`, `.patch`, `.pay`, and `.call`. When the API responds with a 402, it automatically selects the best entry from the server's `accepts[]` array, giving higher priority to Base (chainId `8453`), the Base USDC contract (`0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913`), and the lowest amounts. Leaving `chains` or `tokens` unset allows Armory to consider any compatible option but still prefer Base/USDC.
+
+Use `.pay(url, { method: 'PATCH', body })` when you need to override the HTTP method and `.call(url)` for the default GET.
 
 ## With Browser Wallet
 

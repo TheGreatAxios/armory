@@ -1,69 +1,175 @@
 ---
-description: Use the Armory CLI to scaffold new projects
+description: Use the Armory CLI to scaffold projects and query protocol data
 title: CLI
 ---
 
-Scaffold new Armory projects with a single command.
+The Armory CLI helps you scaffold payment-enabled projects and query network/token data.
 
 ## Installation
 
 ```bash
+# Run directly
 bunx armory-cli
+
+# Or install globally
+bun add -g armory-cli
 ```
 
-## Create a Project
+## Commands
+
+### `create` - Scaffold a Project
+
+Create a new x402 payment-enabled project from a template.
 
 ```bash
 # Interactive mode
-bunx armory-cli create
+armory create
 
 # Direct creation
-bunx armory-cli create facilitator my-facilitator
-bunx armory-cli create server my-api
-bunx armory-cli create client my-app
+armory create bun-server my-api
+armory create viem-client my-client
 ```
 
-## Templates
+#### Server Templates
 
-### Facilitator
+| Template | Description |
+|----------|-------------|
+| `bun-server` | Bun server with payment middleware |
+| `express-server` | Express v5 server |
+| `hono-server` | Hono server with extension support |
+| `elysia-server` | Elysia/Bun server |
+| `next-server` | Next.js App Router middleware |
 
-Payment verification & settlement server.
+#### Client Templates
+
+| Template | Description |
+|----------|-------------|
+| `viem-client` | Viem x402 payment client |
+| `ethers-client` | Ethers.js v6 client |
+| `web3-client` | Web3.js client |
+
+#### Legacy
+
+| Template | Description |
+|----------|-------------|
+| `facilitator` | Payment verification server (deprecated) |
+
+### `networks` - List Networks
+
+Query supported blockchain networks.
 
 ```bash
-bunx armory-cli create facilitator my-facilitator
+armory networks              # All networks
+armory networks --mainnet    # Mainnets only
+armory networks --testnet    # Testnets only
 ```
 
-Creates:
-- `src/index.ts` — Facilitator server
-- `package.json` — Dependencies configured
-- `README.md` — Setup instructions
+Output includes network name, chain ID, and RPC URL for each network.
 
-### Server
+### `tokens` - List Tokens
 
-Simple payment-protected API server.
+Query supported tokens, optionally filtered by network.
 
 ```bash
-bunx armory-cli create server my-api
+armory tokens              # All tokens
+armory tokens base         # Tokens on Base
+armory tokens 8453         # By chain ID
 ```
 
-Creates:
-- `src/index.ts` — Bun server with payment middleware
-- `package.json` — Dependencies configured
-- `README.md` — Setup instructions
+Output includes symbol, name, chain ID, and contract address for each token.
 
-### Client
+### `validate` - Validate Identifiers
 
-x402-enabled fetch wrapper for making payments.
+Validate that a network or token identifier is recognized.
 
 ```bash
-bunx armory-cli create client my-app
+# Validate network (name, chain ID, or CAIP-2)
+armory validate network base
+armory validate network 8453
+armory validate network eip155:8453
+
+# Validate token (symbol or address)
+armory validate token usdc
+armory validate token 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
 ```
 
-Creates:
-- `src/index.ts` — Client setup
-- `src/client.ts` — Example implementation
-- `package.json` — Dependencies configured
-- `README.md` — Setup instructions
+Returns full details if valid, clear error if not.
+
+### `extensions` - List Extensions
+
+View available x402 protocol extensions.
+
+```bash
+armory extensions
+armory ext    # shorthand
+```
+
+Shows extension names, descriptions, and available hooks from `@armory-sh/extensions`.
+
+### `verify` - Check Endpoints
+
+Inspect x402 payment headers on any endpoint.
+
+```bash
+armory verify https://api.example.com/data
+armory inspect https://api.example.com/data   # alias
+```
+
+Displays HTTP status, payment headers, and whether payment is required.
+
+## Workflow Examples
+
+### Quick Start: Payment Server
+
+```bash
+# Create server
+armory create bun-server my-api
+cd my-api
+bun install
+bun run dev
+
+# In another terminal, create client
+armory create viem-client my-client
+cd my-client
+bun install
+PRIVATE_KEY=0x... bun run dev
+```
+
+### Explore Available Options
+
+```bash
+# Check supported networks
+armory networks
+
+# Find tokens on a specific network
+armory tokens base
+
+# Validate before coding
+armory validate network base
+armory validate token usdc
+```
+
+### Debug an Endpoint
+
+```bash
+# Check if payment is required
+armory verify https://api.example.com/premium/data
+
+# Check your local server
+armory verify http://localhost:3000/api/data
+```
+
+## Environment Variables
+
+Most templates require a private key for signing payments:
+
+```bash
+# Client templates
+PRIVATE_KEY=0x...your_private_key
+
+# Server templates
+# Configure payTo address in src/index.ts
+```
 
 ## Next Steps
 
@@ -75,17 +181,4 @@ bun install
 bun run dev
 ```
 
-## Environment
-
-Most templates require environment variables:
-
-```bash
-# Facilitator
-PRIVATE_KEY=0x...your_private_key
-
-# Server
-# (configured in src/index.ts)
-
-# Client
-PRIVATE_KEY=0x...your_private_key
-```
+See the generated `README.md` in your project for framework-specific instructions.

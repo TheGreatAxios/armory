@@ -1,6 +1,20 @@
 # @armory-sh/tokens
 
-Pre-configured token objects for X-402 Protocol.
+Pre-configured token objects for x402 Protocol.
+
+---
+
+## Code Style
+
+- **TypeScript strict mode** - No `any`, use proper typing
+- **ES Modules** - Use `import { x } from 'y'` at top of files
+- **No IIFE** - Use named functions
+- **No dynamic imports** - All imports at compile time
+- **Avoid closures** - Prefer explicit function parameters over captured variables
+- **No OOP classes** - Prefer functional patterns
+- **Modular exports** - Export functions individually
+
+---
 
 ## Overview
 
@@ -58,7 +72,7 @@ import { registerToken } from "@armory-sh/base";
 // Access specific token
 const usdcBase = TOKENS.USDC_BASE;
 
-// Register for use with X-402 protocol
+// Register for use with x402 protocol
 registerToken(usdcBase);
 
 // Get token by chain and address
@@ -68,7 +82,7 @@ const token = getToken(8453, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
 const allUsdc = getUSDCTokens();
 ```
 
-## Integration with X-402 Clients
+## Integration with x402 Clients
 
 ### client-viem
 
@@ -148,6 +162,8 @@ bun run build
 ```
 
 ## Testing
+
+- **NEVER skip tests** - Do not use `test.skip`, `describe.skip`, or `test.todo`
 
 ```bash
 bun test

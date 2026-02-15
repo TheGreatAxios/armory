@@ -239,8 +239,16 @@ export const createPaymentRequiredHeaders = (
   if (version === 1) {
     return { "X-PAYMENT-REQUIRED": encodePaymentPayload(requirements as PaymentRequirementsV1) };
   }
-  // For V2/x402 - base64 encode the JSON
-  return { "PAYMENT-REQUIRED": Buffer.from(JSON.stringify(requirements)).toString("base64") };
+  // For V2/x402 - create proper PaymentRequired format
+  const paymentRequired = {
+    x402Version: 2,
+    resource: {
+      url: "https://api.example.com",
+      description: "API Access",
+    },
+    accepts: [requirements],
+  };
+  return { "PAYMENT-REQUIRED": Buffer.from(JSON.stringify(paymentRequired)).toString("base64") };
 };
 
 /**
