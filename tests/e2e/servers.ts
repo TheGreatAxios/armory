@@ -7,6 +7,10 @@ import { Hono } from "hono";
 import express from "express";
 import { acceptPaymentsViaArmory } from "../../packages/middleware-hono/src/index";
 import { paymentMiddleware as expressPaymentMiddleware } from "../../packages/middleware-express/src/index";
+import {
+  getNetworkConfig,
+  normalizeNetworkName,
+} from "@armory-sh/base";
 
 export interface TestServer {
   port: number;
@@ -32,6 +36,61 @@ const BASE_CONFIG = (config: ServerConfig) => ({
     facilitators: [{ url: process.env.FACILITATOR_URL || "https://facilitator.payai.network" }],
   },
 });
+
+/**
+ * Convert decimal amount to atomic units (6 decimals for USDC)
+ */
+const toAtomicUnits = (amount: string): string => {
+  if (amount.includes(".")) {
+    const [whole, fractional = ""] = amount.split(".");
+    const paddedFractional = fractional.padEnd(6, "0").slice(0, 6);
+    return `${whole}${paddedFractional}`.replace(/^0+/, "") || "0";
+  }
+  return `${amount}000000`;
+};
+
+/**
+ * Create x402 PaymentRequirements from simple config
+ * Express middleware expects proper x402 PaymentRequirements format
+ */
+const createX402Requirements = (
+  config: ServerConfig,
+  version: 1 | 2
+): { scheme: string; network: string; maxAmountRequired?: string; amount?: string; asset: string; payTo: string; maxTimeoutSeconds: number; description?: string; resource?: string; mimeType?: string } => {
+  const networkName = normalizeNetworkName(config.network);
+  const network = getNetworkConfig(networkName);
+  if (!network) {
+    throw new Error(`Unsupported network: ${networkName}`);
+  }
+
+  const atomicAmount = toAtomicUnits(config.amount);
+  const facilitatorUrl = process.env.FACILITATOR_URL || "https://facilitator.payai.network";
+
+  if (version === 1) {
+    // V1 requirements
+    return {
+      scheme: "exact",
+      network: networkName,
+      maxAmountRequired: atomicAmount,
+      asset: network.usdcAddress as `0x${string}`,
+      payTo: config.payTo as `0x${string}`,
+      resource: "/api/test",
+      description: "API Access",
+      mimeType: "application/json",
+      maxTimeoutSeconds: 300,
+    };
+  }
+
+  // V2 requirements
+  return {
+    scheme: "exact",
+    network: network.caip2Id,
+    amount: atomicAmount,
+    asset: network.usdcAddress as `0x${string}`,
+    payTo: config.payTo as `0x${string}`,
+    maxTimeoutSeconds: 300,
+  };
+};
 
 let nextPort = 30000;
 
@@ -115,13 +174,12 @@ export const createExpressServer = async (config: ServerConfig): Promise<TestSer
   let port = getNextPort();
   const app = express();
 
+  const version = config.version ?? 2;
+  const facilitatorUrl = process.env.FACILITATOR_URL || "https://facilitator.payai.network";
+
   app.use(expressPaymentMiddleware({
-    requirements: {
-      networks: [config.network],
-      tokens: ["usdc"],
-      facilitators: [{ url: process.env.FACILITATOR_URL || "https://facilitator.payai.network" }],
-    },
-    facilitatorUrl: process.env.FACILITATOR_URL || "https://facilitator.payai.network",
+    requirements: createX402Requirements(config, version) as any,
+    facilitatorUrl,
   }));
 
   app.get("/api/test", (req: any, res: any) => {
