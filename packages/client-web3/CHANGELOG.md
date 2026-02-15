@@ -1,5 +1,13 @@
 # @armory-sh/client-web3
 
+## 0.2.17
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
 ## 0.2.16
 
 ### Patch Changes

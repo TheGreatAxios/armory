@@ -1,5 +1,14 @@
 # armory-cli
 
+## 0.3.1
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/extensions@0.1.2
+  - @armory-sh/base@0.2.21
+
 ## 0.2.11
 
 ### Patch Changes

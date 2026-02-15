@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware",
-  "version": "0.3.15",
+  "version": "0.3.16",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",

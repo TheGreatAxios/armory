@@ -15,11 +15,12 @@
     "build": "turbo run build",
     "changeset": "changeset",
     "ci:version": "changeset version && bun update",
-    "ci:publish": "for dir in packages/*; do (cd \"$dir\" && bun publish || true); done && bunx changeset tag",
-    "ci:publish:beta": "for dir in packages/*; do (cd \"$dir\" && bun publish --tag beta || true); done && bunx changeset tag",
-    "ci:publish:alpha": "for dir in packages/*; do (cd \"$dir\" && bun publish --tag alpha || true); done",
-    "ci:release": "bun run changeset && bun run ci:version && bun run ci:publish",
-    "ci:release:alpha": "bun run changeset && bun run ci:version && bun run ci:publish:alpha"
+    "ci:publish": "npm publish --provenance --access public --workspaces && changeset tag",
+    "ci:publish:beta": "npm publish --provenance --access public --tag beta --workspaces && changeset tag",
+    "ci:publish:alpha": "npm publish --provenance --access public --tag alpha --workspaces",
+    "ci:release": "bun run ci:version && bun run ci:publish",
+    "ci:release:beta": "bun run ci:version && bun run ci:publish:beta",
+    "ci:release:alpha": "bun run ci:publish:alpha"
   },
   "private": true,
   "packageManager": "bun@1.3.8",

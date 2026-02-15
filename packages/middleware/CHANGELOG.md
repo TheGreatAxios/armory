@@ -1,5 +1,16 @@
 # @armory-sh/middleware
 
+## 0.3.16
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.8
+  - @armory-sh/middleware-elysia@0.3.19
+  - @armory-sh/middleware-hono@0.3.21
+  - @armory-sh/middleware-bun@0.3.19
+
 ## 0.3.15
 
 ### Patch Changes

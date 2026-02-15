@@ -1,5 +1,14 @@
 # @armory-sh/client-viem
 
+## 0.2.20
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/extensions@0.1.2
+  - @armory-sh/base@0.2.21
+
 ## 0.2.19
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @armory-sh/client-ethers
 
+## 0.2.20
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
 ## 0.2.19
 
 ### Patch Changes
