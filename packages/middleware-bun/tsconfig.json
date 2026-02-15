@@ -3,7 +3,8 @@
   "compilerOptions": {
     "composite": false,
     "noEmit": true,
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
