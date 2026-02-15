@@ -1,29 +1,96 @@
-name: Publish Package
-
-on:
-  push:
-    tags:
-      - 'v*'
+name: Release
 
 permissions:
   id-token: write
   contents: read
 
+on:
+  push:
+    branches:
+      - main
+      - staging
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
 jobs:
-  publish:
+  release-beta:
+    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node (OIDC auth)
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://registry.npmjs.org/'
+          always-auth: true
 
-      - run: npm ci
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-      - run: npm run build --if-present
+      - name: Build
+        run: bun run build
 
-      - run: npm test
+      - name: Run beta release
+        run: bun run ci:release:beta
 
-      - run: npm publish --provenance
+  release-prod:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node (OIDC auth)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org/'
+          always-auth: true
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Run release
+        run: bun run ci:release
+
+  release-alpha:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node (OIDC auth)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org/'
+          always-auth: true
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Run alpha release
+        run: bun run ci:release:alpha
