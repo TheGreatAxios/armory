@@ -10,17 +10,42 @@ export type PaymentPayload = PaymentPayloadV2;
 export type SettlementResponse = SettlementResponseV2;
 
 /**
- * JSON encode/decode for V2 (plain JSON, no Base64)
+ * Safe Base64 decode (handles URL-safe format)
+ */
+function safeBase64Decode(str: string): string {
+  const padding = 4 - (str.length % 4);
+  if (padding !== 4) {
+    str += "=".repeat(padding);
+  }
+  str = str.replace(/-/g, "+").replace(/_/g, "/");
+  return Buffer.from(str, "base64").toString("utf-8");
+}
+
+/**
+ * Safe Base64 encode (URL-safe, no padding)
+ */
+function safeBase64Encode(str: string): string {
+  return Buffer.from(str)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
+
+/**
+ * JSON encode/decode for V2 (Base64URL-encoded JSON for x402 compatibility)
  */
 const jsonEncode = (data: unknown): string => JSON.stringify(data);
 
-const jsonDecode = <T>(encoded: string): T => JSON.parse(encoded) as T;
+const base64JsonEncode = (data: unknown): string => safeBase64Encode(JSON.stringify(data));
 
-export const encodePaymentV2 = (payload: PaymentPayloadV2): string => jsonEncode(payload);
-export const decodePaymentV2 = (encoded: string): PaymentPayloadV2 => jsonDecode(encoded);
+const base64JsonDecode = <T>(encoded: string): T => JSON.parse(safeBase64Decode(encoded)) as T;
 
-export const encodeSettlementV2 = (response: SettlementResponseV2): string => jsonEncode(response);
-export const decodeSettlementV2 = (encoded: string): SettlementResponseV2 => jsonDecode(encoded);
+export const encodePaymentV2 = (payload: PaymentPayloadV2): string => base64JsonEncode(payload);
+export const decodePaymentV2 = (encoded: string): PaymentPayloadV2 => base64JsonDecode(encoded);
+
+export const encodeSettlementV2 = (response: SettlementResponseV2): string => base64JsonEncode(response);
+export const decodeSettlementV2 = (encoded: string): SettlementResponseV2 => base64JsonDecode(encoded);
 
 /**
  * Always returns 2 for V2-only mode

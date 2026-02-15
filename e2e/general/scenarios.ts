@@ -29,7 +29,6 @@ export interface PaymentScenario {
 export interface ClientTestContext {
   signer: any;
   walletAddress: string;
-  facilitatorUrl: string;
   testToken: {
     symbol: string;
     contractAddress: string;
@@ -41,7 +40,6 @@ export interface ClientTestContext {
 export interface MiddlewareTestContext {
   server: any;
   baseUrl: string;
-  facilitatorUrl: string;
   testRequirements: X402PaymentRequirementsV1 | PaymentRequirementsV2;
 }
 

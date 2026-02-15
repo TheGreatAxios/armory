@@ -7,8 +7,7 @@
 import { describe, test, expect, beforeAll } from "bun:test";
 import { createX402Client, createX402Transport, armoryPay, armoryGet, armoryPost } from "@armory-sh/client-viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { TOKENS } from "@armory-sh/tokens";
-import { registerToken } from "@armory-sh/base";
+import { TOKENS, registerToken } from "@armory-sh/base";
 
 // ============================================================================
 // Setup

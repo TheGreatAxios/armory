@@ -1,8 +1,7 @@
 /**
  * E2E Test Configuration
  *
- * Shared configuration for E2E tests including network configs,
- * test keys, and facilitator URLs.
+ * Shared configuration for E2E tests including network configs and test keys.
  */
 
 // ============================================================================
@@ -26,12 +25,6 @@ export const TEST_CAIP2_NETWORK = "eip155:84532" as const;
 export const TEST_ASSET_ID = "eip155:84532/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" as const;
 export const TEST_AMOUNT = "1000000" as const; // 1 USDC (6 decimals)
 export const TEST_AMOUNT_DECIMAL = "1.0" as const;
-
-// ============================================================================
-// Facilitator Configuration
-// ============================================================================
-
-export const FACILITATOR_URL = process.env.FACILITATOR_URL || "https://facilitator.payai.network";
 
 // ============================================================================
 // Test Timeouts

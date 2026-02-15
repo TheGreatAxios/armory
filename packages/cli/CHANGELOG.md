@@ -1,5 +1,11 @@
 # armory-cli
 
+## 0.2.6
+
+### Patch Changes
+
+- v2 Only, Cleanup
+
 ## 0.2.5
 
 ### Patch Changes

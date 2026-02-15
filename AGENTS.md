@@ -213,7 +213,6 @@ bun test --watch
 
 ### E2E Tests
 
-- Use 3rd party payment facilitators for integration testing
 - No mocking in e2e tests - test real flows
 - **Cross-SDK Compatibility**: Test against Coinbase x402 SDKs
   - Server middleware must accept Coinbase client payments
@@ -239,6 +238,8 @@ When fixing build or test failures:
 4. **Fix the specific issue** - Make minimal, targeted changes
 5. **Re-run the command** - Verify the fix works
 6. **Repeat until clean** - Continue until build/tests pass
+
+**When stuck**: If you cannot figure out the issue, add temporary `console.log` debug statements to the relevant code paths, ask the human to run the code and share the output, then remove the logs after. Do not use `cat` to read files into random test files or create debug scripts.
 
 **Critical**: Do not add slop or change unrelated items. Fix only what's broken.
 

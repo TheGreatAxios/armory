@@ -6,7 +6,6 @@ Complete example of using `@armory/middleware` with Hono v4 to protect API route
 
 - **Public routes** - No payment required
 - **Protected routes** - Requires valid payment via `PAYMENT-SIGNATURE` header
-- **Facilitator integration** - Optional payment verification and settlement
 - **V2 protocol** - Uses the latest PAYMENT-SIGNATURE header format
 - **Type-safe** - Full TypeScript support with Hono types
 
@@ -28,8 +27,6 @@ Edit `.env` file:
 
 ```env
 PORT=3001                    # Server port
-ENABLE_FACILITATOR=true      # Enable built-in facilitator
-FACILITATOR_PORT=3000        # Facilitator port
 BASE_RPC_URL=https://mainnet.base.org  # RPC URL
 PRIVATE_KEY=0x...            # Optional: for on-chain settlement
 ```
@@ -136,30 +133,6 @@ const paymentClient = createPaymentClient(client, {
 const response = await paymentClient.api.protected.$get();
 ```
 
-## Facilitator Integration
-
-The server includes an optional built-in facilitator for payment verification and settlement.
-
-### Facilitator Endpoints
-
-When enabled (`ENABLE_FACILITATOR=true`), the facilitator runs on port 3000:
-
-- `GET /` - Health check
-- `GET /supported` - Supported networks
-- `POST /verify` - Verify payment
-- `POST /settle` - Settle payment
-
-### External Facilitator
-
-To use an external facilitator, update `server.ts`:
-
-```typescript
-const requirePayment = honoPaymentMiddleware({
-  requirements: PAYMENT_REQUIREMENTS,
-  facilitatorUrl: "https://your-facilitator.com",
-});
-```
-
 ## Response Codes
 
 - `200` - Success with valid payment
@@ -204,11 +177,11 @@ const response = await client.index.$get();
 ## Architecture
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│   Client    │────>│ Hono Server  │────>│ Facilitator │
-│ (with       │     │ (Middleware) │     │ (Optional)  │
-│  Payment)   │     │              │     │             │
-└─────────────┘     └──────────────┘     └─────────────┘
+┌─────────────┐     ┌──────────────┐
+│   Client    │────>│ Hono Server  │
+│ (with       │     │ (Middleware) │
+│  Payment)   │     │              │
+└─────────────┘     └──────────────┘
                            │
                            v
                     ┌──────────────┐

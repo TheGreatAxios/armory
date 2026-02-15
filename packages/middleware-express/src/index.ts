@@ -1,10 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
 import type {
-  X402PaymentPayload,
+  PaymentPayloadV2,
   PaymentRequirements,
 } from "@armory-sh/base";
 import {
-  decodePayment,
+  decodePaymentV2,
   createPaymentRequiredHeaders,
   createSettlementHeaders,
   PAYMENT_SIGNATURE_HEADER,
@@ -19,7 +19,7 @@ export interface PaymentMiddlewareConfig {
 
 export interface AugmentedRequest extends Request {
   payment?: {
-    payload: X402PaymentPayload;
+    payload: PaymentPayloadV2;
     payerAddress: string;
     verified: boolean;
   };
@@ -45,9 +45,9 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
         return;
       }
 
-      let paymentPayload: X402PaymentPayload;
+      let paymentPayload: PaymentPayloadV2;
       try {
-        paymentPayload = decodePayment(paymentHeader);
+        paymentPayload = decodePaymentV2(paymentHeader);
       } catch (error) {
         res.statusCode = 400;
         res.json({

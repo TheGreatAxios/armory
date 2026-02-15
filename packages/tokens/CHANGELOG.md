@@ -1,5 +1,21 @@
 # @armory-sh/tokens
 
+## 0.2.13
+
+### Deprecated
+
+- **DEPRECATED**: Package is deprecated and will be removed in v3.0.0
+- No functional exports - migration message only
+- Migration: Import token constants from `@armory-sh/base`
+
+## 0.2.12
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
 ## 0.2.11
 
 ### Patch Changes

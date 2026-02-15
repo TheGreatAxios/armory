@@ -1,6 +1,6 @@
 import type { Context, Next } from "hono";
 import type {
-  X402PaymentPayload,
+  PaymentPayloadV2,
   PaymentRequirements,
   SettlementResponse,
 } from "@armory-sh/base";
@@ -8,7 +8,7 @@ import {
   createPaymentRequiredHeaders,
   createSettlementHeaders,
   PAYMENT_SIGNATURE_HEADER,
-  decodePayment,
+  decodePaymentV2,
 } from "@armory-sh/base";
 
 export interface PaymentMiddlewareConfig {
@@ -20,7 +20,7 @@ export interface PaymentMiddlewareConfig {
 
 export interface AugmentedRequest extends Request {
   payment?: {
-    payload: X402PaymentPayload;
+    payload: PaymentPayloadV2;
     payerAddress: string;
     verified: boolean;
   };
@@ -44,12 +44,12 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
       });
     }
 
-    let paymentPayload: X402PaymentPayload | null = null;
+    let paymentPayload: PaymentPayloadV2 | null = null;
     try {
-      paymentPayload = decodePayment(paymentHeader);
-    } catch {
+      paymentPayload = decodePaymentV2(paymentHeader);
+    } catch (e) {
       c.status(400);
-      return c.json({ error: "Invalid payment payload" });
+      return c.json({ error: "Invalid payment payload", details: String(e) });
     }
 
     if (!paymentPayload) {

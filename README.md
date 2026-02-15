@@ -58,17 +58,13 @@ app.use(acceptPaymentsViaArmory({
   amount: '1.0'
 }));
 
-// Advanced - multi-network, multi-token, multi-facilitator
+// Advanced - multi-network, multi-token
 app.use(acceptPaymentsViaArmory({
   payTo: '0xYourAddress...',
   amount: '1.0',
   accept: {
     networks: ['base', 'ethereum', 'skale-base'],
-    tokens: ['usdc', 'eurc'],
-    facilitators: [
-      { url: 'https://facilitator1.com' },
-      { url: 'https://facilitator2.com' }
-    ]
+    tokens: ['usdc', 'eurc']
   }
 }));
 ```
@@ -94,7 +90,6 @@ app.use(acceptPaymentsViaArmory({
 - [Quick Start Guide](./docs/quickstart) - Get started in minutes
 - [Token Registry](./docs/tokens) - Pre-configured tokens and how to add your own
 - [API Examples](./docs/examples) - Cross-reference examples for all input formats
-- [Deployment Guide](./DEPLOYMENT.md) - Deploy your own facilitator
 - [Agent Guidelines](./AGENTS.md) - Building AI agents with Armory
 
 ## Supported Networks
@@ -122,7 +117,6 @@ Pre-configured tokens include USDC, EURC, USDT, WBTC, and WETH across all suppor
 | **@armory/client-ethers** | Ethers.js v6 payment client |
 | **@armory/client-web3** | Web3.js payment client |
 | **@armory/tokens** | Pre-configured token objects |
-| **@armory/facilitator** | Payment verification and settlement server |
 | **armory-cli** | Scaffold tool for x402 payment-enabled apps |
 
 ## Development
@@ -147,19 +141,6 @@ Armory validates everything upfront with clear error messages:
 await armoryPay(wallet, url, 'ethereum', 'usdc');
 // Error: TOKEN_NOT_ON_NETWORK
 // "Token USDC is on chain 8453, but expected chain 1"
-
-// Facilitator doesn't support network
-await acceptPaymentsViaArmory({
-  payTo: '0x...',
-  accept: { networks: ['polygon'] },
-  facilitators: [{ networks: ['base'] }]
-});
-// Error: FACILITATOR_NO_NETWORK_SUPPORT
-// "Facilitator does not support network Polygon. Supported: Base"
-
-// Facilitator doesn't support token
-// Error: FACILITATOR_NO_TOKEN_SUPPORT
-// "Facilitator does not support token EURC on Base. Supported: USDC"
 ```
 
 ## Protocol Reference

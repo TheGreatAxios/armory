@@ -39,6 +39,5 @@ bun test:e2e
 ```
 
 **Rules:**
-- Use 3rd party facilitator for integration
 - No mocking - test real flows
 - All tests must pass on every run

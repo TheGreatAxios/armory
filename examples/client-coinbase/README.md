@@ -49,10 +49,6 @@ python3 -m http.server 8000
 
 ## Configuration
 
-### Environment Variables
-
-- `FACILITATOR_URL`: URL of the X-402 facilitator server (default: `http://localhost:3000`)
-
 ### Application Metadata
 
 Update the app metadata in the code to match your application:
@@ -74,15 +70,6 @@ The example is configured for Base Mainnet by default:
 
 To use a different network, modify the constants in the source file.
 
-## API Endpoints
-
-The example interacts with the following facilitator endpoints:
-
-- `GET /` - Health check
-- `GET /supported` - List supported networks
-- `POST /verify` - Verify a payment
-- `POST /settle` - Settle a payment
-
 ## Dependencies
 
 - `@armory/base`: Core X-402 protocol types and utilities
@@ -94,7 +81,6 @@ The example interacts with the following facilitator endpoints:
 - For Node.js/server environments, use the ethers or viem examples instead
 - The Coinbase Wallet SDK provides a seamless user experience for Coinbase Wallet users
 - Users will be prompted to connect their wallet and sign the payment authorization
-- Make sure your facilitator server supports CORS for your domain
 
 ## Security Considerations
 
@@ -102,4 +88,3 @@ The example interacts with the following facilitator endpoints:
 - Display clear information about what the user is signing
 - Use proper error handling for wallet connection failures
 - Never request signatures without user intent (clear button clicks)
-- Ensure your facilitator URL uses HTTPS in production

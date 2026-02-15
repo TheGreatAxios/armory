@@ -197,18 +197,3 @@ export function parsePaymentHeader(
     throw new Error("Could not parse payment header");
   }
 }
-
-/**
- * Assert facilitator health
- */
-export function assertFacilitatorHealth(
-  response: { status: number; body?: unknown }
-): void {
-  expect(response.status).toBe(200);
-  if (response.body) {
-    const body = typeof response.body === "string"
-      ? JSON.parse(response.body)
-      : response.body;
-    expect(body).toHaveProperty("status", "ok");
-  }
-}

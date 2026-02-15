@@ -6,8 +6,7 @@
 
 import { describe, test, expect, beforeAll } from "bun:test";
 import { paymentMiddleware, type PaymentMiddlewareConfig } from "@armory-sh/middleware-express";
-import { TOKENS } from "@armory-sh/tokens";
-import { registerToken } from "@armory-sh/base";
+import { TOKENS, registerToken } from "@armory-sh/base";
 
 describe("Middleware-Express E2E", () => {
   beforeAll(() => {

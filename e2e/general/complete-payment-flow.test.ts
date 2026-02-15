@@ -27,24 +27,7 @@ import {
   assertPaymentRequirements,
 } from "./assertions";
 
-// ============================================================================
-// Setup
-// ============================================================================
-
-const FACILITATOR_URL = process.env.FACILITATOR_URL || "http://localhost:3000";
-
 describe("Complete Payment Flow E2E", () => {
-  // Check if facilitator is available
-  let facilitatorAvailable = false;
-
-  beforeAll(async () => {
-    try {
-      const response = await fetch(`${FACILITATOR_URL}/health`);
-      facilitatorAvailable = response.ok;
-    } catch {
-      console.warn(`Facilitator not available at ${FACILITATOR_URL}`);
-    }
-  });
 
   // ============================================================================
   // V1 Protocol Flow
@@ -133,61 +116,6 @@ describe("Complete Payment Flow E2E", () => {
     }
   });
 
-  // ============================================================================
-  // Facilitator Integration
-  // ============================================================================
-
-  describe("Facilitator Integration", () => {
-    test("verifies payment via facilitator", async () => {
-      if (!facilitatorAvailable) {
-        console.warn("Skipping facilitator test - facilitator not available");
-        return;
-      }
-
-      const scenario = buildV2Scenario();
-      const paymentHeader = createV2Payment(scenario);
-
-      // Verify through facilitator
-      const verifyResponse = await fetch(`${FACILITATOR_URL}/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payload: scenario.payload,
-          requirements: scenario.requirements,
-        }),
-      });
-
-      expect(verifyResponse.ok).toBe(true);
-      const result = await verifyResponse.json();
-      expect(result.success).toBe(true);
-      expect(result.payerAddress).toBeDefined();
-    });
-
-    test("settles payment via facilitator", async () => {
-      if (!facilitatorAvailable) {
-        console.warn("Skipping facilitator test - facilitator not available");
-        return;
-      }
-
-      const scenario = buildV2Scenario();
-      const paymentHeader = createV2Payment(scenario);
-
-      // Settle through facilitator
-      const settleResponse = await fetch(`${FACILITATOR_URL}/settle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payload: scenario.payload,
-          requirements: scenario.requirements,
-        }),
-      });
-
-      expect(settleResponse.ok).toBe(true);
-      const result = await settleResponse.json();
-      expect(result.success).toBe(true);
-      expect(result.transactionHash).toBeDefined();
-    });
-  });
 });
 
 // ============================================================================

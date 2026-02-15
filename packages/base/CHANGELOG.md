@@ -1,5 +1,19 @@
 # @armory-sh/base
 
+## 0.2.15
+
+### Minor Changes
+
+- **Added**: Export token constants (`TOKENS`, `USDC_BASE`, `EURC_BASE`, etc.) from `@armory-sh/tokens` package
+- **Added**: Token helper functions (`getToken`, `getAllTokens`, `getTokensBySymbol`, `getUSDCTokens`, etc.)
+- Token constants are now available directly from `@armory-sh/base` for convenience
+
+## 0.2.14
+
+### Patch Changes
+
+- v2 Only, Cleanup
+
 ## 0.2.13
 
 ### Patch Changes

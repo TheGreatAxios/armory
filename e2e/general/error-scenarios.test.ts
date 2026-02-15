@@ -44,23 +44,7 @@ function createX402V2Payload(nonce?: string): any {
   };
 }
 
-// ============================================================================
-// Setup
-// ============================================================================
-
-const FACILITATOR_URL = process.env.FACILITATOR_URL || "http://localhost:3000";
-
 describe("Error Scenario E2E", () => {
-  let facilitatorAvailable = false;
-
-  beforeAll(async () => {
-    try {
-      const response = await fetch(`${FACILITATOR_URL}/health`);
-      facilitatorAvailable = response.ok;
-    } catch {
-      console.warn("Facilitator not available");
-    }
-  });
 
   // ============================================================================
   // Invalid Signature Errors
@@ -315,45 +299,6 @@ describe("Error Scenario E2E", () => {
       // Should fail verification
       expect(scenario.expectedStatus).toBeGreaterThanOrEqual(400);
     }
-  });
-
-  // ============================================================================
-  // Facilitator Error Handling
-  // ============================================================================
-
-  describe("Facilitator Error Handling", () => {
-    test("handles facilitator unavailability", async () => {
-      if (!facilitatorAvailable) {
-        console.warn("Skipping facilitator test - facilitator not available");
-        return;
-      }
-
-      const response = await fetch("http://localhost:9999/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          payload: createX402V2Payload(),
-          requirements: {
-            scheme: "exact",
-            network: "eip155:84532",
-            amount: "1000000",
-            asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-            payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-            maxTimeoutSeconds: 300,
-          },
-        }),
-      });
-
-      // Should fail since facilitator is not available
-      expect(!response.ok).toBe(true);
-    });
-
-    test("handles facilitator timeout", async () => {
-      // This would require a slow facilitator
-      const payload = createX402V2Payload();
-
-      expect(payload.payload.authorization).toBeDefined();
-    });
   });
 
   // ============================================================================

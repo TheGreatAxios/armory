@@ -102,7 +102,6 @@ curl http://localhost:3002/api/user/profile \
 | `PAYMENT_AMOUNT` | Payment amount (smallest unit) | `1000000` (1 USDC) |
 | `PAYMENT_NETWORK` | Blockchain network | `base` |
 | `PAYMENT_EXPIRY` | Payment expiry (seconds) | `3600` |
-| `FACILITATOR_URL` | Optional facilitator URL for remote verification | - |
 | `USDC_*` | USDC contract addresses | - |
 | `RPC_*` | RPC URLs for local verification | - |
 
@@ -184,7 +183,6 @@ app.get("/api/protected",
       chainId: "eip155:8453",
       assetId: "eip155:8453/erc20:0x8335...",
     },
-    facilitatorUrl: "http://localhost:3000", // Optional
   }),
   (c) => {
     // Payment info available in context
@@ -260,4 +258,3 @@ Client Request
 3. **Rate limiting** - Prevent abuse
 4. **Logging** - Track payment verifications
 5. **Error handling** - Graceful payment failures
-6. **Facilitator URL** - Use dedicated facilitator for scalability

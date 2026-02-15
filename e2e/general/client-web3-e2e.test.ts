@@ -7,8 +7,7 @@
 import { describe, test, expect, beforeAll } from "bun:test";
 import { createX402Client, createX402Transport } from "@armory-sh/client-web3";
 import { Web3 } from "web3";
-import { TOKENS } from "@armory-sh/tokens";
-import { registerToken } from "@armory-sh/base";
+import { TOKENS, registerToken } from "@armory-sh/base";
 
 // ============================================================================
 // Setup

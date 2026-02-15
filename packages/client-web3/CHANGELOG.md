@@ -1,5 +1,13 @@
 # @armory-sh/client-web3
 
+## 0.2.11
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
 ## 0.2.10
 
 ### Patch Changes

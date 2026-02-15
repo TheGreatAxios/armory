@@ -1,5 +1,13 @@
 # @armory-sh/client-viem
 
+## 0.2.14
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
 ## 0.2.13
 
 ### Patch Changes

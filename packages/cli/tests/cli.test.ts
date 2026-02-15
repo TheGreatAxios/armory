@@ -44,14 +44,14 @@ describe("[unit|cli]: CLI Tests", () => {
 
     // Check facilitator template
     expect(content).toContain("@armory-sh/base");
-    expect(content).toContain("@armory-sh/facilitator");
-    expect(content).toContain("@armory-sh/tokens");
+    expect(content).toContain("@armory-sh/middleware");
 
     // Check server template
-    expect(content).toContain("@armory-sh/middleware");
+    expect(content).toContain("@armory-sh/middleware-bun");
 
     // Check client template
     expect(content).toContain("@armory-sh/client-viem");
+    expect(content).toContain("USDC_BASE");
   });
 
   test("[CLI|help] - includes proper help text", () => {
@@ -85,9 +85,8 @@ describe("[unit|cli]: CLI Tests", () => {
     const cliPath = join(import.meta.dir, "../src/cli.ts");
     const content = readFileSync(cliPath, "utf-8");
 
-    expect(content).toContain("createFacilitatorServer");
-    expect(content).toContain("createMemoryQueue");
-    expect(content).toContain("MemoryNonceTracker");
+    // Facilitator pattern is deprecated, template shows migration notice
+    expect(content).toContain("Facilitator pattern has changed");
   });
 
   test("[CLI|server-middleware] - server template includes payment middleware", () => {

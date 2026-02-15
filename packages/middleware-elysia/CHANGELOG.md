@@ -1,5 +1,13 @@
 # @armory-sh/middleware-elysia
 
+## 0.3.13
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
 ## 0.3.12
 
 ### Patch Changes

@@ -53,34 +53,15 @@ const FACILITATOR_PACKAGE = (name: string) => `{
   },
   "dependencies": {
     "@armory-sh/base": "latest",
-    "@armory-sh/facilitator": "latest",
-    "@armory-sh/tokens": "latest"
+    "@armory-sh/middleware": "latest"
   }
 }`;
 
-const FACILITATOR_INDEX = `import { createFacilitatorServer } from "@armory-sh/facilitator";
-import { createMemoryQueue } from "@armory-sh/facilitator/queue/memory";
-import { MemoryNonceTracker } from "@armory-sh/facilitator/nonce/memory";
+const FACILITATOR_INDEX = `// Note: The facilitator pattern has changed.
+// See @armory-sh/middleware packages for current implementation.
+// This is a basic placeholder.
 
-const server = createFacilitatorServer({
-  port: Number(process.env.PORT ?? 3000),
-  host: process.env.HOST ?? "0.0.0.0",
-  nonceTracker: new MemoryNonceTracker({ ttl: 60000 }),
-  paymentQueue: createMemoryQueue({ maxRetries: 3 }),
-  rpcUrls: {
-    8453: process.env.BASE_RPC_URL ?? "https://mainnet.base.org",
-    84532: process.env.BASE_SEPOLIA_RPC_URL ?? "https://sepolia.base.org",
-  },
-  privateKey: process.env.PRIVATE_KEY,
-});
-
-console.log("Facilitator running on http://" + server.host + ":" + server.port);
-
-process.on("SIGINT", () => {
-  console.log("\\nShutting down...");
-  server.stop();
-  process.exit(0);
-});
+console.log("Facilitator pattern has changed. See @armory-sh/middleware packages.");
 `;
 
 const FACILITATOR_README = (name: string) => `# ${name}
@@ -129,8 +110,8 @@ const SERVER_PACKAGE = (name: string) => `{
 }`;
 
 const SERVER_INDEX = `import { Bun } from "bun";
-import { paymentMiddleware } from "@armory-sh/middleware/bun";
-import { USDC_BASE } from "@armory-sh/tokens";
+import { paymentMiddleware } from "@armory-sh/middleware-bun";
+import { USDC_BASE } from "@armory-sh/base";
 
 const app = Bun.serve({
   port: 3000,
@@ -172,13 +153,13 @@ const CLIENT_PACKAGE = (name: string) => `{
   },
   "dependencies": {
     "@armory-sh/client-viem": "latest",
-    "@armory-sh/tokens": "latest"
+    "@armory-sh/base": "latest"
   }
 }`;
 
 const CLIENT_INDEX = `import { createX402Client } from "@armory-sh/client-viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { USDC_BASE } from "@armory-sh/tokens";
+import { USDC_BASE } from "@armory-sh/base";
 import { client } from "./client.js";
 
 const account = privateKeyToAccount(process.env.PRIVATE_KEY ?? "0x" + "1".repeat(64));

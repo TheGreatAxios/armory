@@ -104,7 +104,6 @@ curl http://localhost:3003/api/user/profile \
 | `PAYMENT_NETWORK` | Blockchain network | `base` |
 | `PAYMENT_EXPIRY` | Payment expiry (seconds) | `3600` |
 | `SETTLEMENT_MODE` | Payment mode (`verify` or `settle`) | `verify` |
-| `FACILITATOR_URL` | Facilitator URL for verification/settlement | `http://localhost:3000` |
 | `USDC_*` | USDC contract addresses | - |
 | `RPC_*` | RPC URLs for local verification | - |
 
@@ -196,9 +195,6 @@ const middleware = createBunMiddleware({
   network: "base",
   amount: "1000000",
   settlementMode: "settle",
-  facilitator: {
-    url: "http://localhost:3000",
-  },
 });
 
 Bun.serve({
@@ -269,5 +265,4 @@ Client Request
 3. **Rate limiting** - Prevent abuse
 4. **Logging** - Track payment verifications
 5. **Error handling** - Graceful payment failures
-6. **Facilitator URL** - Use dedicated facilitator for scalability
-7. **Settlement mode** - Choose verify vs settle based on use case
+6. **Settlement mode** - Choose verify vs settle based on use case

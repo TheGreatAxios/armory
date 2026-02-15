@@ -7,8 +7,7 @@
 import { describe, test, expect, beforeAll } from "bun:test";
 import { Wallet } from "ethers";
 import { createX402Client, createX402Transport } from "@armory-sh/client-ethers";
-import { TOKENS } from "@armory-sh/tokens";
-import { registerToken } from "@armory-sh/base";
+import { TOKENS, registerToken } from "@armory-sh/base";
 
 // ============================================================================
 // Setup

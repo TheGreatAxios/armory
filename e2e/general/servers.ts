@@ -25,9 +25,11 @@ export interface ServerConfig {
   network: string;
 }
 
-// Fixed test ports - tests run sequentially so no conflicts
-const HONO_TEST_PORT = 14444;
-const EXPRESS_TEST_PORT = 14445;
+/**
+ * Get a random available port for testing
+ * Using high port range to avoid conflicts
+ */
+const getRandomPort = (): number => 30000 + Math.floor(Math.random() * 10000);
 
 /**
  * Convert decimal amount to atomic units (6 decimals for USDC)
@@ -61,7 +63,7 @@ const createRequirements = (config: ServerConfig) => {
     maxTimeoutSeconds: 300,
     asset: network.usdcAddress as `0x${string}`,
     extra: {
-      name: "USDC",
+      name: "USD Coin",
       version: "2",
     },
   };
@@ -88,15 +90,18 @@ export const createHonoServer = async (config: ServerConfig): Promise<TestServer
 
   const server = serve({
     fetch: app.fetch,
-    port: HONO_TEST_PORT,
-    hostname: "127.0.0.1",
+    port: 0,
+    hostname: "localhost",
   });
 
   await new Promise((resolve) => setTimeout(resolve, 50));
 
+  const port = server.port;
+  const url = `http://localhost:${port}`;
+
   return {
-    port: HONO_TEST_PORT,
-    url: `http://127.0.0.1:${HONO_TEST_PORT}`,
+    port,
+    url,
     close: async () => {
       server.stop(true);
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -123,13 +128,17 @@ export const createExpressServer = async (config: ServerConfig): Promise<TestSer
     });
   });
 
-  const srv = app.listen(EXPRESS_TEST_PORT, "127.0.0.1");
+  const srv = app.listen(0, "localhost");
 
   await new Promise((resolve) => setTimeout(resolve, 50));
 
+  const address = srv.address() as { port: number };
+  const port = address.port;
+  const url = `http://localhost:${port}`;
+
   return {
-    port: EXPRESS_TEST_PORT,
-    url: `http://127.0.0.1:${EXPRESS_TEST_PORT}`,
+    port,
+    url,
     close: async () => {
       srv.close();
       await new Promise((resolve) => setTimeout(resolve, 100));
