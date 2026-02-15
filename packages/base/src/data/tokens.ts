@@ -22,7 +22,7 @@ export const USDC_BASE_SEPOLIA: CustomToken = {
   symbol: "USDC",
   name: "USD Coin",
   version: "2",
-  contractAddress: "0x036CbD5d9A3b9231f83BefBE4F9E3FAA03eee2e0" as `0x${string}`,
+  contractAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as `0x${string}`,
   chainId: 84532,
   decimals: 6,
 };
@@ -31,7 +31,7 @@ export const USDC_SKALE_BASE: CustomToken = {
   symbol: "USDC",
   name: "USD Coin",
   version: "2",
-  contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+  contractAddress: "0x85889c8c714505E0c94b30fcfcF64fE3Ac8FCb20" as `0x${string}`,
   chainId: 1187947933,
   decimals: 6,
 };
@@ -40,7 +40,7 @@ export const SKL_SKALE_BASE: CustomToken = {
   symbol: "SKL",
   name: "SKALE",
   version: "1",
-  contractAddress: "0xaf2e1eb5c9f4a94dbf7400f76e4ec0d8de18fb8584" as `0x${string}`,
+  contractAddress: "0xE0595a049d02b7674572b0d59cd4880Db60EDC50" as `0x${string}`,
   chainId: 1187947933,
   decimals: 18,
 };
@@ -49,7 +49,7 @@ export const USDT_SKALE_BASE: CustomToken = {
   symbol: "USDT",
   name: "Tether USD",
   version: "1",
-  contractAddress: "0x2bF5bF154b4881Ef4E3Ff28Ac1a60Fa1aDcb5fE5F6" as `0x${string}`,
+  contractAddress: "0x2bF5bF154b515EaA82C31a65ec11554fF5aF7fCA" as `0x${string}`,
   chainId: 1187947933,
   decimals: 6,
 };
@@ -58,7 +58,7 @@ export const WBTC_SKALE_BASE: CustomToken = {
   symbol: "WBTC",
   name: "Wrapped BTC",
   version: "1",
-  contractAddress: "0x1aee79F6316aD699F96468A32F7BaF2fD8d55c0000" as `0x${string}`,
+  contractAddress: "0x1aeeCFE5454c83B42D8A316246CAc9739E7f690e" as `0x${string}`,
   chainId: 1187947933,
   decimals: 8,
 };
@@ -67,7 +67,7 @@ export const WETH_SKALE_BASE: CustomToken = {
   symbol: "WETH",
   name: "Wrapped Ether",
   version: "1",
-  contractAddress: "0x8fF2237e4d845bc7Db6E1f1a93C8bCb288Bc5a400" as `0x${string}`,
+  contractAddress: "0x7bD39ABBd0Dd13103542cAe3276C7fA332bCA486" as `0x${string}`,
   chainId: 1187947933,
   decimals: 18,
 };
@@ -76,7 +76,7 @@ export const SKL_SKALE_BASE_SEPOLIA: CustomToken = {
   symbol: "SKL",
   name: "SKALE",
   version: "1",
-  contractAddress: "0xaf2e1eb5c9f4a94dbf7400f76e4ec0d8de18fb8584" as `0x${string}`,
+  contractAddress: "0xaf2e0ff5b5f51553fdb34ce7f04a6c3201cee57b" as `0x${string}`,
   chainId: 324705682,
   decimals: 18,
 };
@@ -85,7 +85,7 @@ export const USDC_SKALE_BASE_SEPOLIA: CustomToken = {
   symbol: "USDC",
   name: "USD Coin",
   version: "2",
-  contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+  contractAddress: "0x2e08028E3C4c2356572E096d8EF835cD5C6030bD" as `0x${string}`,
   chainId: 324705682,
   decimals: 6,
 };
@@ -94,7 +94,7 @@ export const USDT_SKALE_BASE_SEPOLIA: CustomToken = {
   symbol: "USDT",
   name: "Tether USD",
   version: "1",
-  contractAddress: "0xe8af39ca6558a983f6b5f8c0b828cc609f7a1c200" as `0x${string}`,
+  contractAddress: "0x3ca0a49f511c2c89c4dcbbf1731120d8919050bf" as `0x${string}`,
   chainId: 324705682,
   decimals: 6,
 };
@@ -103,7 +103,7 @@ export const WBTC_SKALE_BASE_SEPOLIA: CustomToken = {
   symbol: "WBTC",
   name: "Wrapped BTC",
   version: "1",
-  contractAddress: "0x1aee79F6316aD699F96468A32F7BaF2fD8d55c0000" as `0x${string}`,
+  contractAddress: "0x4512eacd4186b025186e1cf6cc0d89497c530e87" as `0x${string}`,
   chainId: 324705682,
   decimals: 8,
 };
@@ -112,7 +112,7 @@ export const WETH_SKALE_BASE_SEPOLIA: CustomToken = {
   symbol: "WETH",
   name: "Wrapped Ether",
   version: "1",
-  contractAddress: "0x8fF2237e4d845bc7Db6E1f1a93C8bCb288Bc5a400" as `0x${string}`,
+  contractAddress: "0xf94056bd7f6965db3757e1b145f200b7346b4fc0" as `0x${string}`,
   chainId: 324705682,
   decimals: 18,
 };
