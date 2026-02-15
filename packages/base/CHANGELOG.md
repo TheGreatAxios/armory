@@ -1,5 +1,11 @@
 # @armory-sh/base
 
+## 0.2.20
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+
 ## 0.2.19
 
 ### Patch Changes

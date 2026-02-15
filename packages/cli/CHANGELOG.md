@@ -1,5 +1,11 @@
 # armory-cli
 
+## 0.2.11
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+
 ## 0.2.10
 
 ### Patch Changes

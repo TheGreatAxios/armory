@@ -1,5 +1,13 @@
 # @armory-sh/client-web3
 
+## 0.2.16
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
 ## 0.2.15
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @armory-sh/middleware-express
 
+## 0.4.7
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
 ## 0.4.6
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @armory-sh/client-viem
 
+## 0.2.19
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/extensions@0.1.1
+  - @armory-sh/base@0.2.20
+
 ## 0.2.18
 
 ### Patch Changes

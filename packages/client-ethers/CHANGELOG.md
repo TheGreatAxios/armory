@@ -1,5 +1,13 @@
 # @armory-sh/client-ethers
 
+## 0.2.19
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
 ## 0.2.18
 
 ### Patch Changes

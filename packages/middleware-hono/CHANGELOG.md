@@ -1,5 +1,14 @@
 # @armory-sh/middleware-hono
 
+## 0.3.20
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/extensions@0.1.1
+  - @armory-sh/base@0.2.20
+
 ## 0.3.19
 
 ### Patch Changes

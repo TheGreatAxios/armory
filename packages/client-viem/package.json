@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/client-viem",
-  "version": "0.2.18",
+  "version": "0.2.19",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -32,7 +32,7 @@
     "directory": "packages/client-viem"
   },
   "dependencies": {
-    "@armory-sh/base": "^0.2.19",
+    "@armory-sh/base": "^0.2.20",
     "@armory-sh/extensions": "workspace:*",
     "viem": "2.45.0"
   },

@@ -1,5 +1,11 @@
 # @armory-sh/tokens
 
+## 0.2.18
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+
 ## 0.2.17
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-express-v4",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "module": "index.ts",
   "type": "module",
