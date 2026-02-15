@@ -6,6 +6,12 @@
   "type": "module",
   "license": "MIT",
   "private": true,
+  "peerDependencies": {
+    "express": "^4"
+  },
+  "dependencies": {
+    "@armory-sh/base": "workspace:*"
+  },
   "scripts": {
     "test": "bun test"
   }

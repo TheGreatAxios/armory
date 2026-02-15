@@ -1,21 +1,15 @@
 import type { Web3X402Client, X402Transport, X402TransportOptions } from "./types";
 import {
-  V1_HEADERS,
   V2_HEADERS,
-  encodePaymentV1,
   encodePaymentV2,
-  isX402V1Requirements,
   isX402V2Requirements,
-  type PaymentRequirementsV1,
   type PaymentRequirementsV2,
-  type PaymentPayloadV1,
   type PaymentPayloadV2,
 } from "@armory-sh/base";
 import {
   detectX402Version,
   parsePaymentRequired,
   isPaymentRequiredResponse,
-  selectSchemeRequirements,
   type X402Version,
 } from "./protocol";
 
@@ -25,16 +19,12 @@ const DEFAULT_MAX_RETRIES = 3;
  * Create payment headers based on detected version and payload
  */
 const createPaymentHeaders = (
-  payload: PaymentPayloadV1 | PaymentPayloadV2,
-  version: X402Version
+  payload: PaymentPayloadV2,
+  _version: X402Version
 ): Headers => {
   const headers = new Headers();
 
-  if (version === 1) {
-    headers.set(V1_HEADERS.PAYMENT, encodePaymentV1(payload as PaymentPayloadV1));
-  } else {
-    headers.set(V2_HEADERS.PAYMENT_SIGNATURE, encodePaymentV2(payload as PaymentPayloadV2));
-  }
+  headers.set(V2_HEADERS.PAYMENT_SIGNATURE, encodePaymentV2(payload));
 
   return headers;
 };
@@ -69,23 +59,14 @@ const handlePaymentRequired = async (
 
   const parsed = await parsePaymentRequired(response, version);
 
-  const selectedRequirements = selectSchemeRequirements(parsed.requirements, "exact");
+  const selectedRequirements = parsed.requirements[0];
 
   if (!selectedRequirements) {
     throw new Error("No supported payment scheme found in requirements");
   }
 
-  let result;
-
-  if (version === 1 && isX402V1Requirements(selectedRequirements)) {
-    const req = selectedRequirements as PaymentRequirementsV1;
-    result = await client.handlePaymentRequired(req);
-  } else if (version === 2 && isX402V2Requirements(selectedRequirements)) {
-    const req = selectedRequirements as PaymentRequirementsV2;
-    result = await client.handlePaymentRequired(req);
-  } else {
-    result = await client.handlePaymentRequired(selectedRequirements as PaymentRequirementsV1 | PaymentRequirementsV2);
-  }
+  const req = selectedRequirements as PaymentRequirementsV2;
+  const result = await client.handlePaymentRequired(req);
 
   return createPaymentHeaders(result.payload, version);
 };

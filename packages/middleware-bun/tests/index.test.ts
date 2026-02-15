@@ -3,14 +3,9 @@
  */
 
 import { test, expect, describe } from "bun:test";
-import { getHeadersForVersion, extractPayerAddress } from "../src/payment-utils";
+import { extractPayerAddress } from "../src/payment-utils";
 
 describe("[middleware-bun]: Bun payment-utils", () => {
-  test("getHeadersForVersion returns V2 headers", () => {
-    const headers = getHeadersForVersion(2);
-    expect(headers.payment).toBe("PAYMENT-SIGNATURE");
-  });
-
   test("extractPayerAddress from x402 V2", () => {
     const payload = {
       x402Version: 2,

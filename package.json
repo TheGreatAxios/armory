@@ -6,16 +6,17 @@
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "workspaces": [
     "packages/*",
-    "tests/e2e"
+    "e2e"
   ],
   "scripts": {
     "test": "turbo run test",
-    "test:e2e": "bun test tests/e2e/*.test.ts",
-    "test:pay": "bun tests/e2e/pay.ts",
+    "test:e2e": "bun test e2e/**/*.test.ts",
+    "test:pay": "bun e2e/payments/live-payment-test.ts",
     "build": "turbo run build",
     "changeset": "changeset",
     "ci:version": "changeset version && bun update",
-    "ci:publish": "bunx changeset publish"
+    "ci:publish": "bunx changeset publish",
+    "ci:release": "bun run ci:version && bun run ci:publish"
   },
   "private": true,
   "packageManager": "bun@1.3.8",

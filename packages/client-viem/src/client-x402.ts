@@ -26,12 +26,11 @@ import {
   createEIP712Domain,
   EIP712_TYPES,
   encodePayment,
-  X402_HEADERS,
-  safeBase64Encode,
+  PAYMENT_SIGNATURE_HEADER,
+  PAYMENT_RESPONSE_HEADER,
+  PAYMENT_REQUIRED_HEADER,
   safeBase64Decode,
   createNonce,
-  toAtomicUnits,
-  combineSignatureV2,
 } from "@armory-sh/base";
 
 import type { X402Client, X402ClientConfig, X402Wallet } from "./types-x402";
@@ -179,7 +178,7 @@ async function createPaymentPayload(
 }
 
 function extractRequirementsFromResponse(response: Response): X402PaymentRequirements {
-  const encoded = response.headers.get(X402_HEADERS.PAYMENT_REQUIRED);
+  const encoded = response.headers.get(PAYMENT_REQUIRED_HEADER);
   if (!encoded) {
     throw new PaymentError("No payment requirements found in 402 response");
   }
@@ -199,11 +198,11 @@ function extractRequirementsFromResponse(response: Response): X402PaymentRequire
 }
 
 function addPaymentHeader(headers: Headers, payment: X402PaymentPayload): void {
-  headers.set(X402_HEADERS.PAYMENT, encodePayment(payment));
+  headers.set(PAYMENT_SIGNATURE_HEADER, encodePayment(payment));
 }
 
 function checkSettlement(response: Response): void {
-  const encoded = response.headers.get(X402_HEADERS.PAYMENT_RESPONSE);
+  const encoded = response.headers.get(PAYMENT_RESPONSE_HEADER);
   if (!encoded) return;
 
   try {

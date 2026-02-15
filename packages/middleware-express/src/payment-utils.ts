@@ -2,18 +2,7 @@ import type {
   X402PaymentPayload,
   X402PaymentRequirements,
 } from "@armory-sh/base";
-import { extractPaymentFromHeaders, X402_HEADERS } from "@armory-sh/base";
-
-// Legacy V1 payload type for backward compatibility
-export interface LegacyPaymentPayloadV1 {
-  amount: string;
-  network: string;
-  contractAddress: string;
-  payTo: string;
-  from: string;
-  expiry: number;
-  signature: string;
-}
+import { decodePayment, isPaymentPayload, isExactEvmPayload } from "@armory-sh/base";
 
 // Legacy V2 payload type for backward compatibility
 export interface LegacyPaymentPayloadV2 {
@@ -27,50 +16,31 @@ export interface LegacyPaymentPayloadV2 {
   signature: string;
 }
 
-// Union type for all payload formats
-export type AnyPaymentPayload = X402PaymentPayload | LegacyPaymentPayloadV1 | LegacyPaymentPayloadV2;
+// Union type for V2 payload formats
+export type AnyPaymentPayload = X402PaymentPayload | LegacyPaymentPayloadV2;
 
 // Re-export types for use in index.ts
-export type PaymentPayload = AnyPaymentPayload;
 export type { X402PaymentRequirements as PaymentRequirements } from "@armory-sh/base";
-
-export type PaymentVersion = 1 | 2;
 
 export interface PaymentVerificationResult {
   success: boolean;
   payload?: AnyPaymentPayload;
-  version?: PaymentVersion;
   payerAddress?: string;
   error?: string;
 }
 
-export interface PaymentHeaders {
-  payment: string;
-  required: string;
-  response: string;
-}
+// V2 hardcoded headers
+export const PAYMENT_HEADERS = {
+  PAYMENT: "PAYMENT-SIGNATURE",
+  REQUIRED: "PAYMENT-REQUIRED",
+  RESPONSE: "PAYMENT-RESPONSE",
+  payment: "PAYMENT-SIGNATURE",
+  required: "PAYMENT-REQUIRED",
+  response: "PAYMENT-RESPONSE",
+} as const;
 
-export const getHeadersForVersion = (version: PaymentVersion): PaymentHeaders =>
-  version === 1
-    ? { payment: "X-PAYMENT", required: "X-PAYMENT-REQUIRED", response: "X-PAYMENT-RESPONSE" }
-    : { payment: "PAYMENT-SIGNATURE", required: "PAYMENT-REQUIRED", response: "PAYMENT-RESPONSE" };
-
-export const getRequirementsVersion = (requirements: X402PaymentRequirements): PaymentVersion =>
-  "contractAddress" in requirements && "network" in requirements ? 1 : 2;
-
-export const encodeRequirements = (requirements: X402PaymentRequirements, _resourceUrl?: string): string =>
+export const encodeRequirements = (requirements: X402PaymentRequirements): string =>
   JSON.stringify(requirements);
-
-function isLegacyV1(payload: unknown): payload is LegacyPaymentPayloadV1 {
-  return (
-    typeof payload === "object" &&
-    payload !== null &&
-    "contractAddress" in payload &&
-    "network" in payload &&
-    "signature" in payload &&
-    typeof (payload as LegacyPaymentPayloadV1).signature === "string"
-  );
-}
 
 function isLegacyV2(payload: unknown): payload is LegacyPaymentPayloadV2 {
   return (
@@ -85,39 +55,52 @@ function isLegacyV2(payload: unknown): payload is LegacyPaymentPayloadV2 {
 
 export const decodePayload = (
   headerValue: string
-): { payload: AnyPaymentPayload; version: PaymentVersion } => {
-  let parsed: unknown;
-  let isJsonString = false;
-  try {
-    if (headerValue.startsWith("{")) {
-      parsed = JSON.parse(headerValue);
-      isJsonString = true;
-    } else {
-      parsed = JSON.parse(atob(headerValue));
+): { payload: AnyPaymentPayload } => {
+  let payload: unknown;
+
+  // Try JSON first (for test compatibility)
+  if (headerValue.startsWith("{")) {
+    try {
+      payload = JSON.parse(headerValue);
+    } catch {
+      throw new Error("Invalid payment payload: not valid JSON");
     }
-  } catch {
-    throw new Error("Invalid payment payload");
+  } else {
+    // Use core's decodePayment for proper Base64URL handling
+    try {
+      payload = decodePayment(headerValue);
+    } catch {
+      throw new Error("Invalid payment payload: not valid Base64");
+    }
   }
 
-  const base64Value = isJsonString
-    ? Buffer.from(headerValue).toString("base64")
-    : headerValue;
-  const headers = new Headers();
-  headers.set(X402_HEADERS.PAYMENT, base64Value);
-  const x402Payload = extractPaymentFromHeaders(headers);
-  if (x402Payload) {
-    return { payload: x402Payload, version: 2 };
+  // Check for x402 V2 format
+  if (isPaymentPayload(payload)) {
+    return { payload };
   }
 
-  if (isLegacyV1(parsed)) {
-    return { payload: parsed, version: 1 };
-  }
-
-  if (isLegacyV2(parsed)) {
-    return { payload: parsed, version: 2 };
+  if (isLegacyV2(payload)) {
+    return { payload };
   }
 
   throw new Error("Unrecognized payment payload format");
+};
+
+export const extractPayerAddress = (payload: AnyPaymentPayload): string => {
+  // Check for x402 format with nested payload
+  if (isPaymentPayload(payload)) {
+    const p = payload.payload;
+    if (isExactEvmPayload(p) && p.authorization?.from) {
+      return p.authorization.from;
+    }
+  }
+
+  // Check for direct `from` field (legacy format)
+  if ("from" in payload && typeof payload.from === "string") {
+    return payload.from;
+  }
+
+  throw new Error("Unable to extract payer address from payload");
 };
 
 export const verifyWithFacilitator = async (
@@ -155,16 +138,23 @@ export const verifyLocally = async (
   payload: AnyPaymentPayload,
   requirements: X402PaymentRequirements
 ): Promise<PaymentVerificationResult> => {
-  if (isLegacyV1(payload) || isLegacyV2(payload)) {
+  if (isLegacyV2(payload)) {
     return {
       success: false,
-      error: "Local verification not supported for legacy payload formats. Use a facilitator.",
+      error: "Local verification not supported for legacy payload format. Use a facilitator.",
+    };
+  }
+
+  if (!isPaymentPayload(payload) || !isExactEvmPayload(payload.payload)) {
+    return {
+      success: false,
+      error: "Invalid payment payload format",
     };
   }
 
   return {
     success: true,
-    payerAddress: (payload as X402PaymentPayload).payload.authorization.from,
+    payerAddress: payload.payload.authorization.from,
   };
 };
 
@@ -176,18 +166,3 @@ export const verifyPaymentWithRetry = async (
   facilitatorUrl
     ? verifyWithFacilitator(facilitatorUrl, payload, requirements)
     : verifyLocally(payload, requirements);
-
-export const extractPayerAddress = (payload: AnyPaymentPayload): string => {
-  if ("payload" in payload) {
-    const x402Payload = payload as X402PaymentPayload;
-    if ("authorization" in x402Payload.payload) {
-      return x402Payload.payload.authorization.from;
-    }
-  }
-
-  if ("from" in payload && typeof payload.from === "string") {
-    return payload.from;
-  }
-
-  throw new Error("Unable to extract payer address from payload");
-};

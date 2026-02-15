@@ -11,7 +11,7 @@
     // Bundler mode
     "moduleResolution": "bundler",
     "paths": {
-      "@armory-sh/base": ["./packages/core/src"],
+      "@armory-sh/base": ["./packages/base/src"],
       "@armory-sh/cli": ["./packages/cli/src"],
       "@armory-sh/client-ethers": ["./packages/client-ethers/src"],
       "@armory-sh/client-viem": ["./packages/client-viem/src"],

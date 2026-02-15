@@ -14,13 +14,9 @@ import {
   adjustVForChainId,
   signTypedData,
   signWithPrivateKey,
-  isV1Requirements,
-  isV2Requirements,
 } from "../src/index";
 import type {
-  PaymentRequirementsV1,
   PaymentRequirementsV2,
-  SettlementResponseV1,
   SettlementResponseV2,
 } from "@armory-sh/base";
 
@@ -409,19 +405,6 @@ test("createX402Client creates v2 client by default", () => {
   expect(client.getNetwork().chainId).toBe(8453);
 });
 
-test("createX402Client creates v1 client when specified", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
-  const client = createX402Client({
-    account,
-    network: "ethereum",
-    version: 1,
-  });
-
-  expect(client.getVersion()).toBe(1);
-  expect(client.getNetwork().name).toBe("Ethereum Mainnet");
-  expect(client.getNetwork().chainId).toBe(1);
-});
-
 test("createX402Client throws on unknown network", () => {
   const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
 
@@ -434,71 +417,8 @@ test("createX402Client throws on unknown network", () => {
 });
 
 // ============================================================================
-// Type Guard Tests
-// ============================================================================
-
-test("isV1Requirements correctly identifies v1 requirements", () => {
-  const v1Req: PaymentRequirementsV1 = {
-    amount: "1000000",
-    network: "base",
-    contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-    payTo: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-    expiry: Date.now() + 3600,
-  };
-
-  expect(isV1Requirements(v1Req)).toBeTrue();
-  expect(isV2Requirements(v1Req)).toBeFalse();
-});
-
-test("isV2Requirements correctly identifies v2 requirements", () => {
-  const v2Req: PaymentRequirementsV2 = {
-    amount: "1000000",
-    to: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-    chainId: "eip155:8453",
-    assetId: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-    nonce: "test-nonce",
-    expiry: Date.now() + 3600,
-  };
-
-  expect(isV2Requirements(v2Req)).toBeTrue();
-  expect(isV1Requirements(v2Req)).toBeFalse();
-});
-
-// ============================================================================
 // Settlement Verification Tests
 // ============================================================================
-
-test("client verifies successful v1 settlement", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
-  const client = createX402Client({
-    account,
-    network: "base",
-  });
-
-  const response: SettlementResponseV1 = {
-    success: true,
-    txHash: "0xabc123",
-    timestamp: Date.now(),
-  };
-
-  expect(client.verifySettlement(response)).toBeTrue();
-});
-
-test("client verifies failed v1 settlement", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
-  const client = createX402Client({
-    account,
-    network: "base",
-  });
-
-  const response: SettlementResponseV1 = {
-    success: false,
-    error: "Insufficient funds",
-    timestamp: Date.now(),
-  };
-
-  expect(client.verifySettlement(response)).toBeFalse();
-});
 
 test("client verifies successful v2 settlement", () => {
   const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");

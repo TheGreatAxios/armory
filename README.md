@@ -135,7 +135,7 @@ bun install
 bun test
 
 # Run tests for a specific package
-bun test packages/core
+bun test packages/base
 ```
 
 ## Automatic Validation
@@ -166,7 +166,6 @@ await acceptPaymentsViaArmory({
 
 ### X-402 Protocol
 
-- **v1**: `X-PAYMENT` header (legacy)
 - **v2**: `PAYMENT-SIGNATURE` header (CAIP-2/CAIP-10 compliant)
 
 ### EIP-3009 transferWithAuthorization
@@ -187,10 +186,9 @@ interface TransferWithAuthorization {
 
 ### Headers
 
-| Version | Payment Header | Response Header |
-|---------|---------------|-----------------|
-| v1 | `X-PAYMENT` | `X-PAYMENT-RESPONSE` |
-| v2 | `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
+| Payment Header | Response Header |
+|---------------|-----------------|
+| `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
 
 ## Key Technologies
 

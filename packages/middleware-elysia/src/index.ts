@@ -1,30 +1,31 @@
 import type { Context } from "elysia";
 import { Elysia } from "elysia";
 import type {
+  X402PaymentPayload,
+  X402PaymentRequirements,
+} from "@armory-sh/base";
+import type {
   PaymentPayload,
   PaymentRequirements,
 } from "./payment-utils";
 import {
-  getRequirementsVersion,
-  getHeadersForVersion,
   encodeRequirements,
   decodePayload,
   verifyPaymentWithRetry,
   extractPayerAddress,
   createResponseHeaders,
+  PAYMENT_HEADERS,
 } from "./payment-utils";
 
 export interface PaymentMiddlewareConfig {
-  requirements: PaymentRequirements;
+  requirements: X402PaymentRequirements;
   facilitatorUrl?: string;
   skipVerification?: boolean;
-  defaultVersion?: 1 | 2;
 }
 
 export interface PaymentInfo {
-  payload: PaymentPayload;
+  payload: X402PaymentPayload;
   payerAddress: string;
-  version: 1 | 2;
   verified: boolean;
 }
 
@@ -43,9 +44,7 @@ const errorResponse = (
   });
 
 export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
-  const { requirements, facilitatorUrl, skipVerification = false, defaultVersion } = config;
-  const version = defaultVersion ?? getRequirementsVersion(requirements);
-  const headers = getHeadersForVersion(version);
+  const { requirements, facilitatorUrl, skipVerification = false } = config;
 
   return new Elysia({ name: "armory-payment" })
     .derive(() => ({
@@ -53,44 +52,23 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
     }))
     .onBeforeHandle(async ({ payment, request }) => {
       try {
-        const paymentHeader = request.headers.get(headers.payment);
+        const paymentHeader = request.headers.get(PAYMENT_HEADERS.PAYMENT);
 
         if (!paymentHeader) {
-          // For V1, use legacy base64-encoded format
-          // For V2/x402, use proper PaymentRequired format
-          const requiredValue = version === 1
-            ? Buffer.from(JSON.stringify(requirements)).toString("base64")
-            : JSON.stringify({
-                x402Version: version,
-                resource: {
-                  url: request.url,
-                  description: "API Access",
-                },
-                accepts: [requirements],
-              });
           return errorResponse(
             { error: "Payment required", accepts: [requirements] },
             402,
-            { [headers.required]: requiredValue }
+            { [PAYMENT_HEADERS.REQUIRED]: encodeRequirements(requirements) }
           );
         }
 
-        let payload: PaymentPayload;
-        let payloadVersion: 1 | 2;
+        let payload: X402PaymentPayload;
         try {
-          ({ payload, version: payloadVersion } = decodePayload(paymentHeader));
+          ({ payload } = decodePayload(paymentHeader) as { payload: X402PaymentPayload });
         } catch (error) {
           return errorResponse({
             error: "Invalid payment payload",
             message: error instanceof Error ? error.message : "Unknown error",
-          }, 400);
-        }
-
-        if (payloadVersion !== version) {
-          return errorResponse({
-            error: "Payment version mismatch",
-            expected: version,
-            received: payloadVersion,
           }, 400);
         }
 
@@ -102,13 +80,12 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
           return errorResponse(
             { error: verifyResult.error },
             402,
-            { [headers.required]: encodeRequirements(requirements) }
+            { [PAYMENT_HEADERS.REQUIRED]: encodeRequirements(requirements) }
           );
         }
 
         const payerAddress = verifyResult.payerAddress!;
-
-        (payment as PaymentInfo) = { payload, payerAddress, version, verified: !skipVerification };
+        (payment as PaymentInfo) = { payload, payerAddress, verified: !skipVerification };
       } catch (error) {
         return errorResponse({
           error: "Payment middleware error",
@@ -118,9 +95,9 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
     })
     .onAfterHandle(({ payment }) => {
       if (payment) {
-        const { payerAddress, version } = payment;
+        const { payerAddress } = payment;
         return {
-          headers: createResponseHeaders(payerAddress, version),
+          headers: createResponseHeaders(payerAddress),
         };
       }
     });

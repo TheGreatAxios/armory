@@ -1,9 +1,8 @@
 import type { Signer } from "ethers";
 import {
-  decodeSettlementLegacy,
-  type SettlementResponse,
+  decodeSettlementV2,
+  type SettlementResponseV2,
   V2_HEADERS,
-  V1_HEADERS,
   isSettlementSuccessful,
 } from "@armory-sh/base";
 import type { X402TransportConfig, X402RequestInit } from "./types";
@@ -64,7 +63,7 @@ const delay = (ms: number): Promise<void> =>
 const handlePaymentRequired = async (
   state: TransportState,
   response: Response
-): Promise<{ success: boolean; settlement?: SettlementResponse; error?: Error }> => {
+): Promise<{ success: boolean; settlement?: SettlementResponseV2; error?: Error }> => {
   if (!state.signer) {
     throw new SignerRequiredError("Cannot handle payment: no signer configured.");
   }
@@ -87,7 +86,7 @@ const handlePaymentRequired = async (
     );
 
     // Decode settlement response from headers
-    const settlement = decodeSettlementLegacy(paymentResponse.headers);
+    const settlement = decodeSettlementV2(paymentResponse.headers.get(V2_HEADERS.PAYMENT_RESPONSE) || "");
     return { success: true, settlement };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error : new Error(String(error)) };

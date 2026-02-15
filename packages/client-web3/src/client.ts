@@ -1,27 +1,16 @@
 import { Web3 } from "web3";
 import {
   getNetworkConfig,
-  encodePaymentV1,
   encodePaymentV2,
-  isX402V1Requirements,
   isX402V2Requirements,
-  isLegacyPaymentPayloadV1,
   networkToCaip2,
   combineSignatureV2,
   createNonce,
-  V1_HEADERS,
   V2_HEADERS,
-  type PaymentPayloadV1,
   type PaymentPayloadV2,
-  type PaymentRequirementsV1,
   type PaymentRequirementsV2,
-  type SettlementResponseV1,
   type SettlementResponseV2,
-  type X402PaymentPayloadV1,
   type EIP3009Authorization,
-  type EIP3009AuthorizationV1,
-  type X402PaymentRequirementsV1,
-  type LegacyPaymentRequirementsV1,
 } from "@armory-sh/base";
 import type {
   Web3Account,
@@ -33,12 +22,10 @@ import type {
 } from "./types";
 import { createEIP712Domain, createTransferWithAuthorization } from "./eip3009";
 import {
-  createX402V1Payment,
   createX402V2Payment,
   detectX402Version,
   parsePaymentRequired,
-  selectSchemeRequirements,
-  type X402Version,
+  type ParsedPaymentRequired,
 } from "./protocol";
 
 const DEFAULT_EXPIRY_SECONDS = 3600;
@@ -124,93 +111,6 @@ const signTypedDataWrapper = async (
 };
 
 /**
- * Sign payment for x402 V1 protocol
- * Creates a legacy format payload for backward compatibility
- */
-const signPaymentV1 = async (
-  state: ReturnType<typeof createClientState>,
-  params: { from: string; to: string; amount: string; nonce: string; expiry: number; validAfter: number }
-): Promise<PaymentSignatureResult> => {
-  const { from, to, amount, nonce, expiry, validAfter } = params;
-  const { network, domainName, domainVersion } = state;
-
-  const domain = createEIP712Domain(network.chainId, network.usdcAddress, domainName, domainVersion);
-  const message = createTransferWithAuthorization({
-    from,
-    to,
-    value: amount,
-    validAfter: `0x${validAfter.toString(16)}`,
-    validBefore: `0x${expiry.toString(16)}`,
-    nonce: `0x${nonce}`,
-  });
-
-  const signature = await signTypedDataWrapper(state.account, domain, message);
-
-  const legacyPayload: PaymentPayloadV1 = {
-    from,
-    to,
-    amount,
-    nonce,
-    expiry,
-    v: signature.v,
-    r: signature.r,
-    s: signature.s,
-    chainId: network.chainId,
-    contractAddress: network.usdcAddress,
-    network: network.name.toLowerCase().replace(" ", "-"),
-  };
-
-  return { v: signature.v, r: signature.r, s: signature.s, payload: legacyPayload };
-};
-
-/**
- * Handle payment requirements for V1 or V2 protocol
- * This is used by both fetch() and handlePaymentRequired()
- */
-const handlePaymentRequirements = async (
-  requirements: PaymentRequirementsV1 | PaymentRequirementsV2,
-  state: ReturnType<typeof createClientState>
-): Promise<PaymentSignatureResult> => {
-  const version = detectVersionFromRequirements(requirements);
-
-  if (version === 1) {
-    // V1 requirements handling
-    const req = requirements as PaymentRequirementsV1;
-
-    // Handle x402 V1 format
-    if (isX402V1Requirements(req)) {
-      const x402Req = req as X402PaymentRequirementsV1;
-      return signPayment({
-        amount: x402Req.maxAmountRequired,
-        to: x402Req.payTo,
-      }, state);
-    }
-
-    // Handle legacy V1 format
-    const legacyReq = req as LegacyPaymentRequirementsV1;
-    return signPayment({
-      amount: legacyReq.amount,
-      to: legacyReq.payTo,
-      expiry: legacyReq.expiry,
-    }, state);
-  }
-
-  // V2 requirements handling
-  const req = requirements as PaymentRequirementsV2;
-  const to = typeof req.payTo === "string" ? req.payTo : "0x0000000000000000000000000000000000000000";
-  const from = getAddress(state.account);
-
-  return signPaymentV2(state, {
-    from,
-    to,
-    amount: req.amount,
-    nonce: crypto.randomUUID(),
-    expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
-    accepted: req,
-  });
-};
-
-/**
  * Sign payment for x402 V2 protocol
  * Creates a proper x402 V2 PaymentPayload with x402Version, accepted, payload structure
  */
@@ -243,7 +143,7 @@ const signPaymentV2 = async (
 
   const defaultAccepted: PaymentRequirementsV2 = accepted ?? {
     scheme: "exact",
-    network: network.caip2Id as `eip155:${string}`,
+    network: networkToCaip2(network.name) as `eip155:${string}`,
     amount,
     asset: network.usdcAddress as `0x${string}`,
     payTo: to as `0x${string}`,
@@ -258,6 +158,7 @@ const signPaymentV2 = async (
     validAfter: "0x0",
     validBefore: `0x${expiry.toString(16)}`,
     signature: combinedSig,
+    network: defaultAccepted.network,
     accepted: defaultAccepted,
   });
 
@@ -281,35 +182,26 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
       const version = detectX402Version(response, state.version);
       const parsed = await parsePaymentRequired(response, version);
 
-      const selectedRequirements = selectSchemeRequirements(parsed.requirements, "exact");
+      const selectedRequirements = parsed.requirements[0];
       if (!selectedRequirements) {
         throw new Error("No supported payment scheme found in requirements");
       }
 
       const from = getAddress(state.account);
-      let result;
+      const req = selectedRequirements;
+      const to = typeof req.payTo === "string" ? req.payTo : "0x0000000000000000000000000000000000000000";
 
-      if (version === 1) {
-        result = await handlePaymentRequirements(selectedRequirements as PaymentRequirementsV1, state);
-      } else {
-        const req = selectedRequirements as PaymentRequirementsV2;
-        const to = typeof req.payTo === "string" ? req.payTo : "0x0000000000000000000000000000000000000000";
-        result = await signPaymentV2(state, {
-          from,
-          to,
-          amount: req.amount,
-          nonce: crypto.randomUUID(),
-          expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
-          accepted: req,
-        });
-      }
+      const result = await signPaymentV2(state, {
+        from,
+        to,
+        amount: req.amount,
+        nonce: crypto.randomUUID(),
+        expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
+        accepted: req,
+      });
 
       const paymentHeaders = new Headers(init?.headers);
-      if (version === 1) {
-        paymentHeaders.set(V1_HEADERS.PAYMENT, encodePaymentV1(result.payload as PaymentPayloadV1));
-      } else {
-        paymentHeaders.set(V2_HEADERS.PAYMENT_SIGNATURE, encodePaymentV2(result.payload as PaymentPayloadV2));
-      }
+      paymentHeaders.set(V2_HEADERS.PAYMENT_SIGNATURE, encodePaymentV2(result.payload));
 
       response = await fetch(url, { ...init, headers: paymentHeaders });
     }
@@ -330,90 +222,40 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
       const nonce = options.nonce ?? crypto.randomUUID();
       const expiry = options.expiry ?? Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS;
 
-      if (state.version === 1) {
-        return signPaymentV1(state, {
-          from,
-          to,
-          amount,
-          nonce,
-          expiry,
-          validAfter: options.validAfter ?? DEFAULT_VALID_AFTER,
-        });
-      }
-
       return signPaymentV2(state, { from, to, amount, nonce, expiry });
     },
 
     createPaymentHeaders: async (options: PaymentSignOptions): Promise<Headers> => {
-      const result = await signPayment(options, state);
+      const from = getAddress(state.account);
+      const to = options.to;
+      const amount = options.amount.toString();
+      const nonce = options.nonce ?? crypto.randomUUID();
+      const expiry = options.expiry ?? Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS;
+
+      const result = await signPaymentV2(state, { from, to, amount, nonce, expiry });
       const headers = new Headers();
-
-      if (state.version === 1) {
-        headers.set("X-PAYMENT", encodePaymentV1(result.payload as PaymentPayloadV1));
-      } else {
-        headers.set("PAYMENT-SIGNATURE", encodePaymentV2(result.payload as PaymentPayloadV2));
-      }
-
+      headers.set("PAYMENT-SIGNATURE", encodePaymentV2(result.payload));
       return headers;
     },
 
     handlePaymentRequired: async (
-      requirements: PaymentRequirementsV1 | PaymentRequirementsV2
+      requirements: PaymentRequirementsV2
     ): Promise<PaymentSignatureResult> => {
-      return handlePaymentRequirements(requirements, state);
+      const from = getAddress(state.account);
+      const to = typeof requirements.payTo === "string" ? requirements.payTo : "0x0000000000000000000000000000000000000000";
+
+      return signPaymentV2(state, {
+        from,
+        to,
+        amount: requirements.amount,
+        nonce: crypto.randomUUID(),
+        expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
+        accepted: requirements,
+      });
     },
 
-    verifySettlement: (response: SettlementResponseV1 | SettlementResponseV2): boolean => {
-      if ("success" in response) {
-        return response.success;
-      }
-      return false;
+    verifySettlement: (response: SettlementResponseV2): boolean => {
+      return response.success === true;
     },
   };
-};
-
-/**
- * Detect x402 version from requirements object structure
- */
-const detectVersionFromRequirements = (requirements: PaymentRequirementsV1 | PaymentRequirementsV2): X402Version => {
-  if (isX402V2Requirements(requirements)) {
-    return 2;
-  }
-
-  if (isX402V1Requirements(requirements)) {
-    return 1;
-  }
-
-  if ("contractAddress" in requirements) {
-    return 1;
-  }
-
-  // Default to client version
-  return 2;
-};
-
-const signPayment = async (
-  options: PaymentSignOptions,
-  state: ReturnType<typeof createClientState>
-): Promise<PaymentSignatureResult> => {
-  const from = getAddress(state.account);
-
-  if (state.version === 1) {
-    return signPaymentV1(state, {
-      from,
-      to: options.to,
-      amount: options.amount.toString(),
-      nonce: options.nonce ?? crypto.randomUUID(),
-      expiry: options.expiry ?? Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
-      validAfter: options.validAfter ?? DEFAULT_VALID_AFTER,
-    });
-  }
-
-  return signPaymentV2(state, {
-    from,
-    to: options.to,
-    amount: options.amount.toString(),
-    nonce: options.nonce ?? crypto.randomUUID(),
-    expiry: options.expiry ?? Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
-  });
 };

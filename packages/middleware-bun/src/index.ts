@@ -16,7 +16,7 @@ import {
   resolveMiddlewareConfig,
   getPrimaryConfig,
   type SimpleMiddlewareConfig,
-} from "./simple";
+} from "./middleware-config";
 
 export type BunMiddleware = (request: Request) => Promise<Response | null>;
 

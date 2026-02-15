@@ -1,4 +1,4 @@
-import { test, expect, describe } from "bun:test";
+import { describe, test, expect } from "bun:test";
 import {
   // Token Constants
   USDC_BASE,
@@ -29,8 +29,8 @@ import {
   TOKENS,
 } from "../src/index";
 
-describe("[tokens]: Token Constants", () => {
-  test("USDC_BASE token is correctly configured", () => {
+describe("[unit|tokens]: Token Constants", () => {
+  test("[USDC_BASE|success] - token is correctly configured", () => {
     expect(USDC_BASE.symbol).toBe("USDC");
     expect(USDC_BASE.name).toBe("USD Coin");
     expect(USDC_BASE.contractAddress).toMatch(/^0x[a-fA-F0-9]{40,42}$/);
@@ -38,7 +38,7 @@ describe("[tokens]: Token Constants", () => {
     expect(USDC_BASE.decimals).toBe(6);
   });
 
-  test("USDC_BASE_SEPOLIA token is correctly configured", () => {
+  test("[USDC_BASE_SEPOLIA|success] - token is correctly configured", () => {
     expect(USDC_BASE_SEPOLIA.symbol).toBe("USDC");
     expect(USDC_BASE_SEPOLIA.name).toBe("USD Coin");
     expect(USDC_BASE_SEPOLIA.contractAddress).toMatch(/^0x[a-fA-F0-9]{40,42}$/);
@@ -46,7 +46,7 @@ describe("[tokens]: Token Constants", () => {
     expect(USDC_BASE_SEPOLIA.decimals).toBe(6);
   });
 
-  test("EURC_BASE token is correctly configured", () => {
+  test("[EURC_BASE|success] - token is correctly configured", () => {
     expect(EURC_BASE.symbol).toBe("EURC");
     expect(EURC_BASE.name).toBe("EURC");
     expect(EURC_BASE.contractAddress).toMatch(/^0x[a-fA-F0-9]{40,42}$/);
@@ -55,25 +55,25 @@ describe("[tokens]: Token Constants", () => {
   });
 });
 
-describe("[tokens]: Registry Functions", () => {
-  test("getToken retrieves token by chainId and address", () => {
+describe("[unit|tokens]: Registry Functions", () => {
+  test("[getToken|success] - retrieves token by chainId and address", () => {
     const token = getToken(8453, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
     expect(token).toBeDefined();
     expect(token?.symbol).toBe("USDC");
   });
 
-  test("getToken is case-insensitive for contract address", () => {
+  test("[getToken|success] - is case-insensitive for contract address", () => {
     const lowercase = getToken(8453, "0x833589fcd6edb6e08f4c7c32d4f71b54bdA02913");
     const uppercase = getToken(8453, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
     expect(lowercase).toEqual(uppercase);
   });
 
-  test("getToken returns undefined for non-existent token", () => {
-    const token = getToken(999, "0x0000000000000000000000000");
+  test("[getToken|error] - returns undefined for non-existent token", () => {
+    const token = getToken(999, "0x0000000000000000000000000000000");
     expect(token).toBeUndefined();
   });
 
-  test("getAllTokens returns all registered tokens", () => {
+  test("[getAllTokens|success] - returns all registered tokens", () => {
     const allTokens = getAllTokens();
     expect(allTokens).toBeArray();
     expect(allTokens.length).toBe(13);
@@ -89,55 +89,55 @@ describe("[tokens]: Registry Functions", () => {
   });
 });
 
-describe("[tokens]: Helper Functions", () => {
-  test("getUSDCTokens returns only USDC tokens", () => {
+describe("[unit|tokens]: Helper Functions", () => {
+  test("[getUSDCTokens|success] - returns only USDC tokens", () => {
     const usdcTokens = getUSDCTokens();
     expect(usdcTokens.length).toBe(4);
     expect(usdcTokens.every((t) => t.symbol === "USDC")).toBe(true);
   });
 
-  test("getEURCTokens returns only EURC tokens", () => {
+  test("[getEURCTokens|success] - returns only EURC tokens", () => {
     const eurcTokens = getEURCTokens();
     expect(eurcTokens.length).toBe(1);
     expect(eurcTokens.every((t) => t.symbol === "EURC")).toBe(true);
   });
 
-  test("getSKLTokens returns SKL tokens", () => {
+  test("[getSKLTokens|success] - returns SKL tokens", () => {
     const sklTokens = getSKLTokens();
     expect(sklTokens.length).toBe(2);
   });
 
-  test("getUSDTTokens returns USDT tokens", () => {
+  test("[getUSDTokens|success] - returns USDT tokens", () => {
     const usdtTokens = getUSDTokens();
     expect(usdtTokens.length).toBe(2);
   });
 
-  test("getWBTCTokens returns WBTC tokens", () => {
+  test("[getWBTCTokens|success] - returns WBTC tokens", () => {
     const wbtcTokens = getWBTCTokens();
     expect(wbtcTokens.length).toBe(2);
   });
 
-  test("getWETHTokens returns WETH tokens", () => {
+  test("[getWETHTokens|success] - returns WETH tokens", () => {
     const wethTokens = getWETHTokens();
     expect(wethTokens.length).toBe(2);
   });
 });
 
-describe("[tokens]: Token Collection", () => {
-  test("TOKENS collection contains all expected tokens", () => {
+describe("[unit|tokens]: Token Collection", () => {
+  test("[TOKENS|success] - collection contains all expected tokens", () => {
     expect(TOKENS).toBeDefined();
     expect(typeof TOKENS === "object").toBe(true);
   });
 
-  test("TOKENS values match individual token constants", () => {
+  test("[TOKENS|success] - values match individual token constants", () => {
     expect(TOKENS.USDC_BASE).toEqual(USDC_BASE);
     expect(TOKENS.USDC_BASE_SEPOLIA).toEqual(USDC_BASE_SEPOLIA);
     expect(TOKENS.EURC_BASE).toEqual(EURC_BASE);
   });
 });
 
-describe("[tokens]: Edge Cases", () => {
-  test("Registry handles duplicate registrations gracefully", () => {
+describe("[unit|tokens]: Edge Cases", () => {
+  test("[Registry|success] - handles duplicate registrations gracefully", () => {
     const allTokensBefore = getAllTokens();
     const countBefore = allTokensBefore.length;
 
@@ -152,14 +152,14 @@ describe("[tokens]: Edge Cases", () => {
     expect(countAfter).toBe(countBefore);
   });
 
-  test("Token key generation is consistent", () => {
+  test("[TokenRegistry|success] - key generation is consistent", () => {
     const key1 = `${8453}:${"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".toLowerCase()}`;
     const key2 = `${8453}:${"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".toLowerCase()}`;
 
     expect(key1).toBe(key2);
   });
 
-  test("Different chains have unique token keys", () => {
+  test("[TokenRegistry|success] - different chains have unique token keys", () => {
     const usdcBaseKey = `${8453}:${"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".toLowerCase()}`;
     const usdcSkaleKey = `${1187947933}:${"0x833589fc64fE3AceBce20Fc3c4690eFa484b7b5a02913".toLowerCase()}`;
 
@@ -167,8 +167,8 @@ describe("[tokens]: Edge Cases", () => {
   });
 });
 
-describe("[tokens]: Token Validation", () => {
-  test("All tokens have valid Ethereum addresses", () => {
+describe("[unit|tokens]: Token Validation", () => {
+  test("[TokenValidation|success] - all tokens have valid Ethereum addresses", () => {
     const allTokens = getAllTokens();
 
     for (const token of allTokens) {
@@ -177,7 +177,7 @@ describe("[tokens]: Token Validation", () => {
     }
   });
 
-  test("All tokens have valid decimals (6, 8, or 18)", () => {
+  test("[TokenValidation|success] - all tokens have valid decimals (6, 8, or 18)", () => {
     const allTokens = getAllTokens();
 
     for (const token of allTokens) {
@@ -185,7 +185,7 @@ describe("[tokens]: Token Validation", () => {
     }
   });
 
-  test("All tokens have non-empty version strings", () => {
+  test("[TokenValidation|success] - all tokens have non-empty version strings", () => {
     const allTokens = getAllTokens();
 
     for (const token of allTokens) {

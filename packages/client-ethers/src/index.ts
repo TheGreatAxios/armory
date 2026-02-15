@@ -1,8 +1,5 @@
 // Re-export types from @armory-sh/base
 export type {
-  PaymentPayloadV1,
-  PaymentRequirementsV1,
-  SettlementResponseV1,
   PaymentPayloadV2,
   PaymentRequirementsV2,
   SettlementResponseV2,
@@ -21,16 +18,7 @@ export type {
 } from "@armory-sh/base";
 
 export {
-  V1_HEADERS,
   V2_HEADERS,
-  isV1,
-  isV2,
-  getPaymentVersion,
-  getRequirementsVersion,
-  getSettlementVersion,
-  getPaymentHeaderName as getPaymentHeaderNameBase,
-  getPaymentResponseHeaderName,
-  getPaymentRequiredHeaderName,
   isSettlementSuccessful,
   getTxHash,
   NETWORKS,
@@ -39,24 +27,15 @@ export {
   getMainnets,
   getTestnets,
   ERC20_ABI,
-  encodePaymentV1,
-  decodePaymentV1,
-  encodeSettlementV1,
-  decodeSettlementV1,
   encodePaymentV2,
   decodePaymentV2,
   encodeSettlementV2,
   decodeSettlementV2,
   detectPaymentVersion,
   decodePayment,
-  decodeSettlementLegacy,
-  isPaymentV1,
   isPaymentV2,
-  isSettlementV1,
   isSettlementV2,
-  isX402V1PaymentRequired,
   isX402V2PaymentRequired,
-  isX402V1Requirements,
   EIP712_TYPES,
   createEIP712Domain,
   createTransferWithAuthorization,
@@ -66,19 +45,13 @@ export {
   safeBase64Decode,
 } from "@armory-sh/base";
 
-// Ethers-specific exports - x402 protocol functions
+// Ethers-specific exports - x402 protocol functions (V2 only)
 export {
   detectX402Version,
   parsePaymentRequired,
-  createX402V1Payment,
-  createX402V2Payment,
   createX402Payment,
   encodeX402Payment,
   getPaymentHeaderName,
-  // Legacy compatibility (deprecated)
-  createPaymentPayload,
-  parsePaymentRequirements,
-  detectProtocolVersion,
   type ParsedPaymentRequirements,
 } from "./protocol";
 
