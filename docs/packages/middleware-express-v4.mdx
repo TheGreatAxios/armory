@@ -1,0 +1,103 @@
+---
+description: Payment middleware for Express v4
+title: "@armory-sh/middleware-express-v4"
+---
+
+Accept crypto payments in your Express v4 API with a single middleware function.
+
+## Installation
+
+```bash
+bun add @armory-sh/middleware-express-v4
+```
+
+## Quick Start
+
+```typescript
+import express from 'express';
+import { paymentMiddleware } from '@armory-sh/middleware-express-v4';
+
+const app = express();
+
+app.use(paymentMiddleware({
+  requirements: {
+    scheme: 'exact',
+    network: 'eip155:8453',
+    amount: '1000000',
+    asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    payTo: '0xYourWalletAddress...',
+    maxTimeoutSeconds: 3600,
+    extra: {}
+  },
+  facilitatorUrl: 'https://facilitator.armory.sh'
+}));
+
+app.get('/api/protected', (req, res) => {
+  console.log(req.payment);
+  res.json({ message: 'Payment verified!' });
+});
+
+app.listen(3000);
+```
+
+---
+
+## Express v4 vs v5
+
+This package is specifically for **Express v4**. The API differs slightly from the v5 package:
+
+| Feature | Express v4 Package | Express v5 Package |
+|---------|-------------------|-------------------|
+| Package | `@armory-sh/middleware-express-v4` | `@armory-sh/middleware-express` |
+| Requirements | Uses `scheme`, `network`, `asset` | Uses `chainId`, `assetId` |
+| Amount | String (`"1000000"`) | BigInt (`1000000n`) |
+
+For full documentation on configuration options, accessing payment info, and error responses, see the [Express middleware documentation](/packages/middleware-express).
+
+---
+
+## Route-Aware Middleware
+
+Configure different payment requirements for different routes:
+
+```typescript
+import { routeAwarePaymentMiddleware } from '@armory-sh/middleware-express-v4';
+
+app.use(routeAwarePaymentMiddleware({
+  '/api/basic': {
+    requirements: {
+      scheme: 'exact',
+      network: 'eip155:8453',
+      amount: '1000000',
+      asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      payTo: '0xYourAddress...',
+      maxTimeoutSeconds: 300,
+      extra: {}
+    }
+  },
+  '/api/premium': {
+    requirements: {
+      scheme: 'exact',
+      network: 'eip155:8453',
+      amount: '5000000',
+      asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      payTo: '0xYourAddress...',
+      maxTimeoutSeconds: 300,
+      extra: {}
+    }
+  }
+}));
+```
+
+---
+
+## Migration to Express v5
+
+When upgrading to Express v5, switch to `@armory-sh/middleware-express`:
+
+```bash
+bun remove @armory-sh/middleware-express-v4
+bun add @armory-sh/middleware-express
+```
+
+Then update your code to use the v5 API format (BigInt amounts, `chainId`/`assetId` instead of `network`/`asset`).

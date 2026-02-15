@@ -55,6 +55,7 @@
           "packages/middleware",
           "packages/middleware-bun",
           "packages/middleware-express",
+          "packages/middleware-express-v4",
           "packages/middleware-hono",
           "packages/middleware-elysia",
           "packages/middleware-next",

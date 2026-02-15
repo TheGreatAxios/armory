@@ -142,9 +142,10 @@ armory extensions
 
 ## Documentation
 
-- [Quick Start Guide](./docs/quickstart) - Get started in minutes
-- [Token Registry](./docs/tokens) - Pre-configured tokens and how to add your own
-- [API Examples](./docs/examples) - Cross-reference examples for all input formats
+- [Overview](./docs/index.mdx) - Protocol overview and architecture
+- [Accept Payments](./docs/accept-payments/express.mdx) - Add payments to your API
+- [Make Payments](./docs/make-payments/viem.mdx) - Pay for APIs from your app
+- [Custom Tokens](./docs/advanced/custom-tokens.mdx) - Add your own tokens
 - [Agent Guidelines](./AGENTS.md) - Building AI agents with Armory
 
 ## Supported Networks
@@ -168,17 +169,18 @@ Pre-configured tokens include USDC, EURC, USDT, WBTC, and WETH across all suppor
 |---------|-------------|
 | **@armory-sh/base** | Protocol types, encoding, EIP-712, network configs, validation, route matching |
 | **@armory-sh/middleware** | HTTP middleware for Bun, Express, Hono, Elysia |
-| **@armory-sh/middleware-express** | Express-specific middleware |
-| **@armory-sh/middleware-express-v4** | Express v4-specific middleware |
-| **@armory-sh/middleware-hono** | Hono-specific middleware |
-| **@armory-sh/middleware-bun** | Bun-specific middleware |
-| **@armory-sh/middleware-elysia** | Elysia-specific middleware |
+| **@armory-sh/middleware-express** | Express v5 middleware |
+| **@armory-sh/middleware-express-v4** | Express v4 middleware |
+| **@armory-sh/middleware-hono** | Hono middleware |
+| **@armory-sh/middleware-bun** | Bun middleware |
+| **@armory-sh/middleware-elysia** | Elysia middleware |
 | **@armory-sh/middleware-next** | Next.js App Router middleware |
 | **@armory-sh/client-viem** | Viem v2 payment client |
 | **@armory-sh/client-ethers** | Ethers.js v6 payment client |
 | **@armory-sh/client-web3** | Web3.js payment client |
 | **@armory-sh/tokens** | Pre-configured token objects |
-| **@armory-sh/cli** | Scaffold tool for x402 payment-enabled apps |
+| **@armory-sh/extensions** | Protocol extensions (SIWX, payment ID) |
+| **armory-cli** | Scaffold tool for x402 payment-enabled apps |
 
 ## Development
 
