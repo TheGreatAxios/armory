@@ -11,6 +11,10 @@ export function createMiddleware(
 
   return async (request: NextRequest): Promise<NextResponse> => {
     const response = await proxy(request);
-    return NextResponse.json(await response.json(), { status: response.status });
+    const body = await response.text();
+    return new NextResponse(body, {
+      status: response.status,
+      headers: response.headers,
+    });
   };
 }

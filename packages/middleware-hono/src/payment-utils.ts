@@ -1,10 +1,10 @@
 import type {
   X402PaymentPayload,
   X402PaymentRequirements,
+  SettlementResponse,
 } from "@armory-sh/base";
 import { decodePayment, isPaymentPayload, isExactEvmPayload } from "@armory-sh/base";
 
-// Legacy V2 payload type for backward compatibility
 export interface LegacyPaymentPayloadV2 {
   to: string;
   from: string;
@@ -16,7 +16,6 @@ export interface LegacyPaymentPayloadV2 {
   signature: string;
 }
 
-// Union type for V2 payload formats
 export type AnyPaymentPayload = X402PaymentPayload | LegacyPaymentPayloadV2;
 
 export interface PaymentVerificationResult {
@@ -26,15 +25,15 @@ export interface PaymentVerificationResult {
   error?: string;
 }
 
-// V2 hardcoded headers
+export interface PaymentSettlementResult extends SettlementResponse {
+  error?: string;
+}
+
 export const PAYMENT_HEADERS = {
   PAYMENT: "PAYMENT-SIGNATURE",
   REQUIRED: "PAYMENT-REQUIRED",
   RESPONSE: "PAYMENT-RESPONSE",
 } as const;
-
-export const encodeRequirements = (requirements: X402PaymentRequirements): string =>
-  JSON.stringify(requirements);
 
 function isLegacyV2(payload: unknown): payload is LegacyPaymentPayloadV2 {
   return (
@@ -52,7 +51,6 @@ export const decodePayload = (
 ): { payload: AnyPaymentPayload } => {
   let payload: unknown;
 
-  // Try JSON first (for test compatibility)
   if (headerValue.startsWith("{")) {
     try {
       payload = JSON.parse(headerValue);
@@ -60,7 +58,6 @@ export const decodePayload = (
       throw new Error("Invalid payment payload: not valid JSON");
     }
   } else {
-    // Use core's decodePayment for proper Base64URL handling
     try {
       payload = decodePayment(headerValue);
     } catch {
@@ -89,6 +86,99 @@ export const extractPayerAddress = (payload: AnyPaymentPayload): string => {
   }
 
   throw new Error("Unable to extract payer address from payload");
+};
+
+export const verifyWithFacilitator = async (
+  facilitatorUrl: string,
+  payload: AnyPaymentPayload,
+  requirements: X402PaymentRequirements
+): Promise<PaymentVerificationResult> => {
+  try {
+    const response = await fetch(`${facilitatorUrl}/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload, requirements }),
+    });
+
+    const result = await response.json() as { success?: boolean; error?: string; payerAddress?: string };
+
+    if (!response.ok || !result.success) {
+      return { success: false, error: result.error ?? "Verification failed" };
+    }
+
+    return { success: true, payerAddress: result.payerAddress ?? "" };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown facilitator error",
+    };
+  }
+};
+
+export const settleWithFacilitator = async (
+  facilitatorUrl: string,
+  payload: AnyPaymentPayload,
+  requirements: X402PaymentRequirements
+): Promise<PaymentSettlementResult> => {
+  try {
+    const response = await fetch(`${facilitatorUrl}/settle`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload, requirements }),
+    });
+
+    const result = await response.json() as { success?: boolean; transaction?: string; network?: string; error?: string };
+
+    if (!response.ok || !result.success) {
+      return {
+        success: false,
+        transaction: result.transaction,
+        network: result.network,
+        error: result.error ?? "Settlement failed",
+      };
+    }
+
+    return {
+      success: true,
+      transaction: result.transaction,
+      network: result.network,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown facilitator error",
+    };
+  }
+};
+
+export const verifyPaymentWithRetry = async (
+  payload: AnyPaymentPayload,
+  requirements: X402PaymentRequirements,
+  facilitatorUrl?: string
+): Promise<PaymentVerificationResult> => {
+  if (!facilitatorUrl) {
+    return {
+      success: false,
+      error: "Facilitator URL is required for verification",
+    };
+  }
+
+  return verifyWithFacilitator(facilitatorUrl, payload, requirements);
+};
+
+export const settlePaymentWithRetry = async (
+  payload: AnyPaymentPayload,
+  requirements: X402PaymentRequirements,
+  facilitatorUrl?: string
+): Promise<PaymentSettlementResult> => {
+  if (!facilitatorUrl) {
+    return {
+      success: false,
+      error: "Facilitator URL is required for settlement",
+    };
+  }
+
+  return settleWithFacilitator(facilitatorUrl, payload, requirements);
 };
 
 export const createResponseHeaders = (

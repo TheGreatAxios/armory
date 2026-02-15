@@ -12,7 +12,6 @@ import {
   getNetworkConfig,
   getNetworkByChainId,
   encodeSettlementResponse,
-  encodePaymentPayload,
   normalizeNetworkName,
 } from "@armory-sh/base";
 import type {
@@ -237,7 +236,7 @@ export const createPaymentRequiredHeaders = (
   version: 1 | 2
 ): Record<string, string> => {
   if (version === 1) {
-    return { "X-PAYMENT-REQUIRED": encodePaymentPayload(requirements as PaymentRequirementsV1) };
+    return { "X-PAYMENT-REQUIRED": encode(requirements as PaymentRequirementsV1) };
   }
   // For V2/x402 - create proper PaymentRequired format
   const paymentRequired = {

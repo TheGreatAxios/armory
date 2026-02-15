@@ -233,7 +233,7 @@ export const getPrimaryConfig = (resolved: ResolvedMiddlewareConfig): Middleware
     network: normalizeNetworkName(primary.network.config.name),
     amount: primary.amount,
     facilitator: resolved.facilitators[0],
-    settlementMode: "verify",
+    settlementMode: "settle",
   };
 };
 

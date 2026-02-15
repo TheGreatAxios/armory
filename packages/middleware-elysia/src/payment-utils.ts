@@ -1,10 +1,10 @@
 import type {
   X402PaymentPayload,
   X402PaymentRequirements,
+  SettlementResponse,
 } from "@armory-sh/base";
 import { extractPaymentFromHeaders, PAYMENT_SIGNATURE_HEADER } from "@armory-sh/base";
 
-// Legacy V2 payload type for backward compatibility
 export interface LegacyPaymentPayloadV2 {
   to: string;
   from: string;
@@ -13,13 +13,11 @@ export interface LegacyPaymentPayloadV2 {
   assetId: string;
   nonce: string;
   expiry: number;
-  signature: string; // 0x-prefixed hex signature
+  signature: string;
 }
 
-// Union type for V2 payload formats
 export type AnyPaymentPayload = X402PaymentPayload | LegacyPaymentPayloadV2;
 
-// Re-export types for use in index.ts
 export type PaymentPayload = AnyPaymentPayload;
 export type { X402PaymentRequirements as PaymentRequirements } from "@armory-sh/base";
 
@@ -30,19 +28,16 @@ export interface PaymentVerificationResult {
   error?: string;
 }
 
-// V2 hardcoded headers
+export interface PaymentSettlementResult extends SettlementResponse {
+  error?: string;
+}
+
 export const PAYMENT_HEADERS = {
   PAYMENT: "PAYMENT-SIGNATURE",
   REQUIRED: "PAYMENT-REQUIRED",
   RESPONSE: "PAYMENT-RESPONSE",
 } as const;
 
-export const encodeRequirements = (requirements: X402PaymentRequirements): string =>
-  JSON.stringify(requirements);
-
-/**
- * Detect if a payload is legacy V2 format
- */
 function isLegacyV2(payload: unknown): payload is LegacyPaymentPayloadV2 {
   return (
     typeof payload === "object" &&
@@ -57,7 +52,6 @@ function isLegacyV2(payload: unknown): payload is LegacyPaymentPayloadV2 {
 export const decodePayload = (
   headerValue: string
 ): { payload: AnyPaymentPayload } => {
-  // Try to parse as JSON first
   let parsed: unknown;
   let isJsonString = false;
   try {
@@ -88,11 +82,6 @@ export const decodePayload = (
   throw new Error("Unrecognized payment payload format");
 };
 
-export const createVerificationError = (
-  message: string,
-  details?: unknown
-): string => JSON.stringify({ error: message, details });
-
 export const verifyWithFacilitator = async (
   facilitatorUrl: string,
   payload: AnyPaymentPayload,
@@ -105,13 +94,9 @@ export const verifyWithFacilitator = async (
       body: JSON.stringify({ payload, requirements }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      return { success: false, error: JSON.stringify(error) };
-    }
+    const result = await response.json() as { success?: boolean; error?: string; payerAddress?: string };
 
-    const result = await response.json() as { success: boolean; error?: string; payerAddress?: string };
-    if (!result.success) {
+    if (!response.ok || !result.success) {
       return { success: false, error: result.error ?? "Verification failed" };
     }
 
@@ -124,11 +109,46 @@ export const verifyWithFacilitator = async (
   }
 };
 
+export const settleWithFacilitator = async (
+  facilitatorUrl: string,
+  payload: AnyPaymentPayload,
+  requirements: X402PaymentRequirements
+): Promise<PaymentSettlementResult> => {
+  try {
+    const response = await fetch(`${facilitatorUrl}/settle`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload, requirements }),
+    });
+
+    const result = await response.json() as { success?: boolean; transaction?: string; network?: string; error?: string };
+
+    if (!response.ok || !result.success) {
+      return {
+        success: false,
+        transaction: result.transaction,
+        network: result.network,
+        error: result.error ?? "Settlement failed",
+      };
+    }
+
+    return {
+      success: true,
+      transaction: result.transaction,
+      network: result.network,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown facilitator error",
+    };
+  }
+};
+
 export const verifyLocally = async (
   payload: AnyPaymentPayload,
   requirements: X402PaymentRequirements
 ): Promise<PaymentVerificationResult> => {
-  // For legacy format, we'd need to convert to x402 format first
   if (isLegacyV2(payload)) {
     return {
       success: false,
@@ -136,7 +156,6 @@ export const verifyLocally = async (
     };
   }
 
-  // For x402 format, verify locally
   return {
     success: true,
     payerAddress: (payload as X402PaymentPayload).payload.authorization.from,
@@ -152,11 +171,22 @@ export const verifyPaymentWithRetry = async (
     ? verifyWithFacilitator(facilitatorUrl, payload, requirements)
     : verifyLocally(payload, requirements);
 
-/**
- * Extract payer address from various payload formats
- */
+export const settlePaymentWithRetry = async (
+  payload: AnyPaymentPayload,
+  requirements: X402PaymentRequirements,
+  facilitatorUrl?: string
+): Promise<PaymentSettlementResult> => {
+  if (!facilitatorUrl) {
+    return {
+      success: false,
+      error: "Facilitator URL is required for settlement",
+    };
+  }
+
+  return settleWithFacilitator(facilitatorUrl, payload, requirements);
+};
+
 export const extractPayerAddress = (payload: AnyPaymentPayload): string => {
-  // x402 format
   if ("payload" in payload) {
     const x402Payload = payload as X402PaymentPayload;
     if ("authorization" in x402Payload.payload) {
@@ -164,19 +194,9 @@ export const extractPayerAddress = (payload: AnyPaymentPayload): string => {
     }
   }
 
-  // Legacy V2 format
   if ("from" in payload && typeof payload.from === "string") {
     return payload.from;
   }
 
   throw new Error("Unable to extract payer address from payload");
 };
-
-export const createResponseHeaders = (
-  payerAddress: string
-): Record<string, string> => ({
-  [PAYMENT_HEADERS.RESPONSE]: JSON.stringify({
-    status: "verified",
-    payerAddress,
-  }),
-});

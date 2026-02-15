@@ -18,9 +18,16 @@ interface RouteConfig {
   config: RoutePaymentConfig;
 }
 
+type UpstreamHandler = (
+  request: NextRequest,
+  route: RouteConfig,
+  verify: { success: boolean; payerAddress?: string; error?: string }
+) => Promise<Response>;
+
 export function paymentProxy(
   routes: Record<string, RoutePaymentConfig>,
-  resourceServer: x402ResourceServer
+  resourceServer: x402ResourceServer,
+  upstream?: UpstreamHandler
 ): (request: NextRequest) => Promise<Response> {
   const routeConfigs: RouteConfig[] = Object.entries(routes).map(
     ([pattern, config]) => ({ pattern, config })
@@ -94,19 +101,49 @@ export function paymentProxy(
       );
     }
 
-    return new Response(
-      JSON.stringify({
-        verified: true,
-        payerAddress: verifyResult.payerAddress,
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "X-Payment-Verified": "true",
-          "X-Payer-Address": verifyResult.payerAddress || "",
-        },
-      }
+    const handler = upstream ?? (async () =>
+      new Response(
+        JSON.stringify({
+          verified: true,
+          payerAddress: verifyResult.payerAddress,
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      ));
+    const upstreamResponse = await handler(request, matchedRoute, verifyResult);
+
+    if (upstreamResponse.status >= 400) {
+      return upstreamResponse;
+    }
+
+    if (!facilitator.settle) {
+      return upstreamResponse;
+    }
+
+    const settleResult = await facilitator.settle(request.headers);
+    if (!settleResult.success) {
+      return new Response(
+        JSON.stringify({
+          error: "Settlement failed",
+          details: settleResult.error,
+        }),
+        { status: 502, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const responseHeaders = new Headers(upstreamResponse.headers);
+    responseHeaders.set(
+      V2_HEADERS.PAYMENT_RESPONSE,
+      safeBase64Encode(
+        JSON.stringify({
+          success: true,
+          transaction: settleResult.txHash || "",
+        })
+      )
     );
+
+    return new Response(upstreamResponse.body, {
+      status: upstreamResponse.status,
+      headers: responseHeaders,
+    });
   };
 }

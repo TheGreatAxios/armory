@@ -9,9 +9,12 @@ import {
   V2_HEADERS,
   matchRoute,
   validateRouteConfig,
+  createPaymentRequiredHeaders,
+  createSettlementHeaders,
 } from "@armory-sh/base";
 import type { PaymentConfig } from "./simple";
 import { createPaymentRequirements } from "./simple";
+import { decodePayload, verifyPaymentWithRetry, settlePaymentWithRetry } from "./payment-utils";
 
 interface LocalValidationError {
   code: string;
@@ -122,23 +125,51 @@ export const routeAwarePaymentMiddleware = (
 
     let parsedPayload: unknown;
     try {
-      const decoded = atob(paymentHeader);
-      parsedPayload = JSON.parse(decoded);
+      ({ payload: parsedPayload } = decodePayload(paymentHeader));
     } catch {
-      try {
-        parsedPayload = JSON.parse(paymentHeader);
-      } catch {
-        c.status(400);
-        return c.json({ error: "Invalid payment payload" });
-      }
+      c.status(400);
+      return c.json({ error: "Invalid payment payload" });
+    }
+
+    const primaryRequirement = requirements[0];
+    if (!primaryRequirement) {
+      c.status(500);
+      return c.json({ error: "Payment middleware configuration error", details: "No payment requirements configured" });
+    }
+
+    const requirementFacilitatorUrl = primaryRequirement.extra?.facilitatorUrl;
+    const facilitatorUrl = matchedRoute.config.facilitatorUrl
+      ?? (typeof requirementFacilitatorUrl === "string" ? requirementFacilitatorUrl : undefined);
+    const verifyResult = await verifyPaymentWithRetry(parsedPayload as never, primaryRequirement, facilitatorUrl);
+    if (!verifyResult.success) {
+      c.status(402);
+      c.header(V2_HEADERS.PAYMENT_REQUIRED, createPaymentRequiredHeaders(requirements)[V2_HEADERS.PAYMENT_REQUIRED]);
+      return c.json({ error: "Payment verification failed", message: verifyResult.error });
     }
 
     c.set("payment", {
       payload: parsedPayload,
-      verified: false,
+      payerAddress: verifyResult.payerAddress,
+      verified: true,
       route: matchedRoute.pattern,
     });
 
-    return next();
+    await next();
+
+    if (c.res.status >= 400) {
+      return;
+    }
+
+    const settleResult = await settlePaymentWithRetry(parsedPayload as never, primaryRequirement, facilitatorUrl);
+    if (!settleResult.success) {
+      c.status(502);
+      c.res = c.json({ error: "Settlement failed", details: settleResult.error }, 502);
+      return;
+    }
+
+    const headers = createSettlementHeaders(settleResult);
+    for (const [key, value] of Object.entries(headers)) {
+      c.header(key, value);
+    }
   };
 };

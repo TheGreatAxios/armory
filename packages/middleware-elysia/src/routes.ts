@@ -3,19 +3,19 @@ import type {
   X402PaymentPayload,
   X402PaymentRequirements,
 } from "@armory-sh/base";
-import type {
-  PaymentPayload,
-  PaymentRequirements,
-} from "./payment-utils";
 import {
-  encodeRequirements,
+  createPaymentRequiredHeaders,
+  createSettlementHeaders,
+  matchRoute,
+  validateRouteConfig,
+  type RouteValidationError,
+} from "@armory-sh/base";
+import {
   decodePayload,
   verifyPaymentWithRetry,
-  extractPayerAddress,
-  createResponseHeaders,
+  settlePaymentWithRetry,
   PAYMENT_HEADERS,
 } from "./payment-utils";
-import { matchRoute, validateRouteConfig, type RouteValidationError } from "@armory-sh/base";
 
 export interface RouteAwarePaymentMiddlewareConfig {
   route?: string;
@@ -94,7 +94,7 @@ export const routeAwarePaymentMiddleware = (
     .derive(() => ({
       payment: undefined as RouteAwarePaymentInfo | undefined,
     }))
-    .onBeforeHandle(async ({ payment, request }) => {
+    .onBeforeHandle(async (context) => {
       try {
         if (configError) {
           return errorResponse(
@@ -103,7 +103,7 @@ export const routeAwarePaymentMiddleware = (
           );
         }
 
-        const path = new URL(request.url).pathname;
+        const path = new URL(context.request.url).pathname;
         const matchedRoute = resolvedRoutes.find((r) => matchRoute(r.pattern, path));
 
         if (!matchedRoute) {
@@ -113,13 +113,13 @@ export const routeAwarePaymentMiddleware = (
         const routeConfig = matchedRoute.config;
         const { requirements, facilitatorUrl } = routeConfig;
 
-        const paymentHeader = request.headers.get(PAYMENT_HEADERS.PAYMENT);
+        const paymentHeader = context.request.headers.get(PAYMENT_HEADERS.PAYMENT);
 
         if (!paymentHeader) {
           return errorResponse(
             { error: "Payment required", accepts: [requirements] },
             402,
-            { [PAYMENT_HEADERS.REQUIRED]: encodeRequirements(requirements) }
+            createPaymentRequiredHeaders(requirements)
           );
         }
 
@@ -139,12 +139,12 @@ export const routeAwarePaymentMiddleware = (
           return errorResponse(
             { error: verifyResult.error },
             402,
-            { [PAYMENT_HEADERS.REQUIRED]: encodeRequirements(requirements) }
+            createPaymentRequiredHeaders(requirements)
           );
         }
 
-        const payerAddress = verifyResult.payerAddress!;
-        (payment as RouteAwarePaymentInfo) = { payload, payerAddress, verified: true, route: matchedRoute.pattern };
+        const payerAddress = verifyResult.payerAddress ?? payload.payload.authorization.from;
+        (context as { payment?: RouteAwarePaymentInfo }).payment = { payload, payerAddress, verified: true, route: matchedRoute.pattern };
       } catch (error) {
         return errorResponse({
           error: "Payment middleware error",
@@ -152,12 +152,30 @@ export const routeAwarePaymentMiddleware = (
         }, 500);
       }
     })
-    .onAfterHandle(({ payment }) => {
-      if (payment) {
-        const { payerAddress } = payment;
-        return {
-          headers: createResponseHeaders(payerAddress),
-        };
+    .onAfterHandle(async (context) => {
+      const payment = context.payment;
+      if (!payment) {
+        return;
       }
+
+      const statusCode = typeof context.set.status === "number" ? context.set.status : 200;
+      if (statusCode >= 400) {
+        return;
+      }
+
+      const matchedRoute = payment.route ? resolvedRoutes.find((route) => route.pattern === payment.route) : undefined;
+      const routeConfig = matchedRoute?.config;
+      if (!routeConfig) {
+        return;
+      }
+
+      const settlementResult = await settlePaymentWithRetry(payment.payload, routeConfig.requirements, routeConfig.facilitatorUrl);
+      if (!settlementResult.success) {
+        return errorResponse({ error: "Settlement failed", details: settlementResult.error }, 502);
+      }
+
+      return {
+        headers: createSettlementHeaders(settlementResult),
+      };
     });
 };

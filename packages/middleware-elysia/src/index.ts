@@ -1,19 +1,16 @@
-import type { Context } from "elysia";
 import { Elysia } from "elysia";
 import type {
   X402PaymentPayload,
   X402PaymentRequirements,
 } from "@armory-sh/base";
-import type {
-  PaymentPayload,
-  PaymentRequirements,
-} from "./payment-utils";
 import {
-  encodeRequirements,
+  createPaymentRequiredHeaders,
+  createSettlementHeaders,
+} from "@armory-sh/base";
+import {
   decodePayload,
   verifyPaymentWithRetry,
-  extractPayerAddress,
-  createResponseHeaders,
+  settlePaymentWithRetry,
   PAYMENT_HEADERS,
 } from "./payment-utils";
 
@@ -49,15 +46,15 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
     .derive(() => ({
       payment: undefined as PaymentInfo | undefined,
     }))
-    .onBeforeHandle(async ({ payment, request }) => {
+    .onBeforeHandle(async (context) => {
       try {
-        const paymentHeader = request.headers.get(PAYMENT_HEADERS.PAYMENT);
+        const paymentHeader = context.request.headers.get(PAYMENT_HEADERS.PAYMENT);
 
         if (!paymentHeader) {
           return errorResponse(
             { error: "Payment required", accepts: [requirements] },
             402,
-            { [PAYMENT_HEADERS.REQUIRED]: encodeRequirements(requirements) }
+            createPaymentRequiredHeaders(requirements)
           );
         }
 
@@ -77,12 +74,12 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
           return errorResponse(
             { error: verifyResult.error },
             402,
-            { [PAYMENT_HEADERS.REQUIRED]: encodeRequirements(requirements) }
+            createPaymentRequiredHeaders(requirements)
           );
         }
 
-        const payerAddress = verifyResult.payerAddress!;
-        (payment as PaymentInfo) = { payload, payerAddress, verified: true };
+        const payerAddress = verifyResult.payerAddress ?? payload.payload.authorization.from;
+        (context as { payment?: PaymentInfo }).payment = { payload, payerAddress, verified: true };
       } catch (error) {
         return errorResponse({
           error: "Payment middleware error",
@@ -90,13 +87,25 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
         }, 500);
       }
     })
-    .onAfterHandle(({ payment }) => {
-      if (payment) {
-        const { payerAddress } = payment;
-        return {
-          headers: createResponseHeaders(payerAddress),
-        };
+    .onAfterHandle(async (context) => {
+      const payment = context.payment;
+      if (!payment) {
+        return;
       }
+
+      const statusCode = typeof context.set.status === "number" ? context.set.status : 200;
+      if (statusCode >= 400) {
+        return;
+      }
+
+      const settlementResult = await settlePaymentWithRetry(payment.payload, requirements, facilitatorUrl);
+      if (!settlementResult.success) {
+        return errorResponse({ error: "Settlement failed", details: settlementResult.error }, 502);
+      }
+
+      return {
+        headers: createSettlementHeaders(settlementResult),
+      };
     });
 };
 

@@ -7,6 +7,7 @@ import {
   createPaymentRequiredHeaders,
   createSettlementHeaders,
 } from "./core";
+import type { BunHandler } from "./index";
 
 export type BunMiddleware = (request: Request) => Promise<Response | null>;
 
@@ -65,8 +66,8 @@ const parsePaymentHeader = async (request: Request): Promise<ParsedPayment | nul
   if (paymentSig) {
     try {
       const payload = decodePayment(paymentSig);
-      if (isExactEvmPayload(payload)) {
-        return { payload: payload as PaymentPayload, version: 2, payerAddress: payload.authorization.from };
+      if (isExactEvmPayload(payload.payload)) {
+        return { payload: payload as PaymentPayload, version: 2, payerAddress: payload.payload.authorization.from };
       }
     } catch {
     }
@@ -76,8 +77,8 @@ const parsePaymentHeader = async (request: Request): Promise<ParsedPayment | nul
   if (xPayment) {
     try {
       const payload = decodePayment(xPayment);
-      if (isExactEvmPayload(payload)) {
-        return { payload: payload as PaymentPayload, version: 2, payerAddress: payload.authorization.from };
+      if (isExactEvmPayload(payload.payload)) {
+        return { payload: payload as PaymentPayload, version: 2, payerAddress: payload.payload.authorization.from };
       }
       if (payload && typeof payload === "object" && "from" in payload && typeof payload.from === "string") {
         return { payload, version: 1, payerAddress: payload.from };
@@ -143,12 +144,31 @@ const successResponse = (
   );
 };
 
+const appendSettlementHeaders = (
+  response: Response,
+  settlement: SettlementResponse,
+  version: PaymentVersion
+): Response => {
+  const headers = new Headers(response.headers);
+  const settlementHeaders = createSettlementHeaders(settlement, version);
+  for (const [key, value] of Object.entries(settlementHeaders)) {
+    headers.set(key, value);
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+};
+
 export const createRouteAwareBunMiddleware = (
-  config: RouteAwareBunMiddlewareConfig
-): BunMiddleware => {
+  config: RouteAwareBunMiddlewareConfig,
+  handler?: BunHandler
+): BunMiddleware | ((request: Request) => Promise<Response>) => {
   const { routes: resolvedRoutes, error: configError } = resolveRouteConfig(config);
 
-  return async (request: Request): Promise<Response | null> => {
+  const middleware = async (request: Request): Promise<Response | null> => {
     if (configError) {
       return errorResponse(`Payment middleware configuration error: ${configError.message}`, 500);
     }
@@ -161,7 +181,7 @@ export const createRouteAwareBunMiddleware = (
     }
 
     const routeConfig = matchedRoute.config;
-    const { facilitator, settlementMode = "verify", defaultVersion = 2, waitForSettlement = false } = routeConfig;
+    const { facilitator, settlementMode = "settle", defaultVersion = 2, waitForSettlement = false } = routeConfig;
 
     const requirementsV1 = createPaymentRequirements(routeConfig, 1);
     const requirementsV2 = createPaymentRequirements(routeConfig, 2);
@@ -183,21 +203,48 @@ export const createRouteAwareBunMiddleware = (
       }
     }
 
-    if (settlementMode === "settle" && facilitator) {
-      const settle = async () => {
-        const result = await settleWithFacilitator(toHttpRequest(request), facilitator);
-        return result.success
-          ? successResponse(payerAddress, version, createSettlementResponse(true, result.txHash))
-          : errorResponse(result.error ?? "Settlement failed", 400);
-      };
+    if (!handler) {
+      if (settlementMode === "settle" && facilitator) {
+        const settle = async () => {
+          const result = await settleWithFacilitator(toHttpRequest(request), facilitator);
+          return result.success
+            ? successResponse(payerAddress, version, createSettlementResponse(true, result.txHash))
+            : errorResponse(result.error ?? "Settlement failed", 400);
+        };
 
-      if (waitForSettlement) {
-        return await settle();
+        if (waitForSettlement) {
+          return await settle();
+        }
+        settle().catch(console.error);
+        return successResponse(payerAddress, version);
       }
-      settle().catch(console.error);
+
       return successResponse(payerAddress, version);
     }
 
-    return successResponse(payerAddress, version);
+    const response = await handler(request);
+    if (response.status >= 400 || settlementMode !== "settle" || !facilitator) {
+      return response;
+    }
+
+    const settleResult = await settleWithFacilitator(toHttpRequest(request), facilitator);
+    if (!settleResult.success) {
+      return errorResponse(settleResult.error ?? "Settlement failed", 502);
+    }
+
+    const settlement = createSettlementResponse(true, settleResult.txHash);
+    return appendSettlementHeaders(response, settlement, version);
+  };
+
+  if (!handler) {
+    return middleware;
+  }
+
+  return async (request: Request): Promise<Response> => {
+    const result = await middleware(request);
+    if (!result) {
+      return handler(request);
+    }
+    return result;
   };
 };

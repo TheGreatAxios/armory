@@ -1,10 +1,10 @@
 import type { Request, Response, NextFunction } from "express";
 import type {
-  PaymentPayloadV2,
+  X402PaymentPayload,
   PaymentRequirements,
+  SettlementResponse,
 } from "@armory-sh/base";
 import {
-  decodePaymentV2,
   createPaymentRequiredHeaders,
   createSettlementHeaders,
   PAYMENT_SIGNATURE_HEADER,
@@ -12,6 +12,12 @@ import {
   validateRouteConfig,
   type RouteValidationError,
 } from "@armory-sh/base";
+import {
+  decodePayload,
+  type AnyPaymentPayload,
+  verifyPaymentWithRetry,
+  settlePaymentWithRetry,
+} from "./payment-utils";
 
 export interface RouteAwarePaymentMiddlewareConfig {
   route?: string;
@@ -22,12 +28,11 @@ export interface RouteAwarePaymentMiddlewareConfig {
 export interface PaymentMiddlewareConfigEntry {
   requirements: PaymentRequirements;
   facilitatorUrl?: string;
-  network?: string;
 }
 
 export interface AugmentedRequest extends Request {
   payment?: {
-    payload: PaymentPayloadV2;
+    payload: X402PaymentPayload;
     payerAddress: string;
     verified: boolean;
     route?: string;
@@ -65,6 +70,61 @@ const resolveRouteConfig = (
   return { routes: resolvedRoutes };
 };
 
+const installSettlementHook = (
+  res: Response,
+  settle: () => Promise<{ success: boolean; error?: string; transaction?: string; network?: string }>
+): void => {
+  const end = res.end.bind(res);
+  let intercepted = false;
+
+  type EndFn = Response["end"];
+
+  res.end = ((...args: Parameters<EndFn>) => {
+    if (intercepted) {
+      return end(...args);
+    }
+
+    intercepted = true;
+
+    if (res.statusCode >= 400) {
+      return end(...args);
+    }
+
+    void (async () => {
+      const settlement = await settle();
+
+      if (!settlement.success) {
+        if (!res.headersSent) {
+          res.statusCode = 502;
+          res.setHeader("Content-Type", "application/json");
+          end(JSON.stringify({ error: "Settlement failed", details: settlement.error }));
+          return;
+        }
+
+        return;
+      }
+
+      const normalizedSettlement: SettlementResponse = {
+        success: settlement.success,
+        transaction: settlement.transaction ?? "",
+        network: (settlement.network ?? "eip155:8453") as `eip155:${string}`,
+        errorReason: settlement.error,
+      };
+
+      const settlementHeaders = createSettlementHeaders(normalizedSettlement);
+      for (const [key, value] of Object.entries(settlementHeaders)) {
+        if (!res.headersSent) {
+          res.setHeader(key, value);
+        }
+      }
+
+      end(...args);
+    })();
+
+    return res;
+  }) as EndFn;
+};
+
 export const routeAwarePaymentMiddleware = (
   perRouteConfig: Record<string, PaymentMiddlewareConfigEntry>
 ) => {
@@ -95,7 +155,7 @@ export const routeAwarePaymentMiddleware = (
       }
 
       const routeConfig = matchedRoute.config;
-      const { requirements, facilitatorUrl, network = "base" } = routeConfig;
+      const { requirements, facilitatorUrl } = routeConfig;
 
       const paymentHeader = req.headers[PAYMENT_SIGNATURE_HEADER.toLowerCase()] as string | undefined;
 
@@ -112,9 +172,10 @@ export const routeAwarePaymentMiddleware = (
         return;
       }
 
-      let paymentPayload: PaymentPayloadV2;
+      let paymentPayload: AnyPaymentPayload;
       try {
-        paymentPayload = decodePaymentV2(paymentHeader);
+        const decoded = decodePayload(paymentHeader);
+        paymentPayload = decoded.payload;
       } catch (error) {
         res.statusCode = 400;
         res.json({
@@ -124,25 +185,31 @@ export const routeAwarePaymentMiddleware = (
         return;
       }
 
-      const payerAddress = paymentPayload.payload.authorization.from;
-
-      const settlement = {
-        success: true,
-        transaction: "",
-        network,
-      };
-
-      const settlementHeaders = createSettlementHeaders(settlement);
-      for (const [key, value] of Object.entries(settlementHeaders)) {
-        res.setHeader(key, value);
+      const verifyResult = await verifyPaymentWithRetry(paymentPayload, requirements, facilitatorUrl);
+      if (!verifyResult.success) {
+        const requiredHeaders = createPaymentRequiredHeaders(requirements);
+        res.statusCode = 402;
+        for (const [key, value] of Object.entries(requiredHeaders)) {
+          res.setHeader(key, value);
+        }
+        res.json({
+          error: "Payment verification failed",
+          message: verifyResult.error,
+        });
+        return;
       }
 
+      const payerAddress = verifyResult.payerAddress ?? ("payload" in paymentPayload ? paymentPayload.payload.authorization.from : paymentPayload.from);
+
       req.payment = {
-        payload: paymentPayload,
+        payload: paymentPayload as X402PaymentPayload,
         payerAddress,
         verified: true,
         route: matchedRoute.pattern,
       };
+
+      installSettlementHook(res, async () => settlePaymentWithRetry(paymentPayload, requirements, facilitatorUrl));
+
       next();
     } catch (error) {
       res.statusCode = 500;
