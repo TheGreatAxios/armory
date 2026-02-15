@@ -245,15 +245,122 @@ When fixing build or test failures:
 
 ---
 
-## Publishing
+## Publishing & Release Process
 
-Uses Changesets for versioning:
+Armory uses **Changesets** for versioning and **GitHub Actions** for automated publishing.
+
+### How It Works
+
+1. **Local Development** - Use `workspace:*` for internal dependencies (resolved during publish)
+2. **Changesets** - Track version bumps and changelogs via `.changeset/*.md` files
+3. **Auto-Publish** - GitHub Actions publishes on merge to `main` or `staging`
+
+### Release Channels
+
+| Branch | npm Tag | Use Case | Trigger |
+|--------|---------|----------|---------|
+| `main` | `@latest` | Production releases | Push/merge to main |
+| `staging` | `@beta` | Beta testing | Push/merge to staging |
+| Local | `@alpha` | Local testing | Manual `bun run ci:release:alpha` |
+
+### Making a Release
+
+#### 1. Create a Changeset
+
+After making changes to packages:
 
 ```bash
-bun run changeset    # Create changeset
-bun run ci:version   # Version packages
-bun run ci:publish   # Publish to npm
+bun run changeset
 ```
+
+You'll be prompted to:
+- Select which packages changed
+- Choose version bump type (patch/minor/major)
+- Write a summary for the changelog
+
+This creates a `.changeset/[name].md` file.
+
+#### 2. Commit the Changeset
+
+```bash
+git add .
+git commit -m "feat: add new payment feature"
+git push
+```
+
+#### 3. Release via GitHub Actions
+
+**For production (latest):**
+- Create PR to `main` branch
+- Merge the PR
+- GitHub Actions automatically builds and publishes to `@latest`
+
+**For beta releases:**
+- Create PR to `staging` branch
+- Merge the PR
+- GitHub Actions automatically builds and publishes to `@beta`
+
+#### 4. Install Specific Tags
+
+```bash
+# Latest (production)
+npm install @armory-sh/client-viem
+
+# Beta
+npm install @armory-sh/client-viem@beta
+
+# Alpha (must publish locally first)
+npm install @armory-sh/client-viem@alpha
+```
+
+### Local Alpha Publishing
+
+For local testing before pushing to remote:
+
+```bash
+# Full alpha release flow (creates changeset, versions, publishes @alpha)
+bun run ci:release:alpha
+
+# Or just publish existing versions as alpha
+bun run ci:publish:alpha
+```
+
+### Important Notes
+
+**Workspace Dependencies:**
+- Packages use `workspace:*` in `package.json` for local development
+- During publish, `bun publish` automatically resolves these to actual versions
+- This is why we use `bun publish` directly instead of `changeset publish` (which doesn't understand Bun's workspace protocol)
+
+**Running `bun update`:**
+- After `changeset version` bumps versions, `bun update` is run to fix `bun.lockb`
+- This ensures workspace dependencies resolve correctly during publish
+
+**Version Bumping:**
+- All packages share versions via changesets
+- `updateInternalDependencies: "patch"` in changeset config bumps internal deps automatically
+
+### Available Scripts
+
+```bash
+bun run changeset           # Interactive: create a changeset
+bun run ci:version          # Bump versions based on changesets
+bun run ci:publish          # Publish to @latest (production)
+bun run ci:publish:beta     # Publish to @beta
+bun run ci:publish:alpha    # Publish to @alpha
+bun run ci:release          # Full release: changeset + version + publish
+bun run ci:release:alpha    # Full alpha release locally
+```
+
+### GitHub Setup Requirements
+
+**Required Secret:**
+- `NPM_TOKEN` - Add to GitHub repo secrets (Settings → Secrets → Actions)
+  - Create at https://www.npmjs.com/settings/tokens
+  - Select "Automation" token type (required for CI/CD)
+
+**Workflow File:**
+- `.github/workflows/release.yml` - Handles auto-publish on push to main/staging
 
 ---
 
@@ -262,4 +369,9 @@ bun run ci:publish   # Publish to npm
 1. **Package naming**: Use `@armory-sh/` scope for npm
 2. **Exports**: Use both `bun` (for dev) and `default` (for dist) in exports
 3. **Versioning**: All packages share same version via changesets
-4. **Workspace**: Uses `workspace:*` for internal dependencies
+4. **Workspace dependencies**: Use `workspace:*` in package.json - resolved to actual versions during publish by `bun publish`
+
+---
+
+# currentDate
+Today's date is 2026-02-14.
