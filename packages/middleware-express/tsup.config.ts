@@ -7,5 +7,7 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   target: "esnext",
+  splitting: true,
+  treeshake: true,
   external: ["@armory-sh/base", "@armory-sh/extensions", "express"],
 });

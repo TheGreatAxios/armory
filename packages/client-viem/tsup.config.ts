@@ -1,11 +1,13 @@
 import { defineConfig } from "tsup"
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: ["src/index.ts", "src/extensions.ts"],
   format: ["esm"],
   target: "esnext",
   clean: true,
   dts: true,
   sourcemap: false,
-  splitting: false,
+  splitting: true,
+  treeshake: true,
+  external: ["@armory-sh/base", "@armory-sh/extensions"],
 })

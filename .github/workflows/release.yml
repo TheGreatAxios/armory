@@ -1,9 +1,5 @@
 name: Release
 
-permissions:
-  id-token: write
-  contents: read
-
 on:
   push:
     branches:
@@ -28,12 +24,9 @@ jobs:
 
       - name: Check for changeset
         run: |
-          # Get changed files
           CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
 
-          # Check if packages changed
           if echo "$CHANGED_FILES" | grep -q "^packages/"; then
-            # Check for changeset
             if ! echo "$CHANGED_FILES" | grep -q "^\.changeset/.*\.md$"; then
               echo "::error::Packages changed but no changeset found. Run 'bun run changeset' locally."
               exit 1
@@ -41,42 +34,18 @@ jobs:
           fi
           echo "✅ Changeset check passed"
 
-  release-beta:
-    if: github.ref == 'refs/heads/staging'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Setup Node (OIDC auth)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          registry-url: 'https://registry.npmjs.org/'
-          always-auth: true
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build
-        run: bun run build
-
-      - name: Run beta release
-        run: bun run ci:release:beta
-
   release-prod:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -86,7 +55,6 @@ jobs:
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org/'
-          always-auth: true
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -94,12 +62,72 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Run release
-        run: bun run ci:release
+      - name: Version packages
+        run: bun run ci:version
+
+      - name: Commit version changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: version packages"
+          git push
+
+      - name: Publish to npm
+        run: bun run ci:publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release-beta:
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node (OIDC auth)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Version packages
+        run: bun run ci:version
+
+      - name: Commit version changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: version packages [beta]"
+          git push
+
+      - name: Publish to npm (beta)
+        run: bun run ci:publish:beta
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   release-alpha:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'publish-alpha')
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -114,7 +142,6 @@ jobs:
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org/'
-          always-auth: true
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -122,9 +149,22 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Run alpha release
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+      - name: Set alpha versions
         run: |
-          npm version prerelease --preid=alpha.${PR_NUMBER} --no-git-tag-version --workspaces || true
-          bun run ci:publish:alpha
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          RUN_NUMBER=${{ github.run_number }}
+          PREID="alpha.${PR_NUMBER}.${RUN_NUMBER}"
+
+          for pkg_json in packages/*/package.json; do
+            dir=$(dirname "$pkg_json")
+            name=$(jq -r '.name' "$pkg_json")
+            version=$(jq -r '.version' "$pkg_json")
+            alpha_version="${version}-${PREID}"
+            jq --arg v "$alpha_version" '.version = $v' "$pkg_json" > "$pkg_json.tmp" && mv "$pkg_json.tmp" "$pkg_json"
+            echo "  ${name}@${alpha_version}"
+          done
+
+      - name: Publish to npm (alpha)
+        run: bun run ci:publish:alpha
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -7,6 +7,7 @@ export default defineConfig({
   clean: true,
   dts: false,
   sourcemap: false,
-  splitting: false,
+  splitting: true,
+  treeshake: true,
   external: ["@armory-sh/base", "@armory-sh/facilitator", "next"],
 });
