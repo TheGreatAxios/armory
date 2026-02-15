@@ -7,12 +7,12 @@
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thegreataxios/armory.git",
+    "url": "https://github.com/TheGreatAxios/armory",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/thegreataxios/armory#readme",
+  "homepage": "https://github.com/TheGreatAxios/armory#readme",
   "bugs": {
-    "url": "https://github.com/thegreataxios/armory/issues"
+    "url": "https://github.com/TheGreatAxios/armory/issues"
   },
   "keywords": [
     "x402",
