@@ -1,6 +1,6 @@
 {
   "name": "armory-cli",
-  "version": "0.2.11",
+  "version": "0.3.0",
   "description": "Scaffold x402 payment-enabled apps",
   "type": "module",
   "license": "MIT",
@@ -39,6 +39,8 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@armory-sh/base": "workspace:*",
+    "@armory-sh/extensions": "workspace:*",
     "prompts": "2.4.2"
   },
   "devDependencies": {

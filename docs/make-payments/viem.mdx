@@ -24,6 +24,35 @@ const result = await armoryPay(
 console.log(result.data);
 ```
 
+## Prefer the Armory object (method-based API)
+
+For multi-call flows the new `createArmory` object bundles the payment client with method helpers and automatic server option selection.
+
+```typescript
+import { createArmory } from '@armory-sh/client-viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0x...');
+
+const armory = createArmory({
+  wallet: { account },
+  // Restrict the object to Base + USDC if you want to avoid extra lookups
+  chains: 'base',
+  tokens: 'usdc',
+  debug: true,
+});
+
+const premium = await armory.post('https://api.example.com/premium', { signal: 'upgrade' });
+const info = await armory.call('https://api.example.com/data');
+
+console.log(premium.data, info.data);
+```
+
+`createArmory` continually selects the best matching payment requirement from the server's `accepts[]` array, scoring options that run on Base (chainId `8453`), list the Base USDC contract (`0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913`), or specify the lowest amount. Leaving `chains`/`tokens` empty lets Armory serve any compatible option while still favoring Base/USDC. The object exposes `.get`, `.post`, `.put`, `.delete`, `.patch`, `.pay`, and a `.call` shorthand for GET requests.
+
+Use `armory.pay(url, { method: 'PATCH', body })` when you need to override the HTTP method; call `.call` for a simple GET.
+
+
 ## With Custom Amount
 
 ```typescript

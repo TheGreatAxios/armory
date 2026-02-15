@@ -83,6 +83,47 @@ app.use('/api/basic/*', acceptPaymentsViaArmory({
 }));
 ```
 
+## CLI
+
+The `armory-cli` tool helps you scaffold projects and query protocol data.
+
+```bash
+# Install globally
+bun add -g armory-cli
+
+# Create a project
+armory create bun-server my-api
+armory create viem-client my-client
+
+# Query networks and tokens
+armory networks              # List all networks
+armory networks --mainnet    # Mainnets only
+armory tokens base           # Tokens on Base
+
+# Validate identifiers
+armory validate network 8453
+armory validate token usdc
+
+# Check endpoints
+armory verify https://api.example.com/data
+
+# List extensions
+armory extensions
+```
+
+### Available Templates
+
+| Template | Description |
+|----------|-------------|
+| `bun-server` | Bun server with payment middleware |
+| `express-server` | Express v5 server |
+| `hono-server` | Hono server with extensions |
+| `elysia-server` | Elysia/Bun server |
+| `next-server` | Next.js middleware |
+| `viem-client` | Viem x402 client |
+| `ethers-client` | Ethers.js v6 client |
+| `web3-client` | Web3.js client |
+
 ## All Input Formats
 
 **Networks** - Use any format:

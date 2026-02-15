@@ -52,7 +52,6 @@
         "group": "Packages",
         "pages": [
           "packages/base",
-          "packages/facilitator",
           "packages/middleware",
           "packages/middleware-bun",
           "packages/middleware-express",
@@ -62,7 +61,6 @@
           "packages/client-viem",
           "packages/client-ethers",
           "packages/client-web3",
-          "packages/tokens",
           "packages/extensions"
         ]
       }

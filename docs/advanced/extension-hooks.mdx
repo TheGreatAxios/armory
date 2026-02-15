@@ -75,9 +75,13 @@ const timestampHook = createCustomHook({
         ...(context.payload.extensions ?? {}),
         timestamp: { createdAt: Date.now() }
       };
+      console.log('[timestamp-hook] attached timestamp:', context.payload.extensions.timestamp);
     }
-  }
+  },
+  priority: 10
 });
+
+This hook logs every time it attaches the timestamp extension so you can confirm the payload was updated during development.
 ```
 
 ### Conditional Hook
