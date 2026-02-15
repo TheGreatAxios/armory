@@ -22,6 +22,7 @@ export {
   SCHEMES,
   isPaymentPayload,
   isExactEvmPayload,
+  isLegacyPaymentPayload,
 } from "./types/x402";
 
 // ============================================
@@ -293,16 +294,3 @@ export {
   extractPayerAddress,
 } from "./payment-client";
 
-// ============================================
-// Fixtures for testing
-// ============================================
-export {
-  createX402V2Payload,
-  INVALID_PAYLOADS,
-  TEST_PAYER_ADDRESS,
-  TEST_PAY_TO_ADDRESS,
-  TEST_CONTRACT_ADDRESS,
-  TEST_PRIVATE_KEY,
-} from "./fixtures/payloads";
-
-export { DEFAULT_PAYMENT_CONFIG, type TestPaymentConfig } from "./fixtures/config";

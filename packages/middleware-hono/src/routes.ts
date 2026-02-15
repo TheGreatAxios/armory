@@ -137,8 +137,7 @@ export const routeAwarePaymentMiddleware = (
     let parsedPayload: X402PaymentPayload;
     try {
       parsedPayload = decodePayloadHeader(paymentHeader, {
-        scheme: primaryRequirement.scheme,
-        network: primaryRequirement.network,
+        accepted: primaryRequirement,
       });
     } catch {
       c.status(400);

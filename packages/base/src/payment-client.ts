@@ -4,7 +4,7 @@ import type {
   VerifyResponse,
   SettlementResponse,
 } from "./types/x402";
-import { isPaymentPayload, isExactEvmPayload } from "./types/x402";
+import { isPaymentPayload, isExactEvmPayload, isLegacyPaymentPayload } from "./types/x402";
 import { decodePayment } from "./encoding/x402";
 
 export interface FacilitatorClientConfig {
@@ -53,7 +53,6 @@ export async function verifyPayment(
     method: "POST",
     headers,
     body: JSON.stringify({
-      x402Version: payload.x402Version,
       paymentPayload: toJsonSafe(payload),
       paymentRequirements: toJsonSafe(requirements),
     }),
@@ -79,7 +78,6 @@ export async function settlePayment(
     method: "POST",
     headers,
     body: JSON.stringify({
-      x402Version: payload.x402Version,
       paymentPayload: toJsonSafe(payload),
       paymentRequirements: toJsonSafe(requirements),
     }),
@@ -105,8 +103,7 @@ export interface SupportedResponse {
 }
 
 interface DecodePayloadDefaults {
-  scheme?: string;
-  network?: string;
+  accepted?: PaymentRequirements;
 }
 
 export async function getSupported(
@@ -144,6 +141,24 @@ function isCompactV2Payload(payload: unknown): payload is { x402Version: number;
   return typeof record.x402Version === "number" && "payload" in record;
 }
 
+function convertLegacyToNew(
+  legacy: { x402Version: number; scheme: string; network: string; payload: PaymentPayload["payload"] },
+  defaults?: DecodePayloadDefaults,
+): PaymentPayload {
+  return {
+    x402Version: legacy.x402Version as 2,
+    accepted: defaults?.accepted ?? {
+      scheme: legacy.scheme as "exact",
+      network: legacy.network,
+      amount: "0",
+      asset: "0x0000000000000000000000000000000000000000" as `0x${string}`,
+      payTo: "0x0000000000000000000000000000000000000000" as `0x${string}`,
+      maxTimeoutSeconds: 300,
+    },
+    payload: legacy.payload,
+  };
+}
+
 export function decodePayloadHeader(
   headerValue: string,
   defaults?: DecodePayloadDefaults,
@@ -151,12 +166,17 @@ export function decodePayloadHeader(
   if (headerValue.startsWith("{")) {
     const parsed = JSON.parse(headerValue);
     if (isPaymentPayload(parsed)) return parsed;
+    if (isLegacyPaymentPayload(parsed)) {
+      return convertLegacyToNew(parsed, defaults);
+    }
     if (isCompactV2Payload(parsed)) {
       const compact = parsed as { payload: PaymentPayload["payload"] };
+      if (!defaults?.accepted) {
+        throw new Error("Invalid payment payload: missing 'accepted' field and no defaults provided");
+      }
       return {
         x402Version: 2,
-        scheme: (defaults?.scheme ?? "exact") as PaymentPayload["scheme"],
-        network: (defaults?.network ?? "base") as PaymentPayload["network"],
+        accepted: defaults.accepted,
         payload: compact.payload,
       };
     }
@@ -164,16 +184,26 @@ export function decodePayloadHeader(
   }
 
   try {
-    return decodePayment(headerValue);
+    const decoded = decodePayment(headerValue);
+    if (isPaymentPayload(decoded)) return decoded;
+    if (isLegacyPaymentPayload(decoded)) {
+      return convertLegacyToNew(decoded, defaults);
+    }
+    return decoded;
   } catch {
     const parsed = tryParseHeaderJson(headerValue);
     if (isPaymentPayload(parsed)) return parsed;
+    if (isLegacyPaymentPayload(parsed)) {
+      return convertLegacyToNew(parsed, defaults);
+    }
     if (isCompactV2Payload(parsed)) {
       const compact = parsed as { payload: PaymentPayload["payload"] };
+      if (!defaults?.accepted) {
+        throw new Error("Invalid payment payload: missing 'accepted' field and no defaults provided");
+      }
       return {
         x402Version: 2,
-        scheme: (defaults?.scheme ?? "exact") as PaymentPayload["scheme"],
-        network: (defaults?.network ?? "base") as PaymentPayload["network"],
+        accepted: defaults.accepted,
         payload: compact.payload,
       };
     }

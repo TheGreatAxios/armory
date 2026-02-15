@@ -137,12 +137,12 @@ async function createPaymentPayload(
   const from = getWalletAddress(wallet);
   const network = getNetworkFromRequirements(requirements);
   const asset = getAssetFromRequirements(requirements);
-  
+
   const now = Math.floor(Date.now() / 1000);
-  const validAfter = now - 600; // 10 minutes ago (like Coinbase)
+  const validAfter = now - 600;
   const validBefore = now + requirements.maxTimeoutSeconds;
   const nonce = createNonce();
-  
+
   const authorization: ExactEvmAuthorization = {
     from,
     to: requirements.payTo,
@@ -158,7 +158,6 @@ async function createPaymentPayload(
     asset
   );
 
-  // Override domain name/version if provided
   if (domainName || domainVersion) {
     domain.name = domainName ?? domain.name;
     domain.version = domainVersion ?? domain.version;
@@ -168,8 +167,7 @@ async function createPaymentPayload(
 
   return {
     x402Version: X402_VERSION,
-    scheme: "exact",
-    network,
+    accepted: requirements,
     payload: {
       signature,
       authorization,

@@ -25,7 +25,7 @@ const parsePaymentHeader = async (request: Request, requirements: PaymentRequire
   const paymentSig = request.headers.get(PAYMENT_SIGNATURE_HEADER);
   if (paymentSig) {
     try {
-      const payload = decodePayloadHeader(paymentSig, { scheme: requirements.scheme, network: requirements.network });
+      const payload = decodePayloadHeader(paymentSig, { accepted: requirements });
       return { payload, payerAddress: extractPayerAddress(payload) };
     } catch {
     }

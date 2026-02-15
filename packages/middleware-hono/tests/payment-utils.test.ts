@@ -13,7 +13,35 @@ import {
   extractPayerAddress,
   createResponseHeaders,
 } from "../src/payment-utils";
-import { createX402V2Payload } from "@armory-sh/base";
+
+const TEST_PAYER_ADDRESS = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1";
+const TEST_PAY_TO_ADDRESS = "0x1234567890123456789012345678901234567890";
+const TEST_CONTRACT_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+
+const DEFAULT_REQUIREMENTS = {
+  scheme: "exact" as const,
+  network: "eip155:84532",
+  amount: "1000000",
+  asset: TEST_CONTRACT_ADDRESS as `0x${string}`,
+  payTo: TEST_PAY_TO_ADDRESS as `0x${string}`,
+  maxTimeoutSeconds: 300,
+};
+
+const createX402V2Payload = (nonce?: string) => ({
+  x402Version: 2 as const,
+  accepted: DEFAULT_REQUIREMENTS,
+  payload: {
+    signature: `0x${"b".repeat(130)}` as `0x${string}`,
+    authorization: {
+      from: TEST_PAYER_ADDRESS as `0x${string}`,
+      to: TEST_PAY_TO_ADDRESS as `0x${string}`,
+      value: "1000000",
+      validAfter: Math.floor(Date.now() / 1000).toString(),
+      validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
+      nonce: `0x${Buffer.from(nonce ?? "test_nonce").toString("hex").padStart(64, "0")}` as `0x${string}`,
+    },
+  },
+});
 
 describe("[middleware-hono]: decodePayload", () => {
   test("decodes V2 payload from base64", () => {

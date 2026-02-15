@@ -70,8 +70,7 @@ test("[unit|client-viem] - [createPayment|success] - generates v2 payment payloa
 
   expect(payment).toBeDefined();
   expect(payment).toHaveProperty("x402Version", 2);
-  expect(payment).toHaveProperty("scheme");
-  expect(payment).toHaveProperty("network");
+  expect(payment).toHaveProperty("accepted");
   expect(payment).toHaveProperty("payload");
   expect(payment.payload).toHaveProperty("signature");
   expect(payment.payload).toHaveProperty("authorization");
@@ -89,8 +88,9 @@ test("createPayment generates v2 payment payload with explicit version", async (
 
   expect(payment).toBeDefined();
   expect(payment).toHaveProperty("x402Version", 2);
-  expect(payment).toHaveProperty("scheme", "exact");
-  expect(payment).toHaveProperty("network", "eip155:8453");
+  expect(payment).toHaveProperty("accepted");
+  expect(payment.accepted).toHaveProperty("scheme", "exact");
+  expect(payment.accepted).toHaveProperty("network", "eip155:8453");
   expect(payment).toHaveProperty("payload");
   expect(payment.payload).toHaveProperty("signature");
   expect(payment.payload).toHaveProperty("authorization");

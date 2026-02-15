@@ -7,12 +7,21 @@
 import { test, expect, describe } from "bun:test";
 import { Hono } from "hono";
 import { paymentMiddleware } from "../src/index";
-import { DEFAULT_PAYMENT_CONFIG } from "@armory-sh/base";
+import type { PaymentRequirementsV2 } from "@armory-sh/base";
+
+const TEST_REQUIREMENTS: PaymentRequirementsV2 = {
+  scheme: "exact",
+  network: "eip155:84532",
+  amount: "1000000",
+  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  payTo: "0x1234567890123456789012345678901234567890",
+  maxTimeoutSeconds: 300,
+};
 
 describe("[unit|middleware-hono]: Hono Middleware Integration", () => {
   test("returns 402 when no payment header provided", async () => {
     const app = new Hono();
-    app.use("/*", paymentMiddleware({ requirements: DEFAULT_PAYMENT_CONFIG }));
+    app.use("/*", paymentMiddleware({ requirements: TEST_REQUIREMENTS }));
     app.get("/api/test", (c) => c.json({ success: true }));
 
     const req = new Request(new URL("http://localhost/api/test"));
@@ -23,7 +32,7 @@ describe("[unit|middleware-hono]: Hono Middleware Integration", () => {
 
   test("returns 402 when no payment header provided", async () => {
     const app = new Hono();
-    app.use("/*", paymentMiddleware({ requirements: DEFAULT_PAYMENT_CONFIG }));
+    app.use("/*", paymentMiddleware({ requirements: TEST_REQUIREMENTS }));
     app.get("/api/test", (c) => c.json({ success: true }));
 
     const req = new Request(new URL("http://localhost/api/test"));
@@ -36,7 +45,7 @@ describe("[unit|middleware-hono]: Hono Middleware Integration", () => {
 
   test("returns 400 with invalid payment payload", async () => {
     const app = new Hono();
-    app.use("/*", paymentMiddleware({ requirements: DEFAULT_PAYMENT_CONFIG }));
+    app.use("/*", paymentMiddleware({ requirements: TEST_REQUIREMENTS }));
     app.get("/api/test", (c) => c.json({ success: true }));
 
     const req = new Request(new URL("http://localhost/api/test"), {
@@ -53,7 +62,7 @@ describe("[unit|middleware-hono]: Hono Middleware Integration", () => {
 
   test("returns 402 with empty payment header", async () => {
     const app = new Hono();
-    app.use("/*", paymentMiddleware({ requirements: DEFAULT_PAYMENT_CONFIG }));
+    app.use("/*", paymentMiddleware({ requirements: TEST_REQUIREMENTS }));
     app.get("/api/test", (c) => c.json({ success: true }));
 
     const req = new Request(new URL("http://localhost/api/test"));

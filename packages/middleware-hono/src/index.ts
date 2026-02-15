@@ -49,8 +49,7 @@ export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
     let paymentPayload: X402PaymentPayload;
     try {
       paymentPayload = decodePayloadHeader(paymentHeader, {
-        scheme: requirements.scheme,
-        network: requirements.network,
+        accepted: requirements,
       });
     } catch (e) {
       c.status(400);

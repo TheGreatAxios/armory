@@ -1,117 +1,128 @@
 /**
  * Middleware-Express E2E Tests
  *
- * 100% mocked - tests middleware behavior directly
+ * Tests x402 Express middleware directly with mock req/res objects.
  */
 
-import { describe, test, expect, beforeAll } from "bun:test";
-import { paymentMiddleware, type PaymentMiddlewareConfig } from "@armory-sh/middleware-express";
-import { TOKENS, registerToken } from "@armory-sh/base";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { paymentMiddleware } from "@armory-sh/middleware-express";
+import { encodePayment } from "@armory-sh/base";
+import { createX402V2Payload } from "./fixtures/payloads";
+import {
+  mockFacilitator,
+  createMockExpressRequest,
+  createMockExpressResponse,
+  TEST_REQUIREMENTS,
+  MOCK_FACILITATOR_URL,
+} from "./mocks";
 
-describe("Middleware-Express E2E", () => {
-  beforeAll(() => {
-    registerToken(TOKENS.USDC_BASE);
-    registerToken(TOKENS.USDC_BASE_SEPOLIA);
+describe("[e2e|middleware-express]: Express Middleware", () => {
+  let mockFetch: ReturnType<typeof mockFacilitator>;
+
+  beforeEach(() => {
+    mockFetch = mockFacilitator();
   });
 
-  function createMockReq(headers: Record<string, string> = {}) {
-    return { headers, method: "GET", url: "/protected" } as any;
-  }
-
-  function createMockRes() {
-    const headers: Record<string, string> = {};
-    const res: any = {
-      statusCode: 200,
-      json: (data: any) => { res._body = data; },
-      setHeader: (k: string, v: string) => { headers[k] = v; },
-      get headers() { return headers; },
-    };
-    return res;
-  }
-
-  function runMiddleware(config: PaymentMiddlewareConfig, req: any, res: any) {
-    return new Promise<void>((resolve) => {
-      const middleware = paymentMiddleware(config);
-      const next = () => { resolve(); };
-      middleware(req, res, next);
-      setTimeout(resolve, 50);
-    });
-  }
-
-  test("returns 402 when no payment header (V1)", async () => {
-    const req = createMockReq();
-    const res = createMockRes();
-
-    await runMiddleware({
-      requirements: {
-        scheme: "exact",
-        network: "base-sepolia",
-        maxAmountRequired: "1000000",
-        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-        payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-        resource: "http://localhost:3001/protected",
-        description: "Test",
-        maxTimeoutSeconds: 300,
-      },
-    }, req, res);
-
-    expect(res.statusCode).toBe(402);
+  afterEach(() => {
+    mockFetch.restore();
   });
 
-  test("returns 402 when no payment header (V2)", async () => {
-    const req = createMockReq();
-    const res = createMockRes();
-
-    await runMiddleware({
-      requirements: [{
-        scheme: "exact",
-        network: "eip155:84532",
-        amount: "1000000",
-        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-        payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-        maxTimeoutSeconds: 300,
-      }],
-    }, req, res);
-
-    expect(res.statusCode).toBe(402);
-  });
-
-  test("returns 400 for invalid V1 payload", async () => {
-    const req = createMockReq({ "x-payment": "not-valid-base64" });
-    const res = createMockRes();
-
-    await runMiddleware({
-      requirements: {
-        scheme: "exact",
-        network: "base-sepolia",
-        maxAmountRequired: "1000000",
-        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-        payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-        resource: "http://localhost:3001/protected",
-        description: "Test",
-        maxTimeoutSeconds: 300,
-      },
-    }, req, res);
-
-    expect(res.statusCode).toBeGreaterThanOrEqual(400);
-  });
-
-  test("middleware factory function exists", () => {
-    expect(typeof paymentMiddleware).toBe("function");
-  });
-
-  test("middleware returns a function", () => {
+  test("[middleware|success] - returns 402 when no payment header", async () => {
     const middleware = paymentMiddleware({
-      requirements: {
-        scheme: "exact",
-        network: "base-sepolia",
-        maxAmountRequired: "1000000",
-        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-        payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-        resource: "http://localhost:3001/protected",
-        description: "Test",
-        maxTimeoutSeconds: 300,
-      },
+      requirements: TEST_REQUIREMENTS,
+      facilitatorUrl: MOCK_FACILITATOR_URL,
+    });
+
+    const req = createMockExpressRequest();
+    const res = createMockExpressResponse();
+    let nextCalled = false;
+
+    await middleware(req as any, res as any, () => {
+      nextCalled = true;
+    });
+
+    expect(res.statusCode).toBe(402);
+    expect(nextCalled).toBe(false);
+    expect(res.headers["PAYMENT-REQUIRED"]).toBeDefined();
+  });
+
+  test("[middleware|success] - accepts valid x402 V2 payment", async () => {
+    const middleware = paymentMiddleware({
+      requirements: TEST_REQUIREMENTS,
+      facilitatorUrl: MOCK_FACILITATOR_URL,
+    });
+
+    const payload = createX402V2Payload();
+    const paymentHeader = encodePayment(payload);
+
+    const req = createMockExpressRequest({
+      "payment-signature": paymentHeader,
+    });
+    const res = createMockExpressResponse();
+    let nextCalled = false;
+
+    await middleware(req as any, res as any, () => {
+      nextCalled = true;
+    });
+
+    expect(nextCalled).toBe(true);
+    expect(req.payment).toBeDefined();
+    expect(req.payment?.verified).toBe(true);
+    expect(mockFetch.verifyCalls).toBe(1);
+  });
+
+  test("[middleware|error] - returns 400 for invalid payment payload", async () => {
+    const middleware = paymentMiddleware({
+      requirements: TEST_REQUIREMENTS,
+      facilitatorUrl: MOCK_FACILITATOR_URL,
+    });
+
+    const req = createMockExpressRequest({
+      "payment-signature": "not-valid",
+    });
+    const res = createMockExpressResponse();
+    let nextCalled = false;
+
+    await middleware(req as any, res as any, () => {
+      nextCalled = true;
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(nextCalled).toBe(false);
+  });
+
+  test("[middleware|error] - returns 402 when verification fails", async () => {
+    mockFetch.restore();
+    mockFetch = mockFacilitator({
+      verifyResult: { isValid: false, invalidReason: "Invalid signature" },
+    });
+
+    const middleware = paymentMiddleware({
+      requirements: TEST_REQUIREMENTS,
+      facilitatorUrl: MOCK_FACILITATOR_URL,
+    });
+
+    const payload = createX402V2Payload();
+    const paymentHeader = encodePayment(payload);
+
+    const req = createMockExpressRequest({
+      "payment-signature": paymentHeader,
+    });
+    const res = createMockExpressResponse();
+    let nextCalled = false;
+
+    await middleware(req as any, res as any, () => {
+      nextCalled = true;
+    });
+
+    expect(res.statusCode).toBe(402);
+    expect(nextCalled).toBe(false);
+  });
+
+  test("[middleware|factory] - middleware factory returns function", () => {
+    const middleware = paymentMiddleware({
+      requirements: TEST_REQUIREMENTS,
+      facilitatorUrl: MOCK_FACILITATOR_URL,
     });
     expect(typeof middleware).toBe("function");
   });

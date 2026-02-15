@@ -2,8 +2,11 @@ import { describe, test, expect } from "bun:test";
 import {
   V2_HEADERS,
   type PaymentPayloadV2,
+  type PaymentRequirementsV2,
   type CAIP2ChainId,
   isPaymentPayloadV2,
+  isPaymentPayload,
+  isLegacyPaymentPayload,
   getNetworkConfig,
   getNetworkByChainId,
   createEIP712Domain,
@@ -15,6 +18,15 @@ import {
   isAddress,
 } from "../src/index";
 
+const DEFAULT_REQUIREMENTS: PaymentRequirementsV2 = {
+  scheme: "exact",
+  network: "eip155:84532",
+  amount: "1000000",
+  asset: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  payTo: "0x1234567890123456789012345678901234567890",
+  maxTimeoutSeconds: 300,
+};
+
 describe("[unit|base]: Base Package Tests", () => {
   describe("[unit|base]: V2 Headers", () => {
     test("[V2_HEADERS|success] - headers are correct", () => {
@@ -24,12 +36,11 @@ describe("[unit|base]: Base Package Tests", () => {
     });
   });
 
-  describe("[unit|base]: Type Guards", () => {
-    test("[isPaymentPayloadV2|success] - identifies V2 payload", () => {
+  describe("[unit|base]: PaymentPayload V2 Format", () => {
+    test("[isPaymentPayloadV2|success] - validates accepted field", () => {
       const v2Payload: PaymentPayloadV2 = {
         x402Version: 2,
-        scheme: "exact",
-        network: "eip155:84532",
+        accepted: DEFAULT_REQUIREMENTS,
         payload: {
           signature: "0x" + "b".repeat(130),
           authorization: {
@@ -48,6 +59,72 @@ describe("[unit|base]: Base Package Tests", () => {
       };
 
       expect(isPaymentPayloadV2(v2Payload)).toBe(true);
+      expect(isPaymentPayload(v2Payload)).toBe(true);
+    });
+
+    test("[isPaymentPayloadV2|failure] - rejects old scheme/network format", () => {
+      const oldPayload = {
+        x402Version: 2,
+        scheme: "exact",
+        network: "eip155:84532",
+        payload: {
+          signature: "0x" + "b".repeat(130),
+          authorization: {
+            from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+            to: "0x1234567890123456789012345678901234567890",
+            value: "1000000",
+            validAfter: "0",
+            validBefore: "9999999999",
+            nonce: "0x" + "0".repeat(64),
+          },
+        },
+      };
+
+      expect(isPaymentPayloadV2(oldPayload)).toBe(false);
+      expect(isPaymentPayload(oldPayload)).toBe(false);
+      expect(isLegacyPaymentPayload(oldPayload)).toBe(true);
+    });
+
+    test("[isPaymentPayloadV2|failure] - rejects payload without accepted field", () => {
+      const invalidPayload = {
+        x402Version: 2,
+        payload: {
+          signature: "0x" + "b".repeat(130),
+          authorization: {
+            from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+            to: "0x1234567890123456789012345678901234567890",
+            value: "1000000",
+            validAfter: "0",
+            validBefore: "9999999999",
+            nonce: "0x" + "0".repeat(64),
+          },
+        },
+      };
+
+      expect(isPaymentPayloadV2(invalidPayload)).toBe(false);
+    });
+
+    test("[isPaymentPayload|success] - new format has accepted field", () => {
+      const newPayload = {
+        x402Version: 2,
+        accepted: DEFAULT_REQUIREMENTS,
+        payload: {
+          signature: "0x" + "b".repeat(130),
+          authorization: {
+            from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+            to: "0x1234567890123456789012345678901234567890",
+            value: "1000000",
+            validAfter: "0",
+            validBefore: "9999999999",
+            nonce: "0x" + "0".repeat(64),
+          },
+        },
+      };
+
+      expect(isPaymentPayload(newPayload)).toBe(true);
+      expect("accepted" in newPayload).toBe(true);
+      expect("scheme" in newPayload).toBe(false);
+      expect("network" in newPayload).toBe(false);
     });
   });
 

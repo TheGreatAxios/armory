@@ -126,9 +126,8 @@ export const routeAwarePaymentMiddleware = (
         let payload: X402PaymentPayload;
         try {
           payload = decodePayloadHeader(paymentHeader, {
-          scheme: requirements.scheme,
-          network: requirements.network,
-        });
+            accepted: requirements,
+          });
         } catch (error) {
           return errorResponse({
             error: "Invalid payment payload",

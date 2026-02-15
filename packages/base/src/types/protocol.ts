@@ -86,9 +86,8 @@ export function isX402V2Payload(obj: unknown): obj is PaymentPayloadV2 {
     obj !== null &&
     "x402Version" in obj &&
     (obj as PaymentPayloadV2).x402Version === 2 &&
-    "signature" in obj &&
-    "chainId" in obj &&
-    "assetId" in obj
+    "accepted" in obj &&
+    "payload" in obj
   );
 }
 

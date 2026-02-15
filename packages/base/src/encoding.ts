@@ -80,10 +80,15 @@ export const decodeSettlement = (headers: Headers): SettlementResponse => {
  * Type guard for V2 payload
  */
 export const isPaymentV2 = (payload: PaymentPayload): payload is PaymentPayloadV2 =>
-  "signature" in payload && typeof payload.signature === "object";
+  "x402Version" in payload &&
+  (payload as PaymentPayloadV2).x402Version === 2 &&
+  "accepted" in payload &&
+  "payload" in payload;
 
 /**
  * Type guard for V2 settlement
  */
 export const isSettlementV2 = (response: SettlementResponse): response is SettlementResponseV2 =>
-  "status" in response;
+  "success" in response &&
+  typeof (response as SettlementResponseV2).success === "boolean" &&
+  "network" in response;

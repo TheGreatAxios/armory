@@ -61,9 +61,8 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
         let paymentPayload: X402PaymentPayload;
         try {
           paymentPayload = decodePayloadHeader(paymentHeader, {
-          scheme: requirements.scheme,
-          network: requirements.network,
-        });
+            accepted: requirements,
+          });
         } catch (error) {
           return errorResponse({
             error: "Invalid payment payload",

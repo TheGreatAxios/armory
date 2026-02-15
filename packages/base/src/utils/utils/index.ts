@@ -5,4 +5,3 @@
  */
 
 export * from "./mock-facilitator";
-export * from "../../fixtures/config";

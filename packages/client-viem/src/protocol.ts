@@ -111,8 +111,7 @@ export async function createX402Payment(
 
   return {
     x402Version: 2,
-    scheme: requirements.scheme,
-    network: requirements.network,
+    accepted: requirements,
     payload: {
       signature: "0x",
       authorization,

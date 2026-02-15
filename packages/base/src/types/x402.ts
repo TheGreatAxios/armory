@@ -51,14 +51,24 @@ export interface ExactEvmPayload {
 }
 
 /**
- * Payment payload - Coinbase compatible format
- * This is the unified format that works with both v1 and v2
+ * Resource information for payment payload
+ */
+export interface ResourceInfo {
+  url: string;
+  description?: string;
+  mimeType?: string;
+}
+
+/**
+ * Payment payload - Coinbase compatible format (x402 v2)
+ * Uses 'accepted' field to echo server's requirements
  */
 export interface PaymentPayload {
   x402Version: X402Version;
-  scheme: Scheme;
-  network: Network;
+  accepted: PaymentRequirements;
   payload: ExactEvmPayload;
+  resource?: ResourceInfo;
+  extensions?: Record<string, unknown>;
 }
 
 /**
@@ -66,9 +76,10 @@ export interface PaymentPayload {
  */
 export interface UnsignedPaymentPayload {
   x402Version: X402Version;
-  scheme: Scheme;
-  network: Network;
+  accepted: PaymentRequirements;
   payload: Omit<ExactEvmPayload, "signature"> & { signature: undefined };
+  resource?: ResourceInfo;
+  extensions?: Record<string, unknown>;
 }
 
 /**
@@ -121,6 +132,16 @@ export interface X402Response {
  * Type guards
  */
 export function isPaymentPayload(obj: unknown): obj is PaymentPayload {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "x402Version" in obj &&
+    "accepted" in obj &&
+    "payload" in obj
+  );
+}
+
+export function isLegacyPaymentPayload(obj: unknown): obj is { x402Version: number; scheme: string; network: string; payload: ExactEvmPayload } {
   return (
     typeof obj === "object" &&
     obj !== null &&

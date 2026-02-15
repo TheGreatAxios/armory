@@ -107,9 +107,12 @@ export function assertPaymentPayload(
 
   const p = payload as Record<string, unknown>;
   expect(p).toHaveProperty("x402Version", version);
-  expect(p).toHaveProperty("scheme", "exact");
-  expect(p).toHaveProperty("network");
+  expect(p).toHaveProperty("accepted");
   expect(p).toHaveProperty("payload");
+
+  const accepted = p.accepted as Record<string, unknown>;
+  expect(accepted).toHaveProperty("scheme", "exact");
+  expect(accepted).toHaveProperty("network");
 
   const innerPayload = p.payload as Record<string, unknown>;
   expect(innerPayload).toHaveProperty("signature");
