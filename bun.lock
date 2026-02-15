@@ -79,6 +79,7 @@
       "dependencies": {
         "@armory-sh/base": "^0.2.20",
         "@armory-sh/extensions": "workspace:*",
+        "@types/node": "^25.2.3",
         "viem": "2.45.0",
       },
       "devDependencies": {
