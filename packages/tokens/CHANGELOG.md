@@ -1,5 +1,11 @@
 # @armory-sh/tokens
 
+## 0.2.17
+
+### Patch Changes
+
+- Add Simple Middleware Back
+
 ## 0.2.16
 
 ### Patch Changes

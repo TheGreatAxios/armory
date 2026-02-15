@@ -1,5 +1,11 @@
 # @armory-sh/base
 
+## 0.2.19
+
+### Patch Changes
+
+- Add Simple Middleware Back
+
 ## 0.2.18
 
 ### Patch Changes

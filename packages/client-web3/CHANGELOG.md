@@ -1,5 +1,13 @@
 # @armory-sh/client-web3
 
+## 0.2.15
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
 ## 0.2.14
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @armory-sh/middleware
 
+## 0.3.14
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.6
+  - @armory-sh/middleware-elysia@0.3.17
+  - @armory-sh/middleware-hono@0.3.19
+  - @armory-sh/middleware-bun@0.3.17
+
 ## 0.3.13
 
 ### Patch Changes

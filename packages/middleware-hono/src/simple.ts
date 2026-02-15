@@ -25,7 +25,7 @@ import {
 type NetworkId = string | number;
 type TokenId = string;
 
-export interface SimplePaymentConfig {
+export interface PaymentConfig {
   payTo: string;
   chains?: NetworkId[];
   chain?: NetworkId;
@@ -33,6 +33,13 @@ export interface SimplePaymentConfig {
   token?: TokenId;
   amount?: string;
   maxTimeoutSeconds?: number;
+
+  payToByChain?: Record<NetworkId, string>;
+  payToByToken?: Record<NetworkId, Record<TokenId, string>>;
+
+  facilitatorUrl?: string;
+  facilitatorUrlByChain?: Record<NetworkId, string>;
+  facilitatorUrlByToken?: Record<NetworkId, Record<TokenId, string>>;
 }
 
 export interface ResolvedSimpleConfig {
@@ -120,8 +127,74 @@ function toAtomicUnits(amount: string): string {
   return `${amount}000000`;
 }
 
-export function createSimpleRequirements(
-  config: SimplePaymentConfig
+function resolvePayTo(
+  config: PaymentConfig,
+  network: ResolvedNetwork,
+  token: ResolvedToken
+): string {
+  const chainId = network.config.chainId;
+
+  if (config.payToByToken) {
+    for (const [chainKey, tokenMap] of Object.entries(config.payToByToken)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        for (const [tokenKey, address] of Object.entries(tokenMap)) {
+          const resolvedToken = resolveToken(tokenKey, network);
+          if (!isValidationError(resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === token.config.contractAddress.toLowerCase()) {
+            return address;
+          }
+        }
+      }
+    }
+  }
+
+  if (config.payToByChain) {
+    for (const [chainKey, address] of Object.entries(config.payToByChain)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        return address;
+      }
+    }
+  }
+
+  return config.payTo;
+}
+
+function resolveFacilitatorUrl(
+  config: PaymentConfig,
+  network: ResolvedNetwork,
+  token: ResolvedToken
+): string | undefined {
+  const chainId = network.config.chainId;
+
+  if (config.facilitatorUrlByToken) {
+    for (const [chainKey, tokenMap] of Object.entries(config.facilitatorUrlByToken)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        for (const [tokenKey, url] of Object.entries(tokenMap)) {
+          const resolvedToken = resolveToken(tokenKey, network);
+          if (!isValidationError(resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === token.config.contractAddress.toLowerCase()) {
+            return url;
+          }
+        }
+      }
+    }
+  }
+
+  if (config.facilitatorUrlByChain) {
+    for (const [chainKey, url] of Object.entries(config.facilitatorUrlByChain)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        return url;
+      }
+    }
+  }
+
+  return config.facilitatorUrl;
+}
+
+export function createPaymentRequirements(
+  config: PaymentConfig
 ): ResolvedSimpleConfig {
   ensureTokensRegistered();
 
@@ -158,16 +231,20 @@ export function createSimpleRequirements(
       const atomicAmount = toAtomicUnits(amount);
       const tokenConfig = resolvedToken.config;
 
+      const resolvedPayTo = resolvePayTo(config, network, resolvedToken);
+      const resolvedFacilitatorUrl = resolveFacilitatorUrl(config, network, resolvedToken);
+
       requirements.push({
         scheme: "exact",
         network: network.caip2,
         amount: atomicAmount,
         asset: tokenConfig.contractAddress,
-        payTo: payTo as `0x${string}`,
+        payTo: resolvedPayTo as `0x${string}`,
         maxTimeoutSeconds,
         extra: {
           name: tokenConfig.name,
           version: tokenConfig.version,
+          ...(resolvedFacilitatorUrl && { facilitatorUrl: resolvedFacilitatorUrl }),
         },
       });
     }
@@ -176,8 +253,8 @@ export function createSimpleRequirements(
   return { requirements };
 }
 
-export function simplePaymentMiddleware(config: SimplePaymentConfig) {
-  const { requirements, error } = createSimpleRequirements(config);
+export function paymentMiddleware(config: PaymentConfig) {
+  const { requirements, error } = createPaymentRequirements(config);
 
   return async (c: Context, next: Next): Promise<Response | void> => {
     if (error) {

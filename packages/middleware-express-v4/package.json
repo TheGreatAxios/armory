@@ -1,11 +1,29 @@
 {
   "name": "@armory-sh/middleware-express-v4",
-  "version": "0.3.18",
+  "version": "0.1.0",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "module": "index.ts",
   "type": "module",
   "license": "MIT",
-  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thegreataxios/armory.git",
+    "directory": "packages/middleware-express-v4"
+  },
   "peerDependencies": {
     "express": "^4"
   },

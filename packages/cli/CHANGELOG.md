@@ -1,5 +1,11 @@
 # armory-cli
 
+## 0.2.10
+
+### Patch Changes
+
+- Add Simple Middleware Back
+
 ## 0.2.9
 
 ### Patch Changes

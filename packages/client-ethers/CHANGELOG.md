@@ -1,5 +1,13 @@
 # @armory-sh/client-ethers
 
+## 0.2.18
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
 ## 0.2.17
 
 ### Patch Changes

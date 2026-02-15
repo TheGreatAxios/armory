@@ -1,5 +1,13 @@
 # @armory-sh/middleware-express
 
+## 0.4.6
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
 ## 0.4.5
 
 ### Patch Changes

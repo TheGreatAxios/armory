@@ -1,5 +1,13 @@
 # @armory-sh/middleware-bun
 
+## 0.3.17
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
 ## 0.3.16
 
 ### Patch Changes

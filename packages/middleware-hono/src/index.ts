@@ -11,7 +11,7 @@ import {
   decodePaymentV2,
 } from "@armory-sh/base";
 
-export interface PaymentMiddlewareConfig {
+export interface AdvancedPaymentConfig {
   requirements: PaymentRequirements;
   facilitatorUrl?: string;
   skipVerification?: boolean;
@@ -26,7 +26,7 @@ export interface AugmentedRequest extends Request {
   };
 }
 
-export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
+export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
   const { requirements, facilitatorUrl, skipVerification = false, network = "base" } = config;
 
   return async (c: Context, next: Next): Promise<Response | void> => {
@@ -69,4 +69,4 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
   };
 };
 
-export { simplePaymentMiddleware, createSimpleRequirements, type SimplePaymentConfig } from "./simple";
+export { paymentMiddleware, createPaymentRequirements, type PaymentConfig } from "./simple";
