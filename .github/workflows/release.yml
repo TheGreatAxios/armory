@@ -17,6 +17,30 @@ on:
       - ready_for_review
 
 jobs:
+  check-changeset:
+    if: github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'staging')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for changeset
+        run: |
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # Check if packages changed
+          if echo "$CHANGED_FILES" | grep -q "^packages/"; then
+            # Check for changeset
+            if ! echo "$CHANGED_FILES" | grep -q "^\.changeset/.*\.md$"; then
+              echo "::error::Packages changed but no changeset found. Run 'bun run changeset' locally."
+              exit 1
+            fi
+          fi
+          echo "✅ Changeset check passed"
+
   release-beta:
     if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
@@ -99,4 +123,8 @@ jobs:
         run: bun run build
 
       - name: Run alpha release
-        run: bun run ci:release:alpha
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          npm version prerelease --preid=alpha.${PR_NUMBER} --no-git-tag-version --workspaces || true
+          bun run ci:publish:alpha
