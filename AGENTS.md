@@ -8,9 +8,13 @@
 
 ## Project Goals
 
-1. **Easiest x402 library** - Simple, intuitive APIs for both clients and merchants
-2. **Minimal dependencies** - Keep packages lightweight
-3. **Developer experience** - Clear errors, flexible inputs, full TypeScript support
+1. **100% x402 Compatibility** - Fully compatible with Coinbase x402 SDKs and @faremeter SDKs
+   - Server middleware must accept payments from Coinbase/Faremeter clients
+   - Client libraries must work with Coinbase/Faremeter servers
+   - Test compatibility continuously - breaking changes block merges
+2. **Easiest x402 library** - Simple, intuitive APIs for both clients and merchants
+3. **Minimal dependencies** - Keep packages lightweight
+4. **Developer experience** - Clear errors, flexible inputs, full TypeScript support
 
 ---
 
@@ -70,9 +74,13 @@ function handler(state: string) { /* uses state param */ }
 
 ### @armory-sh/base (core)
 
-- Protocol types (v1, v2, unified)
-- Encoding/decoding (Base64URL)
-- EIP-712 typed data
+- **x402 v1 and v2 types** - MUST match Coinbase spec exactly
+- **Version abstraction** - Users shouldn't think about v1 vs v2, it just works
+- Encoding/decoding (Base64) - MUST use exact x402 wire format
+  - V1: Base64-encoded JSON
+  - V2: Base64URL-encoded JSON
+  - NEVER change encoding without verifying x402 SDK compatibility
+- EIP-712 typed data - EIP-3009 TransferWithAuthorization
 - Network configs
 - Token registry
 
@@ -104,6 +112,11 @@ function handler(state: string) { /* uses state param */ }
 ---
 
 ## Protocol Reference
+
+**IMPORTANT**: Armory implements the Coinbase x402 payment protocol (EIP-3009).
+- Spec: https://github.com/coinbase/x402
+- Goal: 100% wire-format compatibility with Coinbase x402 SDKs
+- All encoding/decoding MUST match x402 spec exactly
 
 ### Headers
 
@@ -189,6 +202,10 @@ bun test --watch
 
 - Use 3rd party facilitator for integration testing
 - No mocking in e2e tests - test real flows
+- **Cross-SDK Compatibility**: Test against Coinbase x402 and @faremeter SDKs
+  - Server middleware must accept Coinbase/Faremeter client payments
+  - Client libraries must work with Coinbase/Faremeter servers
+  - All compatibility tests must pass
 
 ```bash
 # Run e2e tests
