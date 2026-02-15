@@ -19,7 +19,7 @@ TypeScript libraries for the X-402 payment protocol (EIP-3009). Enable server-to
 bun add @armory-sh/client-viem
 
 # For merchants (accepting payments)
-bun add @armory-sh/middleware
+bun add @armory-sh/middleware-hono  # or middleware-express, middleware-bun, etc.
 ```
 
 ## Quick Start
@@ -51,7 +51,7 @@ if (result.success) {
 ### For Merchants (Accepting Payments)
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware-hono';
 
 // Simple - single network, default USDC
 app.use(acceptPaymentsViaArmory({
@@ -167,8 +167,7 @@ Pre-configured tokens include USDC, EURC, USDT, WBTC, and WETH across all suppor
 
 | Package | Description |
 |---------|-------------|
-| **@armory-sh/base** | Protocol types, encoding, EIP-712, network configs, validation, route matching |
-| **@armory-sh/middleware** | HTTP middleware for Bun, Express, Hono, Elysia |
+| **@armory-sh/base** | Protocol types, encoding, EIP-712, network configs, tokens, validation |
 | **@armory-sh/middleware-express** | Express v5 middleware |
 | **@armory-sh/middleware-express-v4** | Express v4 middleware |
 | **@armory-sh/middleware-hono** | Hono middleware |
@@ -178,7 +177,6 @@ Pre-configured tokens include USDC, EURC, USDT, WBTC, and WETH across all suppor
 | **@armory-sh/client-viem** | Viem v2 payment client |
 | **@armory-sh/client-ethers** | Ethers.js v6 payment client |
 | **@armory-sh/client-web3** | Web3.js payment client |
-| **@armory-sh/tokens** | Pre-configured token objects |
 | **@armory-sh/extensions** | Protocol extensions (SIWX, payment ID) |
 | **armory-cli** | Scaffold tool for x402 payment-enabled apps |
 

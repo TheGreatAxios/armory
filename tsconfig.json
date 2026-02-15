@@ -17,13 +17,11 @@
       "@armory-sh/client-viem": ["./packages/client-viem/src"],
       "@armory-sh/client-web3": ["./packages/client-web3/src"],
       "@armory-sh/extensions": ["./packages/extensions/src"],
-      "@armory-sh/middleware": ["./packages/middleware/src"],
       "@armory-sh/middleware-bun": ["./packages/middleware-bun/src"],
       "@armory-sh/middleware-elysia": ["./packages/middleware-elysia/src"],
       "@armory-sh/middleware-express": ["./packages/middleware-express/src"],
       "@armory-sh/middleware-express-v4": ["./packages/middleware-express-v4/src"],
-      "@armory-sh/middleware-hono": ["./packages/middleware-hono/src"],
-      "@armory-sh/tokens": ["./packages/tokens/src"]
+      "@armory-sh/middleware-hono": ["./packages/middleware-hono/src"]
     },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,

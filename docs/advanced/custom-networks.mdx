@@ -31,7 +31,7 @@ Configure RPC URLs for your custom network:
 
 ```typescript
 import { createBunMiddleware } from '@armory-sh/middleware-bun';
-import { USDC_BASE } from '@armory-sh/tokens';
+import { USDC_BASE } from '@armory-sh/base';
 
 const middleware = createBunMiddleware({
   payTo: '0x...',
@@ -56,7 +56,7 @@ const app = Bun.serve({
 #### Express
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware-express';
 
 app.use(acceptPaymentsViaArmory({
   payTo: '0x...',

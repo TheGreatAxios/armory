@@ -201,15 +201,13 @@ const allTokens = getAllCustomTokens();
 unregisterToken(8453, "0x1234567890123456789012345678901234567890");
 ```
 
-### Using Pre-configured Tokens from @armory-sh/tokens
+### Using Pre-configured Tokens
 
 ```typescript
-import { TOKENS, registerToken } from "@armory-sh/tokens";
-import { registerToken as registerCoreToken } from "@armory-sh/base";
+import { TOKENS, registerToken } from "@armory-sh/base";
 
 // Use pre-configured token
 const usdcBase = TOKENS.USDC_BASE;
-registerCoreToken(usdcBase);
 ```
 
 ### CustomToken Interface

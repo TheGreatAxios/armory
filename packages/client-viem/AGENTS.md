@@ -95,7 +95,7 @@ const response = await client.fetch("https://api.example.com/data");
 
 ```ts
 // Using token object (recommended)
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const payment = await client.createPayment({
   token: TOKENS.USDC_BASE,
@@ -151,11 +151,11 @@ const client = createX402Client({
 
 ## Token Object Usage
 
-### Using Pre-configured Tokens from @armory-sh/tokens
+### Using Pre-configured Tokens
 
 ```ts
 import { createX402Client } from "@armory-sh/client-viem";
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const client = createX402Client({
   wallet: { type: "account", account },

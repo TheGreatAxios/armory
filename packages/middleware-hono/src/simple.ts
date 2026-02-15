@@ -269,8 +269,11 @@ export function createPaymentRequirements(
 export function paymentMiddleware(config: PaymentConfig) {
   const { requirements, error } = createPaymentRequirements(config);
 
+  console.log("[payment-middleware] Initialized with requirements:", JSON.stringify(requirements, null, 2));
+
   return async (c: Context, next: Next): Promise<Response | void> => {
     if (error) {
+      console.log("[payment-middleware] Configuration error:", error.message);
       c.status(500);
       return c.json({
         error: "Payment middleware configuration error",
@@ -279,6 +282,7 @@ export function paymentMiddleware(config: PaymentConfig) {
     }
 
     const paymentHeader = c.req.header(V2_HEADERS.PAYMENT_SIGNATURE);
+    console.log("[payment-middleware] Payment header present:", !!paymentHeader);
 
     if (!paymentHeader) {
       const resource: ResourceInfo = {
@@ -295,6 +299,7 @@ export function paymentMiddleware(config: PaymentConfig) {
         extensions: config.extensions ? buildExtensions(config.extensions) : undefined,
       };
 
+      console.log("[payment-middleware] Returning 402 with requirements:", JSON.stringify(paymentRequired.accepts, null, 2));
       c.status(402);
       c.header(V2_HEADERS.PAYMENT_REQUIRED, safeBase64Encode(JSON.stringify(paymentRequired)));
       return c.json({
@@ -305,9 +310,12 @@ export function paymentMiddleware(config: PaymentConfig) {
 
     const primaryRequirement = requirements[0];
     if (!primaryRequirement) {
+      console.log("[payment-middleware] No requirements configured");
       c.status(500);
       return c.json({ error: "Payment middleware configuration error", details: "No payment requirements configured" });
     }
+
+    console.log("[payment-middleware] Primary requirement:", JSON.stringify(primaryRequirement, null, 2));
 
     let parsedPayload: X402PaymentPayload;
     try {
@@ -323,19 +331,26 @@ export function paymentMiddleware(config: PaymentConfig) {
     const facilitatorUrl = config.facilitatorUrl
       ?? (typeof requirementFacilitatorUrl === "string" ? requirementFacilitatorUrl : undefined);
 
+    console.log("[payment-middleware] Facilitator URL:", facilitatorUrl);
+
     if (!facilitatorUrl) {
+      console.log("[payment-middleware] No facilitator URL configured");
       c.status(500);
       return c.json({ error: "Payment middleware configuration error", message: "Facilitator URL is required for verification" });
     }
 
+    console.log("[payment-middleware] Verifying payment with facilitator...");
     const verifyResult: VerifyResponse = await verifyPayment(parsedPayload, primaryRequirement, { url: facilitatorUrl });
+    console.log("[payment-middleware] Verify result:", JSON.stringify(verifyResult, null, 2));
 
     if (!verifyResult.isValid) {
+      console.log("[payment-middleware] Verification failed:", verifyResult.invalidReason);
       c.status(402);
       c.header(V2_HEADERS.PAYMENT_REQUIRED, createPaymentRequiredHeaders(requirements)[V2_HEADERS.PAYMENT_REQUIRED]);
       return c.json({ error: "Payment verification failed", message: verifyResult.invalidReason });
     }
 
+    console.log("[payment-middleware] Payment verified, setting payment context");
     c.set("payment", {
       payload: parsedPayload,
       payerAddress: verifyResult.payer,
@@ -348,14 +363,18 @@ export function paymentMiddleware(config: PaymentConfig) {
       return;
     }
 
+    console.log("[payment-middleware] Settling payment...");
     const settleResult: X402SettlementResponse = await settlePayment(parsedPayload, primaryRequirement, { url: facilitatorUrl });
+    console.log("[payment-middleware] Settle result:", JSON.stringify(settleResult, null, 2));
 
     if (!settleResult.success) {
+      console.log("[payment-middleware] Settlement failed:", settleResult.errorReason);
       c.status(502);
       c.res = c.json({ error: "Settlement failed", details: settleResult.errorReason }, 502);
       return;
     }
 
+    console.log("[payment-middleware] Payment settled, tx:", settleResult.transaction);
     const headers = createSettlementHeaders(settleResult);
     for (const [key, value] of Object.entries(headers)) {
       c.header(key, value);

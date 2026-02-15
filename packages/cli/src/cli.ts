@@ -135,7 +135,7 @@ const FACILITATOR_PACKAGE = (name: string) => `{
   },
   "dependencies": {
     "@armory-sh/base": "latest",
-    "@armory-sh/middleware": "latest"
+    "@armory-sh/middleware-hono": "latest"
   }
 }`;
 

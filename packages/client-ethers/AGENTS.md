@@ -95,7 +95,7 @@ const response = await transport.get("/protected-resource");
 import { signPayment } from "@armory-sh/client-ethers";
 
 // Using token object (recommended)
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const signature = await signPayment(
   signer,
@@ -201,7 +201,6 @@ bun test
 ## Dependencies
 
 - `@armory-sh/base` - Core types, utilities, and token registry
-- `@armory-sh/tokens` - Pre-configured token objects (optional)
 - `ethers` v6 - Ethereum library
 
 ---
@@ -212,7 +211,7 @@ bun test
 
 ```ts
 import { createX402Client } from "@armory-sh/client-ethers";
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const client = createX402Client({
   signer,

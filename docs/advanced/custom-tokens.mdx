@@ -50,7 +50,7 @@ const app = Bun.serve({
 ### Express
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware-express';
 
 app.use(acceptPaymentsViaArmory({
   payTo: '0xYourWalletAddress...',
@@ -139,12 +139,11 @@ const client = createArmoryClient({
 If you want your token to be discoverable via the token registry:
 
 ```typescript
-import { registerToken } from '@armory-sh/tokens';
+import { registerToken, getToken } from '@armory-sh/base';
 
 registerToken(MY_TOKEN);
 
 // Now available via:
-import { getToken } from '@armory-sh/tokens';
 const token = getToken(8453, '0x1234...');
 ```
 
