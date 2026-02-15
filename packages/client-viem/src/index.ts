@@ -25,13 +25,27 @@ export {
   armoryPay,
   armoryGet,
   armoryPost,
+  armoryPut,
+  armoryDelete,
+  armoryPatch,
   getWalletAddress,
   validateNetwork,
   validateToken,
   getNetworks,
   getTokens,
-  type SimpleWallet,
+  normalizeWallet,
+  type SimpleWalletInput,
+  type NormalizedWallet,
 } from "./payment-api";
+
+// Armory API
+export {
+  createArmory,
+  type ArmoryConfig,
+  type ArmoryInstance,
+  type PaymentOptions,
+  type HttpMethod,
+} from "./armory-api";
 
 // Re-export simple types from core
 export type {

@@ -1,33 +1,22 @@
 /**
- * Simple one-line payment API for Armory
+ * Simple one-line payment API for Armory (Web3)
  * Focus on DX/UX - "everything just magically works"
  */
 
 import type {
-  Account,
-  WalletClient,
-  Address,
-} from "viem";
-import type {
   NetworkId,
   TokenId,
   ArmoryPaymentResult,
-  PaymentResult,
-  PaymentError,
   ValidationError,
-  ResolvedNetwork,
 } from "@armory-sh/base";
-import type { X402Wallet } from "./types";
 import {
   resolveNetwork,
   resolveToken,
   validatePaymentConfig,
   isValidationError,
-  createError,
-  getAvailableNetworks,
-  getAvailableTokens,
 } from "@armory-sh/base";
 import { createX402Client } from "./client";
+import type { Web3Account } from "./types";
 
 // ═══════════════════════════════════════════════════════════════
 // Simple Wallet Types
@@ -37,40 +26,22 @@ import { createX402Client } from "./client";
  * Simple wallet input - accepts wallet directly or wrapped for backward compatibility
  */
 export type SimpleWalletInput =
-  | Account
-  | WalletClient
-  | { account: Account }
-  | { walletClient: WalletClient };
+  | Web3Account
+  | { account: Web3Account };
 
 /**
  * Normalized wallet (internal use)
  */
-export type NormalizedWallet =
-  | { type: "account"; account: Account }
-  | { type: "walletClient"; walletClient: WalletClient };
+export type NormalizedWallet = Web3Account;
 
 /**
  * Normalize wallet input to internal format
  */
 export const normalizeWallet = (wallet: SimpleWalletInput): NormalizedWallet => {
-  if (typeof wallet === "object" && wallet !== null) {
-    if ("account" in wallet && "type" in wallet) {
-      return wallet as NormalizedWallet;
-    }
-    if ("account" in wallet) {
-      return { type: "account", account: wallet.account };
-    }
-    if ("walletClient" in wallet) {
-      return { type: "walletClient", walletClient: wallet.walletClient };
-    }
+  if (typeof wallet === "object" && wallet !== null && "account" in wallet) {
+    return wallet.account as NormalizedWallet;
   }
-  if ("address" in wallet && "type" in wallet) {
-    return { type: "account", account: wallet as Account };
-  }
-  if ("account" in wallet) {
-    return { type: "walletClient", walletClient: wallet as WalletClient };
-  }
-  throw new Error("Invalid wallet input");
+  return wallet as NormalizedWallet;
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -79,22 +50,6 @@ export const normalizeWallet = (wallet: SimpleWalletInput): NormalizedWallet => 
 
 /**
  * Make a payment-protected API request with one line of code
- *
- * @example
- * ```ts
- * const result = await armoryPay(
- *   { account },                    // wallet
- *   "https://api.example.com/data", // URL
- *   "base",                         // network
- *   "usdc"                          // token
- * );
- *
- * if (result.success) {
- *   console.log(result.data);
- * } else {
- *   console.error(result.message);
- * }
- * ```
  */
 export const armoryPay = async <T = unknown>(
   wallet: SimpleWalletInput,
@@ -112,15 +67,10 @@ export const armoryPay = async <T = unknown>(
     version?: 2;
     /** Payment amount in token units (default: from 402 header) */
     amount?: string;
-    /** Enable debug logging */
-    debug?: boolean;
   }
 ): Promise<ArmoryPaymentResult<T>> => {
   try {
-    const normalized = normalizeWallet(wallet);
-    const x402Wallet: X402Wallet = normalized.type === "account"
-      ? { type: "account", account: normalized.account }
-      : { type: "walletClient", walletClient: normalized.walletClient };
+    const account = normalizeWallet(wallet);
 
     const config = validatePaymentConfig(network, token);
     if (isValidationError(config)) {
@@ -133,10 +83,10 @@ export const armoryPay = async <T = unknown>(
     }
 
     const client = createX402Client({
-      wallet: x402Wallet,
+      account,
+      network: config.network.config.name,
       version: options?.version ?? 2,
       token: config.token.config,
-      debug: options?.debug ?? false,
     });
 
     const method = options?.method ?? "GET";
@@ -170,7 +120,7 @@ export const armoryPay = async <T = unknown>(
       };
     }
 
-    const data = await response.json();
+    const data = await response.json() as T;
 
     const txHash = response.headers.get("X-PAYMENT-RESPONSE") ||
                    response.headers.get("PAYMENT-RESPONSE");
@@ -266,11 +216,11 @@ export const armoryPatch = <T = unknown>(
 /**
  * Get the wallet address from a SimpleWalletInput
  */
-export const getWalletAddress = (wallet: SimpleWalletInput): Address => {
-  const normalized = normalizeWallet(wallet);
-  return normalized.type === "account"
-    ? normalized.account.address
-    : normalized.walletClient.account.address;
+export const getWalletAddress = (wallet: SimpleWalletInput): string => {
+  const account = normalizeWallet(wallet);
+  if ("address" in account) return account.address;
+  if (Array.isArray(account) && account[0]) return account[0].address;
+  throw new Error("Unable to get address from account");
 };
 
 /**
@@ -291,7 +241,7 @@ export const validateToken = (
   token: TokenId,
   network?: NetworkId
 ): ValidationError | { success: true; token: string; network: string } => {
-  let resolvedNetwork: ResolvedNetwork | undefined = undefined;
+  let resolvedNetwork = undefined;
   if (network) {
     const networkResult = resolveNetwork(network);
     if (isValidationError(networkResult)) {
@@ -314,6 +264,7 @@ export const validateToken = (
  * Get list of available networks
  */
 export const getNetworks = (): string[] => {
+  const { getAvailableNetworks } = require("@armory-sh/base");
   return getAvailableNetworks();
 };
 
@@ -321,5 +272,6 @@ export const getNetworks = (): string[] => {
  * Get list of available tokens
  */
 export const getTokens = (): string[] => {
+  const { getAvailableTokens } = require("@armory-sh/base");
   return getAvailableTokens();
 };

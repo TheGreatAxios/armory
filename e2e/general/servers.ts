@@ -5,7 +5,7 @@
 import { serve } from "bun";
 import { Hono } from "hono";
 import express from "express";
-import { paymentMiddleware as honoPaymentMiddleware } from "@armory-sh/middleware-hono";
+import { advancedPaymentMiddleware as honoPaymentMiddleware } from "@armory-sh/middleware-hono";
 import { paymentMiddleware as expressPaymentMiddleware } from "@armory-sh/middleware-express";
 import {
   getNetworkConfig,

@@ -78,3 +78,30 @@ export { signEIP3009, signEIP3009WithDomain, signPayment, recoverEIP3009Signer }
 
 // X402 Client factory
 export { createX402Client, type X402Client } from "./client";
+
+// Simple one-line API
+export {
+  armoryPay,
+  armoryGet,
+  armoryPost,
+  armoryPut,
+  armoryDelete,
+  armoryPatch,
+  getWalletAddress,
+  validateNetwork,
+  validateToken,
+  getNetworks,
+  getTokens,
+  normalizeWallet,
+  type SimpleWalletInput,
+  type NormalizedWallet,
+} from "./payment-api";
+
+// Armory API
+export {
+  createArmory,
+  type ArmoryConfig,
+  type ArmoryInstance,
+  type PaymentOptions,
+  type HttpMethod,
+} from "./armory-api";
