@@ -1,7 +1,4 @@
-# Entire CLI hooks
-entire hooks git pre-push "$1" || true
-
-# Changeset check for main/staging branches
+# Changeset check
 check_changeset() {
   base="main"
   if git rev-parse --verify origin/staging >/dev/null 2>&1; then
