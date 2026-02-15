@@ -14,7 +14,7 @@ export type Token = CustomToken;
 
 export interface Web3ClientConfig {
   account: Web3Account;
-  network: NetworkConfig | string;
+  network?: NetworkConfig | string;
   version?: 2;
   rpcUrl?: string;
   /** Pre-configured token object (overrides individual fields below) */
@@ -52,7 +52,7 @@ export interface X402Transport {
 export interface Web3X402Client {
   fetch(url: string | Request, init?: RequestInit): Promise<Response>;
   getAccount(): Web3Account;
-  getNetwork(): NetworkConfig;
+  getNetwork(): NetworkConfig | undefined;
   getVersion(): 2;
   signPayment(options: PaymentSignOptions): Promise<PaymentSignatureResult>;
   createPaymentHeaders(options: PaymentSignOptions): Promise<Headers>;

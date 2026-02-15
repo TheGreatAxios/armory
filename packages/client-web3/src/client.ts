@@ -1,6 +1,7 @@
 import { Web3 } from "web3";
 import {
   getNetworkConfig,
+  getNetworkByChainId,
   encodePaymentV2,
   isX402V2Requirements,
   networkToCaip2,
@@ -11,6 +12,7 @@ import {
   type PaymentRequirementsV2,
   type SettlementResponseV2,
   type EIP3009Authorization,
+  type NetworkConfig,
 } from "@armory-sh/base";
 import type {
   Web3Account,
@@ -46,16 +48,22 @@ const extractDomainConfig = (config: Web3ClientConfig) => {
 };
 
 const createClientState = (config: Web3ClientConfig) => {
-  const network = typeof config.network === "string"
-    ? getNetworkConfig(config.network) ?? (() => { throw new Error(`Unknown network: ${config.network}`); })()
-    : config.network;
+  const network = config.network
+    ? (typeof config.network === "string"
+        ? getNetworkConfig(config.network) ?? (() => { throw new Error(`Unknown network: ${config.network}`); })()
+        : config.network)
+    : undefined;
   const { domainName, domainVersion } = extractDomainConfig(config);
 
   return {
     account: config.account,
     version: config.version ?? 2,
     network,
-    web3: new Web3(config.rpcUrl ?? network.rpcUrl),
+    web3: config.rpcUrl
+      ? new Web3(config.rpcUrl)
+      : network
+        ? new Web3(network.rpcUrl)
+        : new Web3(),
     domainName,
     domainVersion,
   };
@@ -116,6 +124,7 @@ const signTypedDataWrapper = async (
  */
 const signPaymentV2 = async (
   state: ReturnType<typeof createClientState>,
+  network: NetworkConfig,
   params: {
     from: string;
     to: string;
@@ -126,7 +135,7 @@ const signPaymentV2 = async (
   }
 ): Promise<PaymentSignatureResult> => {
   const { from, to, amount, nonce, expiry, accepted } = params;
-  const { network, domainName, domainVersion } = state;
+  const { domainName, domainVersion } = state;
 
   const domain = createEIP712Domain(network.chainId, network.usdcAddress, domainName, domainVersion);
   const message = createTransferWithAuthorization({
@@ -172,6 +181,22 @@ const signPaymentV2 = async (
   };
 };
 
+const extractNetworkFromRequirements = (requirements: PaymentRequirementsV2): NetworkConfig => {
+  const caip2Network = requirements.network;
+  const match = caip2Network.match(/^eip155:(\d+)$/);
+  if (!match) {
+    throw new Error(`Invalid CAIP-2 network format: ${caip2Network}`);
+  }
+
+  const chainId = parseInt(match[1], 10);
+  const network = getNetworkByChainId(chainId);
+  if (!network) {
+    throw new Error(`Unsupported chain ID: ${chainId}`);
+  }
+
+  return network;
+};
+
 export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
   const state = createClientState(config);
 
@@ -191,7 +216,9 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
       const req = selectedRequirements;
       const to = typeof req.payTo === "string" ? req.payTo : "0x0000000000000000000000000000000000000000";
 
-      const result = await signPaymentV2(state, {
+      const network = extractNetworkFromRequirements(req);
+
+      const result = await signPaymentV2(state, network, {
         from,
         to,
         amount: req.amount,
@@ -216,23 +243,25 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
     getVersion: () => state.version,
 
     signPayment: async (options: PaymentSignOptions): Promise<PaymentSignatureResult> => {
+      const network = state.network ?? (() => { throw new Error("Network must be configured for manual payment signing"); })();
       const from = getAddress(state.account);
       const to = options.to;
       const amount = options.amount.toString();
       const nonce = options.nonce ?? crypto.randomUUID();
       const expiry = options.expiry ?? Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS;
 
-      return signPaymentV2(state, { from, to, amount, nonce, expiry });
+      return signPaymentV2(state, network, { from, to, amount, nonce, expiry });
     },
 
     createPaymentHeaders: async (options: PaymentSignOptions): Promise<Headers> => {
+      const network = state.network ?? (() => { throw new Error("Network must be configured for manual payment signing"); })();
       const from = getAddress(state.account);
       const to = options.to;
       const amount = options.amount.toString();
       const nonce = options.nonce ?? crypto.randomUUID();
       const expiry = options.expiry ?? Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS;
 
-      const result = await signPaymentV2(state, { from, to, amount, nonce, expiry });
+      const result = await signPaymentV2(state, network, { from, to, amount, nonce, expiry });
       const headers = new Headers();
       headers.set("PAYMENT-SIGNATURE", encodePaymentV2(result.payload));
       return headers;
@@ -243,8 +272,9 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
     ): Promise<PaymentSignatureResult> => {
       const from = getAddress(state.account);
       const to = typeof requirements.payTo === "string" ? requirements.payTo : "0x0000000000000000000000000000000000000000";
+      const network = extractNetworkFromRequirements(requirements);
 
-      return signPaymentV2(state, {
+      return signPaymentV2(state, network, {
         from,
         to,
         amount: requirements.amount,

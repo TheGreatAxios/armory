@@ -416,6 +416,31 @@ test("createX402Client throws on unknown network", () => {
   }).toThrow("Unknown network");
 });
 
+test("createX402Client works without network config", () => {
+  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const client = createX402Client({
+    account,
+  });
+
+  expect(client.getNetwork()).toBeUndefined();
+  expect(client.getAccount()).toBe(account);
+  expect(client.getVersion()).toBe(2);
+});
+
+test("createX402Client requires network for manual payment signing", async () => {
+  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const client = createX402Client({
+    account,
+  });
+
+  const promise = client.signPayment({
+    amount: "1000000",
+    to: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  });
+
+  await expect(promise).rejects.toThrow("Network must be configured for manual payment signing");
+});
+
 // ============================================================================
 // Settlement Verification Tests
 // ============================================================================
