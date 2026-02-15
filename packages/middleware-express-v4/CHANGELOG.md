@@ -1,5 +1,13 @@
 # @armory-sh/middleware-express-v4
 
+## 0.1.3
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
 ## 0.1.2
 
 ### Patch Changes

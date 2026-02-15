@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-elysia",
-  "version": "0.3.19",
+  "version": "0.3.20",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -28,7 +28,7 @@
     "elysia": "^1"
   },
   "dependencies": {
-    "@armory-sh/base": "workspace:*"
+    "@armory-sh/base": "0.2.22"
   },
   "devDependencies": {
     "bun-types": "latest",

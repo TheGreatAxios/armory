@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-bun",
-  "version": "0.3.19",
+  "version": "0.3.20",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -24,7 +24,7 @@
     "directory": "packages/middleware-bun"
   },
   "dependencies": {
-    "@armory-sh/base": "workspace:*"
+    "@armory-sh/base": "0.2.22"
   },
   "devDependencies": {
     "bun-types": "latest",

@@ -1,5 +1,11 @@
 # @armory-sh/base
 
+## 0.2.22
+
+### Patch Changes
+
+- Fix Amount
+
 ## 0.2.21
 
 ### Patch Changes
