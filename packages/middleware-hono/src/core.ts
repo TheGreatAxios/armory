@@ -1,6 +1,7 @@
 import type {
   PaymentRequirements,
   SettlementResponseV1,
+  CustomToken,
   // x402 V1 types
   X402PaymentRequiredV1,
   X402PaymentRequirementsV1,
@@ -15,6 +16,7 @@ import {
   getNetworkConfig,
   getNetworkByChainId,
   normalizeNetworkName,
+  getCustomToken,
   // x402 V1 encoding
   encodeX402PaymentRequiredV1,
   encodeX402SettlementResponseV1,
@@ -126,7 +128,8 @@ const toAtomicUnits = (amount: string): string => {
 
 const createV2Requirements = (
   config: MiddlewareConfig,
-  resourceUrl: string
+  resourceUrl: string,
+  token?: CustomToken
 ): PaymentRequirementsV2 => {
   const networkName = getNetworkName(config.network);
   const network = getNetworkConfig(networkName);
@@ -137,6 +140,21 @@ const createV2Requirements = (
   const assetIdMatch = network.caipAssetId.match(/\/erc20:(0x[a-fA-F0-9]{40})$/);
   if (!assetIdMatch) throw new Error(`Invalid CAIP asset ID format: ${network.caipAssetId}`);
   const asset = assetIdMatch[1] as `0x${string}`;
+
+  // Get token name and version from provided token or registry
+  let tokenName = "USD Coin";
+  let tokenVersion = "2";
+
+  if (token) {
+    tokenName = token.name;
+    tokenVersion = token.version;
+  } else {
+    const registeredToken = getCustomToken(network.chainId, asset);
+    if (registeredToken) {
+      tokenName = registeredToken.name;
+      tokenVersion = registeredToken.version;
+    }
+  }
 
   // Convert amount to atomic units (USDC has 6 decimals)
   const atomicAmount = toAtomicUnits(config.amount);
@@ -149,8 +167,8 @@ const createV2Requirements = (
     payTo: config.payTo as `0x${string}`,
     maxTimeoutSeconds: 300,
     extra: {
-      name: "USDC",
-      version: "2",
+      name: tokenName,
+      version: tokenVersion,
     },
   };
 };
@@ -158,7 +176,8 @@ const createV2Requirements = (
 export const createPaymentRequirements = (
   config: MiddlewareConfig,
   version: 1 | 2 = 1,
-  resourceUrl: string = "https://api.example.com"
+  resourceUrl: string = "https://api.example.com",
+  token?: CustomToken
 ): PaymentRequirements => {
   const networkName = getNetworkName(config.network);
   const network = getNetworkConfig(networkName);
@@ -167,7 +186,7 @@ export const createPaymentRequirements = (
 
   return version === 1
     ? createV1Requirements(config, resourceUrl, expiry)
-    : createV2Requirements(config, resourceUrl);
+    : createV2Requirements(config, resourceUrl, token);
 };
 
 const findHeaderValue = (

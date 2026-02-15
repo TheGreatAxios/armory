@@ -172,11 +172,17 @@ test("fetch handles 402 response with payment", async () => {
         })
       );
     }
+    const settlementResponse = JSON.stringify({ success: true, txHash: "0xabc123", timestamp: Date.now() });
+    const encodedResponse = Buffer.from(settlementResponse).toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
+
     return Promise.resolve(
       new Response("Success", {
         status: 200,
         headers: {
-          "PAYMENT-RESPONSE": JSON.stringify({ success: true, txHash: "0xabc123", timestamp: Date.now() }),
+          "PAYMENT-RESPONSE": encodedResponse,
         },
       })
     );
@@ -219,11 +225,17 @@ test("fetch handles 402 response with v2 payment", async () => {
         })
       );
     }
+    const settlementResponse = JSON.stringify({ status: "success", txHash: "0xabc123", timestamp: Date.now() });
+    const encodedResponse = Buffer.from(settlementResponse).toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
+
     return Promise.resolve(
       new Response("Success", {
         status: 200,
         headers: {
-          "PAYMENT-RESPONSE": JSON.stringify({ status: "success", txHash: "0xabc123", timestamp: Date.now() }),
+          "PAYMENT-RESPONSE": encodedResponse,
         },
       })
     );
@@ -358,11 +370,17 @@ test("full payment flow: 402 -> payment -> success", async () => {
         })
       );
     }
+    const settlementResponse = JSON.stringify({ success: true, txHash: "0xtx123", timestamp: Date.now() });
+    const encodedResponse = Buffer.from(settlementResponse).toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
+
     return Promise.resolve(
       new Response('{"data": "protected content"}', {
         status: 200,
         headers: {
-          "PAYMENT-RESPONSE": JSON.stringify({ success: true, txHash: "0xtx123", timestamp: Date.now() }),
+          "PAYMENT-RESPONSE": encodedResponse,
         },
       })
     );
@@ -409,15 +427,21 @@ test("payment flow with v2 protocol", async () => {
         })
       );
     }
+    const settlementResponse = JSON.stringify({
+      status: "success",
+      txHash: "0xabc456",
+      timestamp: Date.now(),
+    });
+    const encodedResponse = Buffer.from(settlementResponse).toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
+
     return Promise.resolve(
       new Response('{"result": "success"}', {
         status: 200,
         headers: {
-          "PAYMENT-RESPONSE": JSON.stringify({
-            status: "success",
-            txHash: "0xabc456",
-            timestamp: Date.now(),
-          }),
+          "PAYMENT-RESPONSE": encodedResponse,
         },
       })
     );

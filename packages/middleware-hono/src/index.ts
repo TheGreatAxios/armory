@@ -59,23 +59,6 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
 
     const payerAddress = paymentPayload.payload.authorization.from;
 
-    // TODO: Add verification with facilitator if not skipVerification
-    // if (!skipVerification && facilitatorUrl) {
-    //   const result = await verifyWithFacilitator(...);
-    //   if (!result.success) { ... }
-    // }
-
-    const settlement: SettlementResponse = {
-      success: true,
-      transaction: "",
-      network: network as any,
-    };
-
-    const settlementHeaders = createSettlementHeaders(settlement);
-    for (const [key, value] of Object.entries(settlementHeaders)) {
-      c.header(key, value);
-    }
-
     c.set("payment", {
       payload: paymentPayload,
       payerAddress,
@@ -85,3 +68,5 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
     return next();
   };
 };
+
+export { simplePaymentMiddleware, createSimpleRequirements, type SimplePaymentConfig } from "./simple";
