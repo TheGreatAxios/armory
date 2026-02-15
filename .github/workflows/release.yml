@@ -126,10 +126,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   release-alpha:
-    if: >-
-      github.event_name == 'pull_request'
-      && github.actor == 'TheGreatAxios'
-      && contains(github.event.pull_request.labels.*.name, 'publish-alpha')
+    if: github.event_name == 'pull_request' && github.actor == 'TheGreatAxios'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
