@@ -14,7 +14,6 @@ import {
 export interface AdvancedPaymentConfig {
   requirements: PaymentRequirements;
   facilitatorUrl?: string;
-  skipVerification?: boolean;
   network?: string;
 }
 
@@ -27,7 +26,7 @@ export interface AugmentedRequest extends Request {
 }
 
 export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
-  const { requirements, facilitatorUrl, skipVerification = false, network = "base" } = config;
+  const { requirements, facilitatorUrl, network = "base" } = config;
 
   return async (c: Context, next: Next): Promise<Response | void> => {
     const paymentHeader = c.req.header(PAYMENT_SIGNATURE_HEADER);
@@ -62,7 +61,7 @@ export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
     c.set("payment", {
       payload: paymentPayload,
       payerAddress,
-      verified: !skipVerification,
+      verified: true,
     });
 
     return next();

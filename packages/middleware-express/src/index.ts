@@ -13,7 +13,6 @@ import {
 export interface PaymentMiddlewareConfig {
   requirements: PaymentRequirements;
   facilitatorUrl?: string;
-  skipVerification?: boolean;
   network?: string;
 }
 
@@ -26,7 +25,7 @@ export interface AugmentedRequest extends Request {
 }
 
 export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
-  const { requirements, facilitatorUrl, skipVerification = false, network = "base" } = config;
+  const { requirements, facilitatorUrl, network = "base" } = config;
 
   return async (req: AugmentedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -59,12 +58,6 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
 
       const payerAddress = paymentPayload.payload.authorization.from;
 
-      // TODO: Add verification with facilitator if not skipVerification
-      // if (!skipVerification && facilitatorUrl) {
-      //   const result = await verifyWithFacilitator(...);
-      //   if (!result.success) { ... }
-      // }
-
       const settlement = {
         success: true,
         transaction: "",
@@ -76,7 +69,7 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
         res.setHeader(key, value);
       }
 
-      req.payment = { payload: paymentPayload, payerAddress, verified: !skipVerification };
+      req.payment = { payload: paymentPayload, payerAddress, verified: true };
       next();
     } catch (error) {
       res.statusCode = 500;

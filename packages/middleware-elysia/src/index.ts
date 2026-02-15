@@ -20,7 +20,6 @@ import {
 export interface PaymentMiddlewareConfig {
   requirements: X402PaymentRequirements;
   facilitatorUrl?: string;
-  skipVerification?: boolean;
 }
 
 export interface PaymentInfo {
@@ -44,7 +43,7 @@ const errorResponse = (
   });
 
 export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
-  const { requirements, facilitatorUrl, skipVerification = false } = config;
+  const { requirements, facilitatorUrl } = config;
 
   return new Elysia({ name: "armory-payment" })
     .derive(() => ({
@@ -72,9 +71,7 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
           }, 400);
         }
 
-        const verifyResult = skipVerification
-          ? { success: true, payerAddress: extractPayerAddress(payload) }
-          : await verifyPaymentWithRetry(payload, requirements, facilitatorUrl);
+        const verifyResult = await verifyPaymentWithRetry(payload, requirements, facilitatorUrl);
 
         if (!verifyResult.success) {
           return errorResponse(
@@ -85,7 +82,7 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
         }
 
         const payerAddress = verifyResult.payerAddress!;
-        (payment as PaymentInfo) = { payload, payerAddress, verified: !skipVerification };
+        (payment as PaymentInfo) = { payload, payerAddress, verified: true };
       } catch (error) {
         return errorResponse({
           error: "Payment middleware error",

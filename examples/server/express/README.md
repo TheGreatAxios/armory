@@ -159,7 +159,7 @@ app.use(
       nonce: crypto.randomUUID(),
       expiry: Math.floor(Date.now() / 1000) + 3600,
     },
-    skipVerification: false, // Set true for testing
+    facilitatorUrl: process.env.FACILITATOR_URL,
   })
 );
 ```

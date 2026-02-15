@@ -105,7 +105,6 @@ app.get(
   paymentMiddleware({
     requirements: PAYMENT_REQUIREMENTS,
     facilitatorUrl: FACILITATOR_URL,
-    skipVerification: false,
   }),
   (req: AugmentedRequest, res) => {
     // Payment info is attached to req.payment by the middleware

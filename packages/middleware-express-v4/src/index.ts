@@ -18,7 +18,6 @@ import {
 export interface PaymentMiddlewareConfig {
   requirements: X402PaymentRequirements;
   facilitatorUrl?: string;
-  skipVerification?: boolean;
 }
 
 export interface AugmentedRequest extends Request {
@@ -41,7 +40,7 @@ const sendError = (
 };
 
 export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
-  const { requirements, facilitatorUrl, skipVerification = false } = config;
+  const { requirements, facilitatorUrl } = config;
 
   return async (req: AugmentedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -60,18 +59,15 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
         return;
       }
 
-      const payerAddress = skipVerification
-        ? extractPayerAddress(payload)
-        : await (async () => {
-            const result = await verifyPaymentWithRetry(payload, requirements, facilitatorUrl);
-            if (!result.success) {
-              sendError(res, 402, { [PAYMENT_HEADERS.RESPONSE]: JSON.stringify({ status: "verified", payerAddress, version: 2 }) }, { error: result.error });
-              throw new Error("Verification failed");
-            }
-            return result.payerAddress!;
-          })();
+      const result = await verifyPaymentWithRetry(payload, requirements, facilitatorUrl);
+      if (!result.success) {
+        sendError(res, 402, { [PAYMENT_HEADERS.RESPONSE]: JSON.stringify({ status: "verified", payerAddress: result.payerAddress, version: 2 }) }, { error: result.error });
+        return;
+      }
 
-      req.payment = { payload, payerAddress, verified: !skipVerification };
+      const payerAddress = result.payerAddress!;
+
+      req.payment = { payload, payerAddress, verified: true };
       res.setHeader(PAYMENT_HEADERS.RESPONSE, JSON.stringify({ status: "verified", payerAddress, version: 2 }));
       next();
     } catch (error) {

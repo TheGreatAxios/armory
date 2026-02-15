@@ -90,10 +90,7 @@ For production use, specify a facilitator for payment verification:
 
 ```typescript
 {
-  verifyOptions: {
-    timeout: 5000,   // Request timeout in ms
-    retries: 3       // Number of retries
-  }
+  facilitatorUrl: string  // Required for payment verification
 }
 ```
 
@@ -174,15 +171,7 @@ Payment signature or amount was invalid.
 
 ## Tips
 
-<Tip>
-Use `skipVerification: true` in development to bypass facilitator verification while still testing the middleware flow.
-</Tip>
-
 <Note>
 Express middleware runs in order — place `paymentMiddleware` before any routes that require payment.
 </Note>
-
-<Warning>
-Always validate `req.payment.verified` is `true` before processing paid requests. The middleware may skip verification if configured to do so.
-</Warning>
 

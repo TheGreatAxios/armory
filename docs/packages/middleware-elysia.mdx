@@ -77,20 +77,7 @@ For production use, specify a facilitator:
 
 ```typescript
 {
-  verifyOptions: {
-    timeout: 5000,   // Request timeout in ms
-    retries: 3       // Number of retries
-  }
-}
-```
-
-### Development Mode
-
-Skip verification for testing:
-
-```typescript
-{
-  skipVerification: true  // Only for development!
+  facilitatorUrl: string  // Required for payment verification
 }
 ```
 
@@ -202,15 +189,7 @@ Payment signature or amount was invalid.
 
 ## Tips
 
-<Tip>
-Use `skipVerification: true` during development to test your middleware flow without a running facilitator.
-</Tip>
-
 <Note>
 Elysia's store is shared across all middleware and routes. Payment info will be available in any route handler after the middleware runs.
 </Note>
-
-<Warning>
-Never deploy with `skipVerification: true` in production. This allows anyone to bypass payment verification entirely.
-</Warning>
 

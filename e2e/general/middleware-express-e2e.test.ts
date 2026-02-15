@@ -53,7 +53,6 @@ describe("Middleware-Express E2E", () => {
         description: "Test",
         maxTimeoutSeconds: 300,
       },
-      skipVerification: true,
     }, req, res);
 
     expect(res.statusCode).toBe(402);
@@ -72,7 +71,6 @@ describe("Middleware-Express E2E", () => {
         payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         maxTimeoutSeconds: 300,
       }],
-      skipVerification: true,
     }, req, res);
 
     expect(res.statusCode).toBe(402);
@@ -93,7 +91,6 @@ describe("Middleware-Express E2E", () => {
         description: "Test",
         maxTimeoutSeconds: 300,
       },
-      skipVerification: true,
     }, req, res);
 
     expect(res.statusCode).toBeGreaterThanOrEqual(400);
@@ -115,7 +112,6 @@ describe("Middleware-Express E2E", () => {
         description: "Test",
         maxTimeoutSeconds: 300,
       },
-      skipVerification: true,
     });
     expect(typeof middleware).toBe("function");
   });
