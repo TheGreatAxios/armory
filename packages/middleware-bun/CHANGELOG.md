@@ -1,5 +1,13 @@
 # @armory-sh/middleware-bun
 
+## 0.3.14
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
 ## 0.3.13
 
 ### Patch Changes

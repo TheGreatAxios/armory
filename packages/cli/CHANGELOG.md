@@ -1,5 +1,11 @@
 # armory-cli
 
+## 0.2.7
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+
 ## 0.2.6
 
 ### Patch Changes

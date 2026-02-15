@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-bun",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",

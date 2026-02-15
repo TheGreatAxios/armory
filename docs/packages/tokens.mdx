@@ -16,14 +16,20 @@ bun add @armory-sh/tokens
 ```typescript
 import { USDC_BASE } from '@armory-sh/tokens';
 
-import { paymentMiddleware } from '@armory-sh/middleware/bun';
+import { createBunMiddleware } from '@armory-sh/middleware-bun';
+
+const middleware = createBunMiddleware({
+  payTo: '0x...',
+  amount: '2000000', // 2 USDC
+  token: USDC_BASE,
+});
 
 const app = Bun.serve({
-  fetch: paymentMiddleware({
-    payTo: '0x...',
-    amount: '2000000', // 2 USDC
-    token: USDC_BASE,
-  }),
+  fetch: async (req) => {
+    const result = await middleware(req);
+    if (result) return result;
+    return new Response(JSON.stringify({ data: 'protected content' }));
+  }
 });
 ```
 

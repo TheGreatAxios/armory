@@ -1,5 +1,13 @@
 # @armory-sh/client-web3
 
+## 0.2.12
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
 ## 0.2.11
 
 ### Patch Changes

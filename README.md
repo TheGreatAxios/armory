@@ -15,10 +15,10 @@ TypeScript libraries for the X-402 payment protocol (EIP-3009). Enable server-to
 
 ```bash
 # For clients (making payments)
-bun add @armory/client-viem
+bun add @armory-sh/client-viem
 
 # For merchants (accepting payments)
-bun add @armory/middleware
+bun add @armory-sh/middleware
 ```
 
 ## Quick Start
@@ -26,7 +26,7 @@ bun add @armory/middleware
 ### For Buyers (Making Payments)
 
 ```typescript
-import { armoryPay } from '@armory/client-viem';
+import { armoryPay } from '@armory-sh/client-viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const account = privateKeyToAccount('0x...');
@@ -50,7 +50,7 @@ if (result.success) {
 ### For Merchants (Accepting Payments)
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory/middleware';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
 
 // Simple - single network, default USDC
 app.use(acceptPaymentsViaArmory({
@@ -111,13 +111,17 @@ Pre-configured tokens include USDC, EURC, USDT, WBTC, and WETH across all suppor
 
 | Package | Description |
 |---------|-------------|
-| **@armory/base** | Protocol types, encoding, EIP-712, network configs, validation |
-| **@armory/middleware** | HTTP middleware for Bun, Express, Hono, Elysia |
-| **@armory/client-viem** | Viem v2 payment client |
-| **@armory/client-ethers** | Ethers.js v6 payment client |
-| **@armory/client-web3** | Web3.js payment client |
-| **@armory/tokens** | Pre-configured token objects |
-| **armory-cli** | Scaffold tool for x402 payment-enabled apps |
+| **@armory-sh/base** | Protocol types, encoding, EIP-712, network configs, validation |
+| **@armory-sh/middleware** | HTTP middleware for Bun, Express, Hono, Elysia |
+| **@armory-sh/middleware-express** | Express-specific middleware |
+| **@armory-sh/middleware-hono** | Hono-specific middleware |
+| **@armory-sh/middleware-bun** | Bun-specific middleware |
+| **@armory-sh/middleware-elysia** | Elysia-specific middleware |
+| **@armory-sh/client-viem** | Viem v2 payment client |
+| **@armory-sh/client-ethers** | Ethers.js v6 payment client |
+| **@armory-sh/client-web3** | Web3.js payment client |
+| **@armory-sh/tokens** | Pre-configured token objects |
+| **@armory-sh/cli** | Scaffold tool for x402 payment-enabled apps |
 
 ## Development
 

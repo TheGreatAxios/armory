@@ -1,5 +1,11 @@
 # @armory-sh/tokens
 
+## 0.2.14
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+
 ## 0.2.13
 
 ### Deprecated

@@ -1,5 +1,11 @@
 # @armory-sh/base
 
+## 0.2.16
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+
 ## 0.2.15
 
 ### Minor Changes

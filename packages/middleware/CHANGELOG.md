@@ -1,5 +1,16 @@
 # @armory-sh/middleware
 
+## 0.3.11
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.3
+  - @armory-sh/middleware-elysia@0.3.14
+  - @armory-sh/middleware-hono@0.3.16
+  - @armory-sh/middleware-bun@0.3.14
+
 ## 0.3.10
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/tokens",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",

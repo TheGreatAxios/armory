@@ -1,5 +1,13 @@
 # @armory-sh/middleware-express
 
+## 0.4.3
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
 ## 0.4.2
 
 ### Patch Changes
