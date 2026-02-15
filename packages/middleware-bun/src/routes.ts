@@ -1,12 +1,7 @@
-import { decodePayment, isExactEvmPayload, matchRoute, validateRouteConfig, type X402PaymentPayload as PaymentPayload, type X402SettlementResponse as SettlementResponse, type X402Network, type RouteValidationError } from "@armory-sh/base";
-import type { MiddlewareConfig, HttpRequest } from "./types";
-import {
-  createPaymentRequirements,
-  verifyWithFacilitator,
-  settleWithFacilitator,
-  createPaymentRequiredHeaders,
-  createSettlementHeaders,
-} from "./core";
+import type { X402PaymentPayload, X402SettlementResponse, X402Network, RouteValidationError, PaymentRequirements } from "@armory-sh/base";
+import { decodePayloadHeader, extractPayerAddress, verifyPayment, settlePayment, createPaymentRequiredHeaders, createSettlementHeaders, PAYMENT_SIGNATURE_HEADER, matchRoute, validateRouteConfig } from "@armory-sh/base";
+import type { MiddlewareConfig } from "./types";
+import { createPaymentRequirements } from "./core";
 import type { BunHandler } from "./index";
 
 export type BunMiddleware = (request: Request) => Promise<Response | null>;
@@ -15,15 +10,11 @@ export interface RouteAwareBunMiddlewareConfig extends MiddlewareConfig {
   route?: string;
   routes?: string[];
   perRoute?: Record<string, Partial<MiddlewareConfig>>;
-  defaultVersion?: 1 | 2;
   waitForSettlement?: boolean;
 }
 
-type PaymentVersion = 1 | 2;
-
 type ParsedPayment = {
-  payload: PaymentPayload;
-  version: PaymentVersion;
+  payload: X402PaymentPayload;
   payerAddress: string;
 };
 
@@ -61,39 +52,17 @@ const resolveRouteConfig = (
   return { routes: resolvedRoutes };
 };
 
-const parsePaymentHeader = async (request: Request): Promise<ParsedPayment | null> => {
-  const paymentSig = request.headers.get("PAYMENT-SIGNATURE");
+const parsePaymentHeader = async (request: Request, requirements: PaymentRequirements): Promise<ParsedPayment | null> => {
+  const paymentSig = request.headers.get(PAYMENT_SIGNATURE_HEADER);
   if (paymentSig) {
     try {
-      const payload = decodePayment(paymentSig);
-      if (isExactEvmPayload(payload.payload)) {
-        return { payload: payload as PaymentPayload, version: 2, payerAddress: payload.payload.authorization.from };
-      }
-    } catch {
-    }
-  }
-
-  const xPayment = request.headers.get("X-PAYMENT");
-  if (xPayment) {
-    try {
-      const payload = decodePayment(xPayment);
-      if (isExactEvmPayload(payload.payload)) {
-        return { payload: payload as PaymentPayload, version: 2, payerAddress: payload.payload.authorization.from };
-      }
-      if (payload && typeof payload === "object" && "from" in payload && typeof payload.from === "string") {
-        return { payload, version: 1, payerAddress: payload.from };
-      }
+      const payload = decodePayloadHeader(paymentSig, { scheme: requirements.scheme, network: requirements.network });
+      return { payload, payerAddress: extractPayerAddress(payload) };
     } catch {
     }
   }
 
   return null;
-};
-
-const toHttpRequest = (request: Request): HttpRequest => {
-  const headers: Record<string, string | string[] | undefined> = {};
-  request.headers.forEach((v, k) => { headers[k] = v; });
-  return { headers, method: request.method, url: request.url };
 };
 
 const errorResponse = (
@@ -110,7 +79,7 @@ const errorResponse = (
 const createSettlementResponse = (
   success: boolean,
   txHash?: string
-): SettlementResponse => ({
+): X402SettlementResponse => ({
   success,
   transaction: txHash ?? "",
   errorReason: success ? undefined : "Settlement failed",
@@ -119,8 +88,7 @@ const createSettlementResponse = (
 
 const successResponse = (
   payerAddress: string,
-  version: PaymentVersion,
-  settlement?: SettlementResponse
+  settlement?: X402SettlementResponse
 ): Response => {
   const isSuccess = settlement?.success;
   const txHash = settlement?.transaction;
@@ -129,7 +97,6 @@ const successResponse = (
     JSON.stringify({
       verified: true,
       payerAddress,
-      version,
       settlement: settlement ? { success: isSuccess, txHash } : undefined,
     }),
     {
@@ -138,7 +105,7 @@ const successResponse = (
         "Content-Type": "application/json",
         "X-Payment-Verified": "true",
         "X-Payer-Address": payerAddress,
-        ...(settlement ? createSettlementHeaders(settlement, version) : {}),
+        ...(settlement ? createSettlementHeaders(settlement) : {}),
       },
     },
   );
@@ -146,11 +113,10 @@ const successResponse = (
 
 const appendSettlementHeaders = (
   response: Response,
-  settlement: SettlementResponse,
-  version: PaymentVersion
+  settlement: X402SettlementResponse
 ): Response => {
   const headers = new Headers(response.headers);
-  const settlementHeaders = createSettlementHeaders(settlement, version);
+  const settlementHeaders = createSettlementHeaders(settlement);
   for (const [key, value] of Object.entries(settlementHeaders)) {
     headers.set(key, value);
   }
@@ -181,45 +147,41 @@ export const createRouteAwareBunMiddleware = (
     }
 
     const routeConfig = matchedRoute.config;
-    const { facilitator, settlementMode = "settle", defaultVersion = 2, waitForSettlement = false } = routeConfig;
+    const { facilitator, settlementMode = "settle", waitForSettlement = false } = routeConfig;
+    const requirements = createPaymentRequirements(routeConfig);
 
-    const requirementsV1 = createPaymentRequirements(routeConfig, 1);
-    const requirementsV2 = createPaymentRequirements(routeConfig, 2);
-
-    const paymentResult = await parsePaymentHeader(request);
+    const paymentResult = await parsePaymentHeader(request, requirements);
 
     if (!paymentResult) {
-      const requirements = defaultVersion === 1 ? requirementsV1 : requirementsV2;
-      return errorResponse("Payment required", 402, createPaymentRequiredHeaders(requirements, defaultVersion), [requirements]);
+      return errorResponse("Payment required", 402, createPaymentRequiredHeaders(requirements), [requirements]);
     }
 
-    const { version, payerAddress } = paymentResult;
+    const { payerAddress, payload } = paymentResult;
 
     if (facilitator) {
-      const verifyResult = await verifyWithFacilitator(toHttpRequest(request), facilitator);
-      if (!verifyResult.success) {
-        const requirements = version === 1 ? requirementsV1 : requirementsV2;
-        return errorResponse(`Payment verification failed: ${verifyResult.error}`, 402, createPaymentRequiredHeaders(requirements, version), [requirements]);
+      const verifyResult = await verifyPayment(payload, requirements, { url: facilitator.url });
+      if (!verifyResult.isValid) {
+        return errorResponse(`Payment verification failed: ${verifyResult.invalidReason}`, 402, createPaymentRequiredHeaders(requirements), [requirements]);
       }
     }
 
     if (!handler) {
       if (settlementMode === "settle" && facilitator) {
         const settle = async () => {
-          const result = await settleWithFacilitator(toHttpRequest(request), facilitator);
+          const result = await settlePayment(payload, requirements, { url: facilitator.url });
           return result.success
-            ? successResponse(payerAddress, version, createSettlementResponse(true, result.txHash))
-            : errorResponse(result.error ?? "Settlement failed", 400);
+            ? successResponse(payerAddress, createSettlementResponse(true, result.transaction))
+            : errorResponse(result.errorReason ?? "Settlement failed", 400);
         };
 
         if (waitForSettlement) {
           return await settle();
         }
         settle().catch(console.error);
-        return successResponse(payerAddress, version);
+        return successResponse(payerAddress);
       }
 
-      return successResponse(payerAddress, version);
+      return successResponse(payerAddress);
     }
 
     const response = await handler(request);
@@ -227,13 +189,13 @@ export const createRouteAwareBunMiddleware = (
       return response;
     }
 
-    const settleResult = await settleWithFacilitator(toHttpRequest(request), facilitator);
+    const settleResult = await settlePayment(payload, requirements, { url: facilitator.url });
     if (!settleResult.success) {
-      return errorResponse(settleResult.error ?? "Settlement failed", 502);
+      return errorResponse(settleResult.errorReason ?? "Settlement failed", 502);
     }
 
-    const settlement = createSettlementResponse(true, settleResult.txHash);
-    return appendSettlementHeaders(response, settlement, version);
+    const settlement = createSettlementResponse(true, settleResult.transaction);
+    return appendSettlementHeaders(response, settlement);
   };
 
   if (!handler) {

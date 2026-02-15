@@ -8,12 +8,11 @@
 import type {
   PaymentPayload,
   X402Response,
-  PaymentPayloadV2,
   PaymentRequirements,
   SettlementResponse,
 } from "../types/x402";
 
-import { isPaymentPayload, legacyToPaymentPayload } from "../types/x402";
+import { isPaymentPayload } from "../types/x402";
 import { V2_HEADERS } from "../types/v2";
 
 /**
@@ -44,17 +43,12 @@ export function safeBase64Decode(str: string): string {
 /**
  * Encode payment payload to JSON string
  */
-export function encodePayment(payload: PaymentPayload | PaymentPayloadV2): string {
-  let normalizedPayload: PaymentPayload;
-
-  if (isPaymentPayload(payload)) {
-    normalizedPayload = payload;
-  } else {
-    normalizedPayload = legacyToPaymentPayload(payload);
+export function encodePayment(payload: PaymentPayload): string {
+  if (!isPaymentPayload(payload)) {
+    throw new Error("Invalid payment payload format");
   }
-
   // Convert any bigint values to strings for JSON serialization
-  const safePayload = JSON.parse(JSON.stringify(normalizedPayload, (_, value) => {
+  const safePayload = JSON.parse(JSON.stringify(payload, (_, value) => {
     if (typeof value === "bigint") {
       return value.toString();
     }
@@ -68,12 +62,16 @@ export function encodePayment(payload: PaymentPayload | PaymentPayloadV2): strin
  * Decode payment payload from JSON string
  */
 export function decodePayment(encoded: string): PaymentPayload {
-  const decoded = safeBase64Decode(encoded);
-  const parsed = JSON.parse(decoded);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(encoded);
+  } catch {
+    const decoded = safeBase64Decode(encoded);
+    parsed = JSON.parse(decoded);
+  }
 
   if (!isPaymentPayload(parsed)) {
-    // Try to convert from legacy format
-    return legacyToPaymentPayload(parsed as PaymentPayloadV2);
+    throw new Error("Invalid payment payload format");
   }
 
   return parsed;
@@ -97,8 +95,12 @@ export function encodeSettlementResponse(response: SettlementResponse): string {
  * Decode settlement response from JSON string
  */
 export function decodeSettlementResponse(encoded: string): SettlementResponse {
-  const decoded = safeBase64Decode(encoded);
-  return JSON.parse(decoded);
+  try {
+    return JSON.parse(encoded);
+  } catch {
+    const decoded = safeBase64Decode(encoded);
+    return JSON.parse(decoded);
+  }
 }
 
 /**
@@ -112,8 +114,12 @@ export function encodeX402Response(response: X402Response): string {
  * Decode X402 error response
  */
 export function decodeX402Response(encoded: string): X402Response {
-  const decoded = safeBase64Decode(encoded);
-  return JSON.parse(decoded);
+  try {
+    return JSON.parse(encoded);
+  } catch {
+    const decoded = safeBase64Decode(encoded);
+    return JSON.parse(decoded);
+  }
 }
 
 /**
@@ -171,18 +177,6 @@ export function createSettlementHeaders(
   return {
     [V2_HEADERS.PAYMENT_RESPONSE]: encodeSettlementResponse(settlement),
   };
-}
-
-/**
- * Type guard for legacy V2 payload (without x402Version)
- */
-export function isLegacyV2(payload: unknown): payload is PaymentPayloadV2 {
-  return (
-    typeof payload === "object" &&
-    payload !== null &&
-    "signature" in payload &&
-    typeof (payload as PaymentPayloadV2).signature === "object"
-  );
 }
 
 /**

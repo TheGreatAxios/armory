@@ -2,20 +2,20 @@ import type { Request, Response, NextFunction } from "express";
 import type {
   X402PaymentPayload,
   X402PaymentRequirements,
+  VerifyResponse,
+  X402SettlementResponse,
 } from "@armory-sh/base";
 import {
   createPaymentRequiredHeaders,
   createSettlementHeaders,
+  PAYMENT_SIGNATURE_HEADER,
   matchRoute,
   validateRouteConfig,
   type RouteValidationError,
+  decodePayloadHeader,
+  verifyPayment,
+  settlePayment,
 } from "@armory-sh/base";
-import {
-  PAYMENT_HEADERS,
-  decodePayload,
-  verifyPaymentWithRetry,
-  settlePaymentWithRetry,
-} from "./payment-utils";
 
 export interface RouteAwarePaymentMiddlewareConfig {
   route?: string;
@@ -25,7 +25,7 @@ export interface RouteAwarePaymentMiddlewareConfig {
 
 export interface PaymentMiddlewareConfigEntry {
   requirements: X402PaymentRequirements;
-  facilitatorUrl?: string;
+  facilitatorUrl: string;
 }
 
 export interface AugmentedRequest extends Request {
@@ -81,7 +81,7 @@ const sendError = (
 
 const installSettlementHook = (
   res: Response,
-  settle: () => Promise<{ success: boolean; error?: string; transaction?: string; network?: string }>
+  settle: () => Promise<X402SettlementResponse>
 ): void => {
   const end = res.end.bind(res);
   let intercepted = false;
@@ -101,12 +101,15 @@ const installSettlementHook = (
 
     void (async () => {
       const settlement = await settle();
+
       if (!settlement.success) {
         if (!res.headersSent) {
           res.statusCode = 502;
           res.setHeader("Content-Type", "application/json");
-          end(JSON.stringify({ error: "Settlement failed", details: settlement.error }));
+          end(JSON.stringify({ error: "Settlement failed", details: settlement.errorReason }));
+          return;
         }
+
         return;
       }
 
@@ -152,32 +155,43 @@ export const routeAwarePaymentMiddleware = (
       const routeConfig = matchedRoute.config;
       const { requirements, facilitatorUrl } = routeConfig;
 
-      const paymentHeader = req.headers[PAYMENT_HEADERS.PAYMENT.toLowerCase()] as string | undefined;
+      const paymentHeader = req.headers[PAYMENT_SIGNATURE_HEADER.toLowerCase()] as string | undefined;
 
       if (!paymentHeader) {
-        sendError(res, 402, createPaymentRequiredHeaders(requirements), { error: "Payment required", accepts: [requirements] });
+        const requiredHeaders = createPaymentRequiredHeaders(requirements);
+        sendError(res, 402, requiredHeaders, { error: "Payment required", accepts: [requirements] });
         return;
       }
 
-      let payload: X402PaymentPayload;
+      let paymentPayload: X402PaymentPayload;
       try {
-        ({ payload } = decodePayload(paymentHeader) as { payload: X402PaymentPayload });
+        paymentPayload = decodePayloadHeader(paymentHeader, {
+          scheme: requirements.scheme,
+          network: requirements.network,
+        });
       } catch (error) {
         sendError(res, 400, {}, { error: "Invalid payment payload", message: error instanceof Error ? error.message : "Unknown error" });
         return;
       }
 
-      const result = await verifyPaymentWithRetry(payload, requirements, facilitatorUrl);
-      if (!result.success) {
-        sendError(res, 402, createPaymentRequiredHeaders(requirements), { error: result.error });
+      const verifyResult: VerifyResponse = facilitatorUrl
+        ? await verifyPayment(paymentPayload, requirements, { url: facilitatorUrl })
+        : { isValid: false, invalidReason: "Facilitator URL is required for verification" };
+
+      if (!verifyResult.isValid) {
+        const requiredHeaders = createPaymentRequiredHeaders(requirements);
+        sendError(res, 402, requiredHeaders, { error: "Payment verification failed", message: verifyResult.invalidReason });
         return;
       }
 
-      const payerAddress = result.payerAddress ?? payload.payload.authorization.from;
+      const payerAddress = verifyResult.payer ?? paymentPayload.payload.authorization.from;
 
-      req.payment = { payload, payerAddress, verified: true, route: matchedRoute.pattern };
+      req.payment = { payload: paymentPayload, payerAddress, verified: true, route: matchedRoute.pattern };
 
-      installSettlementHook(res, async () => settlePaymentWithRetry(payload, requirements, facilitatorUrl));
+      installSettlementHook(res, async () => facilitatorUrl
+        ? settlePayment(paymentPayload, requirements, { url: facilitatorUrl })
+        : { success: false, errorReason: "Facilitator URL is required for settlement" }
+      );
 
       next();
     } catch (error) {

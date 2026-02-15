@@ -55,6 +55,19 @@ export interface ParsedPaymentRequirements {
   requirements: PaymentRequirementsV2;
 }
 
+function parseJsonOrBase64(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+  }
+
+  const normalized = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(value.length / 4) * 4, "=");
+  return JSON.parse(Buffer.from(normalized, "base64").toString("utf-8"));
+}
+
 /**
  * Parse x402 PAYMENT-REQUIRED header from response
  * V2 only
@@ -66,7 +79,7 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
   }
 
   try {
-    const parsed = JSON.parse(v2Header);
+    const parsed = parseJsonOrBase64(v2Header);
     if (!isX402V2PaymentRequired(parsed)) {
       throw new PaymentError("Invalid x402 V2 payment required format");
     }

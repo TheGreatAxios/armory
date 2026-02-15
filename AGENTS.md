@@ -106,6 +106,7 @@ function handler(state: string) { /* uses state param */ }
 **IMPORTANT**: Armory implements the Coinbase x402 payment protocol (EIP-3009).
 - Goal: 100% wire-format compatibility with Coinbase x402 SDKs
 - All encoding/decoding MUST match x402 spec exactly
+- **V2 only**: Do not add or keep V1/legacy protocol types, headers, decoding paths, or compatibility shims
 
 ### Specification Links
 

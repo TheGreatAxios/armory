@@ -9,7 +9,7 @@ export type Address = `0x${string}`;
 export type Hex = `0x${string}`;
 
 // X402 Protocol Version
-export const X402_VERSION = 1 as const;
+export const X402_VERSION = 2 as const;
 export type X402Version = typeof X402_VERSION;
 
 // Supported schemes
@@ -29,19 +29,6 @@ export type Network =
   | "optimism"
   | "optimism-sepolia"
   | string; // For custom networks
-
-// Chain ID to network mapping
-const CHAIN_ID_TO_NETWORK: Record<number, Network> = {
-  1: "ethereum",
-  8453: "base",
-  84532: "base-sepolia",
-  137: "polygon",
-  42161: "arbitrum",
-  421614: "arbitrum-sepolia",
-  10: "optimism",
-  11155420: "optimism-sepolia",
-  11155111: "ethereum-sepolia",
-};
 
 /**
  * EIP-3009 TransferWithAuthorization authorization data
@@ -130,39 +117,6 @@ export interface X402Response {
   payer?: Address;
 }
 
-// Legacy types for backward compatibility
-export interface PaymentPayloadV1 {
-  from: string;
-  to: string;
-  amount: string;
-  nonce: string;
-  expiry: number;
-  v: number;
-  r: string;
-  s: string;
-  chainId: number;
-  contractAddress: string;
-  network: string;
-}
-
-export interface PaymentPayloadV2 {
-  from: Address;
-  to: Address | { role?: string; callback?: string };
-  amount: string;
-  nonce: string;
-  expiry: number;
-  signature: {
-    v: number;
-    r: string;
-    s: string;
-  };
-  chainId: `eip155:${string}`;
-  assetId: `eip155:${string}/erc20:${string}`;
-  extensions?: Record<string, unknown>;
-}
-
-export type LegacyPaymentPayload = PaymentPayloadV1 | PaymentPayloadV2;
-
 /**
  * Type guards
  */
@@ -184,124 +138,4 @@ export function isExactEvmPayload(obj: unknown): obj is ExactEvmPayload {
     "signature" in obj &&
     "authorization" in obj
   );
-}
-
-// Helper functions for legacy conversion (not closures)
-function extractNetworkFromLegacy(legacy: LegacyPaymentPayload): Network {
-  if ("network" in legacy && typeof legacy.network === "string") {
-    return legacy.network as Network;
-  }
-  
-  if ("chainId" in legacy && typeof legacy.chainId === "string") {
-    const match = legacy.chainId.match(/^eip155:(\d+)$/);
-    if (match) {
-      const chainId = parseInt(match[1], 10);
-      return CHAIN_ID_TO_NETWORK[chainId] || `eip155:${chainId}`;
-    }
-  }
-  
-  if ("chainId" in legacy && typeof legacy.chainId === "number") {
-    return CHAIN_ID_TO_NETWORK[legacy.chainId] || `eip155:${legacy.chainId}`;
-  }
-  
-  return "base";
-}
-
-function extractAssetFromLegacy(legacy: LegacyPaymentPayload): Address {
-  if ("contractAddress" in legacy && typeof legacy.contractAddress === "string") {
-    return legacy.contractAddress as Address;
-  }
-  
-  if ("assetId" in legacy && typeof legacy.assetId === "string") {
-    const match = legacy.assetId.match(/:0x[a-fA-F0-9]{40}$/);
-    if (match) {
-      return match[0].slice(1) as Address;
-    }
-  }
-  
-  return "0x0000000000000000000000000000000000000000" as Address;
-}
-
-function extractSignatureFromLegacy(legacy: LegacyPaymentPayload): Hex {
-  if ("v" in legacy && "r" in legacy && "s" in legacy) {
-    // V1 format: v, r, s are separate
-    const v = legacy.v.toString(16).padStart(2, "0");
-    const r = legacy.r.startsWith("0x") ? legacy.r.slice(2) : legacy.r;
-    const s = legacy.s.startsWith("0x") ? legacy.s.slice(2) : legacy.s;
-    return `0x${r}${s}${v}` as Hex;
-  }
-  
-  if ("signature" in legacy && typeof legacy.signature === "object" && legacy.signature !== null) {
-    // V2 format: signature object
-    const sig = legacy.signature as { v: number; r: string; s: string };
-    const v = sig.v.toString(16).padStart(2, "0");
-    const r = sig.r.startsWith("0x") ? sig.r.slice(2) : sig.r;
-    const s = sig.s.startsWith("0x") ? sig.s.slice(2) : sig.s;
-    return `0x${r}${s}${v}` as Hex;
-  }
-  
-  return "0x" as Hex;
-}
-
-function convertAmountToAtomic(amount: string): string {
-  if (amount.includes(".")) {
-    const parts = amount.split(".");
-    const whole = parts[0];
-    const fractional = parts[1] || "";
-    const paddedFractional = fractional.padEnd(6, "0").slice(0, 6);
-    return `${whole}${paddedFractional}`;
-  }
-  return amount;
-}
-
-function convertNonceToHex(nonce: string): Hex {
-  if (nonce.startsWith("0x") && nonce.length === 66) {
-    return nonce as Hex;
-  }
-  const hex = BigInt(nonce).toString(16).padStart(64, "0");
-  return `0x${hex}` as Hex;
-}
-
-function extractFromAddress(legacy: LegacyPaymentPayload): Address {
-  return legacy.from as Address;
-}
-
-function extractToAddress(legacy: LegacyPaymentPayload): Address {
-  if ("to" in legacy && typeof legacy.to === "string") {
-    return legacy.to as Address;
-  }
-  return legacy.from as Address;
-}
-
-/**
- * Convert legacy payload to new format
- */
-export function legacyToPaymentPayload(legacy: LegacyPaymentPayload | PaymentPayload): PaymentPayload {
-  if (isPaymentPayload(legacy)) {
-    return legacy;
-  }
-
-  const network = extractNetworkFromLegacy(legacy);
-  const signature = extractSignatureFromLegacy(legacy);
-  const value = convertAmountToAtomic(legacy.amount);
-  const nonce = convertNonceToHex(legacy.nonce);
-  const from = extractFromAddress(legacy);
-  const to = extractToAddress(legacy);
-
-  return {
-    x402Version: X402_VERSION,
-    scheme: "exact",
-    network,
-    payload: {
-      signature,
-      authorization: {
-        from,
-        to,
-        value,
-        validAfter: "0",
-        validBefore: legacy.expiry.toString(),
-        nonce,
-      },
-    },
-  };
 }

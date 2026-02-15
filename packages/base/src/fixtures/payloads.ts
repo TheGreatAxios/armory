@@ -3,7 +3,6 @@
  */
 
 import type {
-  X402PayloadV2,
   PaymentPayloadV2,
   SchemePayloadV2,
   EIP3009Authorization,
@@ -39,22 +38,6 @@ export const createX402V2Payload = (nonce?: string): PaymentPayloadV2 => ({
     url: "https://example.com/api/test",
     description: "Test resource",
   },
-});
-
-// Legacy V2 Payload (from x402.ts - different format)
-export const createLegacyV2Payload = (nonce?: string): X402PayloadV2 => ({
-  from: TEST_PAYER_ADDRESS,
-  to: TEST_PAY_TO_ADDRESS,
-  amount: "1000000",
-  nonce: nonce ?? "test_legacy_v2_nonce",
-  expiry: Math.floor(Date.now() / 1000) + 3600,
-  signature: {
-    v: 27,
-    r: `0x${"f".repeat(64)}`,
-    s: `0x${"0".repeat(64)}`,
-  },
-  chainId: "eip155:84532",
-  assetId: `eip155:84532/erc20:${TEST_CONTRACT_ADDRESS.slice(2)}`,
 });
 
 // Invalid payloads for error testing

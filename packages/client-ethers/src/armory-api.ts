@@ -201,8 +201,7 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
 
       const data = await response.json();
 
-      const txHash = response.headers.get("X-PAYMENT-RESPONSE") ||
-                     response.headers.get("PAYMENT-RESPONSE");
+      const txHash = response.headers.get("PAYMENT-RESPONSE");
 
       return {
         success: true,

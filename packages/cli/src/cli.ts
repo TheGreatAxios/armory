@@ -513,8 +513,8 @@ function printHelp() {
 ║    ethers-client       Ethers.js v6 client                       ║
 ║    web3-client         Web3.js client                            ║
 ║                                                                  ║
-║  Legacy:                                                         ║
-║    facilitator         Payment verification server (deprecated)  ║
+║  Facilitators:                                                   ║
+║    facilitator         Payment verification server               ║
 ║                                                                  ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  EXAMPLES                                                        ║

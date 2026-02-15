@@ -6,8 +6,6 @@
 import type {
   Address,
   PaymentRequirements,
-  PaymentRequirementsV1,
-  PaymentRequirementsV2,
 } from "@armory-sh/base";
 import type {
   NetworkId,
@@ -59,8 +57,6 @@ export interface SimpleMiddlewareConfig {
 export interface ResolvedMiddlewareConfig {
   /** All valid payment configurations (network/token combinations) */
   configs: ResolvedPaymentConfigWithPricing[];
-  /** Protocol version */
-  version: 1 | 2 | "auto";
   /** Facilitator configs */
   facilitators: CoreFacilitatorConfig[];
 }
@@ -123,7 +119,7 @@ export const resolveMiddlewareConfig = (
 ): ResolvedMiddlewareConfig | ValidationError => {
   const { payTo, amount = "1.0", accept = {}, facilitatorUrl, pricing } = config;
 
-  // If using legacy facilitatorUrl, convert to AcceptPaymentOptions
+  // If using facilitatorUrl, convert to AcceptPaymentOptions
   const acceptOptions: AcceptPaymentOptions = facilitatorUrl
     ? {
         ...accept,
@@ -140,7 +136,7 @@ export const resolveMiddlewareConfig = (
 
   const facilitatorConfigs: CoreFacilitatorConfig[] = result.config[0]?.facilitators.map((f) => ({
     url: f.url,
-    createHeaders: f.input.headers,
+    headers: f.input.headers,
   })) ?? [];
 
   const enrichedConfigs: ResolvedPaymentConfigWithPricing[] = result.config.map((c) => {
@@ -164,7 +160,6 @@ export const resolveMiddlewareConfig = (
 
   return {
     configs: enrichedConfigs,
-    version: acceptOptions.version ?? "auto",
     facilitators: facilitatorConfigs,
   };
 };
@@ -201,17 +196,13 @@ export const getRequirements = (
     } as ValidationError;
   }
 
-  // Determine version
-  const version = config.version === "auto" ? 2 : config.version;
-
   return createPaymentRequirements(
     {
       payTo: matchingConfig.payTo,
       network: normalizeNetworkName(normalizeNetworkName(matchingConfig.network.config.name)),
       amount: matchingConfig.amount,
       facilitator: config.facilitators[0],
-    },
-    version
+    }
   );
 };
 
@@ -220,7 +211,7 @@ export const getRequirements = (
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Get primary/default middleware config for legacy middlewares
+ * Get primary/default middleware config for middlewares
  */
 export const getPrimaryConfig = (resolved: ResolvedMiddlewareConfig): MiddlewareConfig => {
   const primary = resolved.configs[0];

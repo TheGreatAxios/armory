@@ -2,23 +2,21 @@ import type { Request, Response, NextFunction } from "express";
 import type {
   X402PaymentPayload,
   PaymentRequirements,
-  SettlementResponse,
+  VerifyResponse,
+  X402SettlementResponse,
 } from "@armory-sh/base";
 import {
   createPaymentRequiredHeaders,
   createSettlementHeaders,
   PAYMENT_SIGNATURE_HEADER,
+  decodePayloadHeader,
+  verifyPayment,
+  settlePayment,
 } from "@armory-sh/base";
-import {
-  decodePayload,
-  type AnyPaymentPayload,
-  verifyPaymentWithRetry,
-  settlePaymentWithRetry,
-} from "./payment-utils";
 
 export interface PaymentMiddlewareConfig {
   requirements: PaymentRequirements;
-  facilitatorUrl?: string;
+  facilitatorUrl: string;
 }
 
 export interface AugmentedRequest extends Request {
@@ -31,7 +29,7 @@ export interface AugmentedRequest extends Request {
 
 const installSettlementHook = (
   res: Response,
-  settle: () => Promise<{ success: boolean; error?: string; transaction?: string; network?: string }>
+  settle: () => Promise<X402SettlementResponse>
 ): void => {
   const end = res.end.bind(res);
   let intercepted = false;
@@ -56,21 +54,14 @@ const installSettlementHook = (
         if (!res.headersSent) {
           res.statusCode = 502;
           res.setHeader("Content-Type", "application/json");
-          end(JSON.stringify({ error: "Settlement failed", details: settlement.error }));
+          end(JSON.stringify({ error: "Settlement failed", details: settlement.errorReason }));
           return;
         }
 
         return;
       }
 
-      const normalizedSettlement: SettlementResponse = {
-        success: settlement.success,
-        transaction: settlement.transaction ?? "",
-        network: (settlement.network ?? "eip155:8453") as `eip155:${string}`,
-        errorReason: settlement.error,
-      };
-
-      const settlementHeaders = createSettlementHeaders(normalizedSettlement);
+      const settlementHeaders = createSettlementHeaders(settlement);
       for (const [key, value] of Object.entries(settlementHeaders)) {
         if (!res.headersSent) {
           res.setHeader(key, value);
@@ -104,10 +95,12 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
         return;
       }
 
-      let paymentPayload: AnyPaymentPayload;
+      let paymentPayload: X402PaymentPayload;
       try {
-        const decoded = decodePayload(paymentHeader);
-        paymentPayload = decoded.payload;
+        paymentPayload = decodePayloadHeader(paymentHeader, {
+          scheme: requirements.scheme,
+          network: requirements.network,
+        });
       } catch (error) {
         res.statusCode = 400;
         res.json({
@@ -117,8 +110,15 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
         return;
       }
 
-      const verifyResult = await verifyPaymentWithRetry(paymentPayload, requirements, facilitatorUrl);
-      if (!verifyResult.success) {
+      if (!facilitatorUrl) {
+        res.statusCode = 500;
+        res.json({ error: "Payment middleware configuration error", message: "Facilitator URL is required for verification" });
+        return;
+      }
+
+      const verifyResult: VerifyResponse = await verifyPayment(paymentPayload, requirements, { url: facilitatorUrl });
+
+      if (!verifyResult.isValid) {
         const requiredHeaders = createPaymentRequiredHeaders(requirements);
         res.statusCode = 402;
         for (const [key, value] of Object.entries(requiredHeaders)) {
@@ -126,16 +126,15 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
         }
         res.json({
           error: "Payment verification failed",
-          message: verifyResult.error,
+          message: verifyResult.invalidReason,
         });
         return;
       }
 
-      const payerAddress = verifyResult.payerAddress ?? ("payload" in paymentPayload ? paymentPayload.payload.authorization.from : paymentPayload.from);
+      const payerAddress = verifyResult.payer ?? paymentPayload.payload.authorization.from;
 
-      req.payment = { payload: paymentPayload as X402PaymentPayload, payerAddress, verified: true };
-
-      installSettlementHook(res, async () => settlePaymentWithRetry(paymentPayload, requirements, facilitatorUrl));
+      req.payment = { payload: paymentPayload, payerAddress, verified: true };
+      installSettlementHook(res, async () => settlePayment(paymentPayload, requirements, { url: facilitatorUrl }));
 
       next();
     } catch (error) {

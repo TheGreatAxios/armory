@@ -2,21 +2,21 @@ import { Elysia } from "elysia";
 import type {
   X402PaymentPayload,
   X402PaymentRequirements,
+  VerifyResponse,
+  X402SettlementResponse,
 } from "@armory-sh/base";
 import {
   createPaymentRequiredHeaders,
   createSettlementHeaders,
+  PAYMENT_SIGNATURE_HEADER,
+  decodePayloadHeader,
+  verifyPayment,
+  settlePayment,
 } from "@armory-sh/base";
-import {
-  decodePayload,
-  verifyPaymentWithRetry,
-  settlePaymentWithRetry,
-  PAYMENT_HEADERS,
-} from "./payment-utils";
 
 export interface PaymentMiddlewareConfig {
   requirements: X402PaymentRequirements;
-  facilitatorUrl?: string;
+  facilitatorUrl: string;
 }
 
 export interface PaymentInfo {
@@ -48,7 +48,7 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
     }))
     .onBeforeHandle(async (context) => {
       try {
-        const paymentHeader = context.request.headers.get(PAYMENT_HEADERS.PAYMENT);
+        const paymentHeader = context.request.headers.get(PAYMENT_SIGNATURE_HEADER);
 
         if (!paymentHeader) {
           return errorResponse(
@@ -58,9 +58,12 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
           );
         }
 
-        let payload: X402PaymentPayload;
+        let paymentPayload: X402PaymentPayload;
         try {
-          ({ payload } = decodePayload(paymentHeader) as { payload: X402PaymentPayload });
+          paymentPayload = decodePayloadHeader(paymentHeader, {
+          scheme: requirements.scheme,
+          network: requirements.network,
+        });
         } catch (error) {
           return errorResponse({
             error: "Invalid payment payload",
@@ -68,18 +71,23 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
           }, 400);
         }
 
-        const verifyResult = await verifyPaymentWithRetry(payload, requirements, facilitatorUrl);
+        if (!facilitatorUrl) {
+          return errorResponse({ error: "Payment middleware configuration error", message: "Facilitator URL is required for verification" }, 500);
+        }
 
-        if (!verifyResult.success) {
+        const verifyConfig = { url: facilitatorUrl };
+        const verifyResult: VerifyResponse = await verifyPayment(paymentPayload, requirements, verifyConfig);
+
+        if (!verifyResult.isValid) {
           return errorResponse(
-            { error: verifyResult.error },
+            { error: verifyResult.invalidReason },
             402,
             createPaymentRequiredHeaders(requirements)
           );
         }
 
-        const payerAddress = verifyResult.payerAddress ?? payload.payload.authorization.from;
-        (context as { payment?: PaymentInfo }).payment = { payload, payerAddress, verified: true };
+        const payerAddress = verifyResult.payer ?? paymentPayload.payload.authorization.from;
+        (context as { payment?: PaymentInfo }).payment = { payload: paymentPayload, payerAddress, verified: true };
       } catch (error) {
         return errorResponse({
           error: "Payment middleware error",
@@ -98,9 +106,15 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
         return;
       }
 
-      const settlementResult = await settlePaymentWithRetry(payment.payload, requirements, facilitatorUrl);
+      if (!facilitatorUrl) {
+        return errorResponse({ error: "Payment middleware configuration error", message: "Facilitator URL is required for settlement" }, 500);
+      }
+
+      const settleConfig = { url: facilitatorUrl };
+      const settlementResult: X402SettlementResponse = await settlePayment(payment.payload, requirements, settleConfig);
+
       if (!settlementResult.success) {
-        return errorResponse({ error: "Settlement failed", details: settlementResult.error }, 502);
+        return errorResponse({ error: "Settlement failed", details: settlementResult.errorReason }, 502);
       }
 
       return {

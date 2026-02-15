@@ -69,8 +69,11 @@ export const parsePaymentRequired = async (
     try {
       parsed = JSON.parse(v2Header) as PaymentRequiredV2;
     } catch {
-      // Try base64 decode first
-      const decoded = Buffer.from(v2Header, "base64").toString("utf-8");
+      const normalized = v2Header
+        .replace(/-/g, "+")
+        .replace(/_/g, "/")
+        .padEnd(Math.ceil(v2Header.length / 4) * 4, "=");
+      const decoded = Buffer.from(normalized, "base64").toString("utf-8");
       parsed = JSON.parse(decoded) as PaymentRequiredV2;
     }
 

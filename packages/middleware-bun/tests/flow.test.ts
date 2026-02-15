@@ -8,10 +8,10 @@ describe("[unit|middleware-bun]: Wrapped Flow", () => {
     globalThis.fetch = (async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith("/verify")) {
-        return new Response(JSON.stringify({ success: true, payerAddress: "0x123" }), { status: 200 });
+        return new Response(JSON.stringify({ isValid: true, payer: "0x123" }), { status: 200 });
       }
       if (url.endsWith("/settle")) {
-        return new Response(JSON.stringify({ success: true, txHash: "0xabc" }), { status: 200 });
+        return new Response(JSON.stringify({ success: true, transaction: "0xabc" }), { status: 200 });
       }
       return new Response(JSON.stringify({ error: "unexpected" }), { status: 500 });
     }) as typeof fetch;
@@ -40,7 +40,7 @@ describe("[unit|middleware-bun]: Wrapped Flow", () => {
       const settlementHeader = response.headers.get("PAYMENT-RESPONSE");
       expect(settlementHeader).toBeDefined();
       const settlement = JSON.parse(Buffer.from(settlementHeader!, "base64").toString("utf-8"));
-      expect(settlement.status).toBe("success");
+      expect(settlement.success).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -52,11 +52,11 @@ describe("[unit|middleware-bun]: Wrapped Flow", () => {
     globalThis.fetch = (async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith("/verify")) {
-        return new Response(JSON.stringify({ success: true, payerAddress: "0x123" }), { status: 200 });
+        return new Response(JSON.stringify({ isValid: true, payer: "0x123" }), { status: 200 });
       }
       if (url.endsWith("/settle")) {
         settleCalled = true;
-        return new Response(JSON.stringify({ success: false, error: "should-not-run" }), { status: 400 });
+        return new Response(JSON.stringify({ success: false, errorReason: "should-not-run" }), { status: 400 });
       }
       return new Response(JSON.stringify({ error: "unexpected" }), { status: 500 });
     }) as typeof fetch;

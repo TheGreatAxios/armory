@@ -41,6 +41,19 @@ export function getWalletAddress(wallet: X402Wallet): Address {
 
 export type ParsedPaymentRequirements = PaymentRequirementsV2;
 
+function parseJsonOrBase64(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+  }
+
+  const normalized = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(value.length / 4) * 4, "=");
+  return JSON.parse(Buffer.from(normalized, "base64").toString("utf-8"));
+}
+
 export function parsePaymentRequired(response: Response): ParsedPaymentRequirements {
   const v2Header = response.headers.get(V2_HEADERS.PAYMENT_REQUIRED);
 
@@ -49,14 +62,15 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
   }
 
   try {
-    const decoded = Buffer.from(v2Header, "base64").toString("utf-8");
-    const parsed = JSON.parse(decoded) as PaymentRequirementsV2;
+    const parsed = parseJsonOrBase64(v2Header);
 
     if (!isX402V2PaymentRequired(parsed)) {
       throw new PaymentError("Invalid x402 V2 payment required format");
     }
-
-    return parsed;
+    if (!parsed.accepts || parsed.accepts.length === 0) {
+      throw new PaymentError("No payment requirements found in accepts array");
+    }
+    return parsed.accepts[0];
   } catch (error) {
     if (error instanceof PaymentError) throw error;
     throw new PaymentError(`Failed to parse V2 PAYMENT-REQUIRED header: ${error}`);
