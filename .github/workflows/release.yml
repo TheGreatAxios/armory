@@ -14,7 +14,10 @@ on:
 
 jobs:
   check-changeset:
-    if: github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'staging')
+    if: >-
+      github.event_name == 'pull_request'
+      && github.actor == 'TheGreatAxios'
+      && (github.base_ref == 'main' || github.base_ref == 'staging')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -123,7 +126,10 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   release-alpha:
-    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'publish-alpha')
+    if: >-
+      github.event_name == 'pull_request'
+      && github.actor == 'TheGreatAxios'
+      && contains(github.event.pull_request.labels.*.name, 'publish-alpha')
     runs-on: ubuntu-latest
     permissions:
       id-token: write

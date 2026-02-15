@@ -3,22 +3,26 @@ entire hooks git pre-push "$1" || true
 
 # Changeset check for main/staging branches
 check_changeset() {
-  while read local_ref local_sha remote_ref remote_sha; do
-    branch="${remote_ref#refs/heads/}"
-
-    if [ "$branch" = "main" ] || [ "$branch" = "staging" ]; then
-      if git diff --name-only HEAD~1 HEAD | grep -q "^packages/"; then
-        if ! git diff --name-only HEAD~1 HEAD | grep -q "^\.changeset/.*\.md$"; then
-          echo ""
-          echo "No changeset found for packages/* changes"
-          echo "  Run: bun run changeset"
-          echo "  Skip: git push --no-verify"
-          echo ""
-          exit 1
-        fi
-      fi
+  base="main"
+  if git rev-parse --verify origin/staging >/dev/null 2>&1; then
+    current=$(git branch --show-current)
+    if [ "$current" = "staging" ] || git merge-base --is-ancestor origin/staging HEAD 2>/dev/null; then
+      base="staging"
     fi
-  done
+  fi
+
+  changed_files=$(git diff --name-only "origin/${base}...HEAD" 2>/dev/null || git diff --name-only HEAD~1 HEAD)
+
+  if echo "$changed_files" | grep -q "^packages/"; then
+    if ! echo "$changed_files" | grep -q "^\.changeset/.*\.md$"; then
+      echo ""
+      echo "⚠️  No changeset found for packages/* changes"
+      echo "  Run: bun run changeset"
+      echo "  Skip: git push --no-verify"
+      echo ""
+      exit 1
+    fi
+  fi
 }
 
 check_changeset
