@@ -290,7 +290,7 @@ export function createMockHonoContext(
 export const TEST_REQUIREMENTS: PaymentRequirements = {
   scheme: "exact",
   network: "eip155:84532",
-  amount: "1000000",
+  maxAmountRequired: "1000000",
   asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
   payTo: "0x1234567890123456789012345678901234567890",
   maxTimeoutSeconds: 300,

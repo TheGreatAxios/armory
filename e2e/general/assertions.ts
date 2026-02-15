@@ -55,9 +55,10 @@ export function assertPaymentVerified(
   expect(response.headers[responseHeader]).toBeDefined();
 
   const responseBody = JSON.parse(response.headers[responseHeader]!);
-  expect(responseBody).toHaveProperty("status", "verified");
-  expect(responseBody).toHaveProperty("payerAddress");
-  expect(responseBody.payerAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
+  expect(responseBody).toHaveProperty("isValid");
+  expect(responseBody.isValid).toBe(true);
+  expect(responseBody).toHaveProperty("payer");
+  expect(responseBody.payer).toMatch(/^0x[a-fA-F0-9]{40}$/);
 }
 
 /**

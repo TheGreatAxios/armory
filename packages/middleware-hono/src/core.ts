@@ -46,7 +46,7 @@ export const createPaymentRequirements = (config: MiddlewareConfig): PaymentRequ
   const requirements: PaymentRequirementsV2 = {
     scheme: "exact",
     network: toEip155(config.network) as `eip155:${string}`,
-    amount: config.amount,
+    maxAmountRequired: config.amount,
     asset: network.usdcAddress as `0x${string}`,
     payTo: config.payTo as PayToV2,
     maxTimeoutSeconds: 300,

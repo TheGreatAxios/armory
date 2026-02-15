@@ -22,7 +22,6 @@ export {
   SCHEMES,
   isPaymentPayload,
   isExactEvmPayload,
-  isLegacyPaymentPayload,
 } from "./types/x402";
 
 // ============================================

@@ -89,12 +89,12 @@ export interface UnsignedPaymentPayload {
 export interface PaymentRequirements {
   scheme: Scheme;
   network: Network;
-  amount: string;               // Atomic units (x402 SDK expects 'amount')
+  maxAmountRequired: string;       // Atomic units (x402 SDK format - sent to facilitator)
   payTo: Address;
   maxTimeoutSeconds: number;
-  asset: Address;               // Token contract address
-  name?: string;                // EIP-712 domain parameter
-  version?: string;             // EIP-712 domain parameter
+  asset: Address;                  // Token contract address
+  name?: string;                    // EIP-712 domain parameter
+  version?: string;                 // EIP-712 domain parameter
   extra?: Record<string, unknown>;  // Additional extensions
 }
 
@@ -137,17 +137,6 @@ export function isPaymentPayload(obj: unknown): obj is PaymentPayload {
     obj !== null &&
     "x402Version" in obj &&
     "accepted" in obj &&
-    "payload" in obj
-  );
-}
-
-export function isLegacyPaymentPayload(obj: unknown): obj is { x402Version: number; scheme: string; network: string; payload: ExactEvmPayload } {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    "x402Version" in obj &&
-    "scheme" in obj &&
-    "network" in obj &&
     "payload" in obj
   );
 }

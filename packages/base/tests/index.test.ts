@@ -6,7 +6,6 @@ import {
   type CAIP2ChainId,
   isPaymentPayloadV2,
   isPaymentPayload,
-  isLegacyPaymentPayload,
   getNetworkConfig,
   getNetworkByChainId,
   createEIP712Domain,
@@ -21,7 +20,7 @@ import {
 const DEFAULT_REQUIREMENTS: PaymentRequirementsV2 = {
   scheme: "exact",
   network: "eip155:84532",
-  amount: "1000000",
+  maxAmountRequired: "1000000",
   asset: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
   payTo: "0x1234567890123456789012345678901234567890",
   maxTimeoutSeconds: 300,
@@ -62,11 +61,9 @@ describe("[unit|base]: Base Package Tests", () => {
       expect(isPaymentPayload(v2Payload)).toBe(true);
     });
 
-    test("[isPaymentPayloadV2|failure] - rejects old scheme/network format", () => {
-      const oldPayload = {
+    test("[isPaymentPayloadV2|failure] - rejects compact V2 format without defaults", () => {
+      const compactPayload = {
         x402Version: 2,
-        scheme: "exact",
-        network: "eip155:84532",
         payload: {
           signature: "0x" + "b".repeat(130),
           authorization: {
@@ -80,9 +77,8 @@ describe("[unit|base]: Base Package Tests", () => {
         },
       };
 
-      expect(isPaymentPayloadV2(oldPayload)).toBe(false);
-      expect(isPaymentPayload(oldPayload)).toBe(false);
-      expect(isLegacyPaymentPayload(oldPayload)).toBe(true);
+      expect(isPaymentPayloadV2(compactPayload)).toBe(false);
+      expect(isPaymentPayload(compactPayload)).toBe(false);
     });
 
     test("[isPaymentPayloadV2|failure] - rejects payload without accepted field", () => {

@@ -54,7 +54,7 @@ export const createX402V1Requirements = (
 export const MOCK_X402_V2_REQUIREMENTS: PaymentRequirementsV2 = {
   scheme: "exact",
   network: "eip155:84532",
-  amount: "1000000",
+  maxAmountRequired: "1000000",
   asset: TEST_CONTRACT_ADDRESS,
   payTo: TEST_PAY_TO_ADDRESS,
   maxTimeoutSeconds: 300,

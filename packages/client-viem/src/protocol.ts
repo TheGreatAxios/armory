@@ -103,7 +103,7 @@ export async function createX402Payment(
   const authorization: EIP3009Authorization = {
     from,
     to: requirements.payTo,
-    value: requirements.amount,
+    value: requirements.maxAmountRequired,
     validAfter: "0",
     validBefore: (validBefore ?? Math.floor(Date.now() / 1000 + 3600)).toString(),
     nonce,

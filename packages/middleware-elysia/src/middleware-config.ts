@@ -219,7 +219,7 @@ export const getPrimaryConfig = (resolved: ResolvedMiddlewareConfig): Middleware
   return {
     payTo: primary.payTo,
     network: normalizeNetworkName(primary.network.config.name),
-    amount: primary.amount,
+    maxAmountRequired: primary.amount,
     facilitator: resolved.facilitators[0],
     settlementMode: "settle",
   };

@@ -250,7 +250,7 @@ export function createPaymentRequirements(
       requirements.push({
         scheme: "exact",
         network: network.caip2,
-        amount: atomicAmount,
+        maxAmountRequired: atomicAmount,
         asset: tokenConfig.contractAddress,
         payTo: resolvedPayTo as `0x${string}`,
         maxTimeoutSeconds,

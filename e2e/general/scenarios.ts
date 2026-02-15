@@ -91,7 +91,7 @@ export const buildV2Scenario = (overrides?: Partial<PaymentScenario>): PaymentSc
     accepted: {
       scheme: "exact",
       network: "eip155:84532",
-      amount: "1000000",
+      maxAmountRequired: "1000000",
       asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
       payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
       maxTimeoutSeconds: 300,
@@ -111,7 +111,7 @@ export const buildV2Scenario = (overrides?: Partial<PaymentScenario>): PaymentSc
   requirements: {
     scheme: "exact",
     network: "eip155:84532",
-    amount: "1000000",
+    maxAmountRequired: "1000000",
     asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
     payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
     maxTimeoutSeconds: 300,
@@ -139,7 +139,7 @@ export const errorScenarios = {
       accepted: {
         scheme: "exact",
         network: "eip155:84532",
-        amount: "1000000",
+        maxAmountRequired: "1000000",
         asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         maxTimeoutSeconds: 300,
@@ -167,7 +167,7 @@ export const errorScenarios = {
       accepted: {
         scheme: "exact",
         network: "eip155:84532",
-        amount: "1000000",
+        maxAmountRequired: "1000000",
         asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         maxTimeoutSeconds: 300,
@@ -195,7 +195,7 @@ export const errorScenarios = {
       accepted: {
         scheme: "exact",
         network: "eip155:1",
-        amount: "1000000",
+        maxAmountRequired: "1000000",
         asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         maxTimeoutSeconds: 300,

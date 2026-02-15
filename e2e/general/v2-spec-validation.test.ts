@@ -104,7 +104,7 @@ describe("[e2e|v2-spec]: PaymentPayload Format Compliance", () => {
     const customRequirements = {
       scheme: "exact" as const,
       network: "eip155:1",
-      amount: "5000000",
+      maxAmountRequired: "5000000",
       asset: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       payTo: "0xabcdef1234567890123456789012345678901234",
       maxTimeoutSeconds: 600,
@@ -113,7 +113,7 @@ describe("[e2e|v2-spec]: PaymentPayload Format Compliance", () => {
     const payload = createX402V2Payload("test_nonce", customRequirements);
 
     expect(payload.accepted.network).toBe("eip155:1");
-    expect(payload.accepted.amount).toBe("5000000");
+    expect(payload.accepted.maxAmountRequired).toBe("5000000");
     expect(payload.accepted.maxTimeoutSeconds).toBe(600);
   });
 });

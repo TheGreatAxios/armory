@@ -124,7 +124,7 @@ describe("Error Scenario E2E", () => {
       const requirements = {
         scheme: "exact",
         network: "eip155:84532",
-        amount: "1000000",
+        maxAmountRequired: "1000000",
         asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         maxTimeoutSeconds: 300,
@@ -135,7 +135,7 @@ describe("Error Scenario E2E", () => {
       payload.payload.authorization.value = "500000";
 
       expect(parseInt(payload.payload.authorization.value)).toBeLessThan(
-        parseInt(requirements.amount)
+        parseInt(requirements.maxAmountRequired)
       );
     });
 

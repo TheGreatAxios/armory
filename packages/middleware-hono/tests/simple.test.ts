@@ -186,7 +186,7 @@ describe("[unit|middleware-hono]: Simple Middleware API", () => {
     expect(req.scheme).toBe("exact");
     expect(req.network).toBe("eip155:8453");
     expect(req.asset).toBe("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
-    expect(req.amount).toBe("1000000");
+    expect(req.maxAmountRequired).toBe("1000000");
     expect(req.extra?.name).toBe("USD Coin");
     expect(req.extra?.version).toBe("2");
   });
@@ -245,6 +245,6 @@ describe("[unit|middleware-hono]: Simple Middleware API", () => {
     });
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].amount).toBe("1000000");
+    expect(result.requirements[0].maxAmountRequired).toBe("1000000");
   });
 });

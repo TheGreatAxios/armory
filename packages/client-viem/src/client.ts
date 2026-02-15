@@ -203,7 +203,7 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
       const requirements: PaymentRequirementsV2 = {
         scheme: "exact",
         network: caip2Network,
-        amount,
+        maxAmountRequired: amount,
         asset: contractAddress as `0x${string}`,
         payTo: to,
         maxTimeoutSeconds: validBefore - Math.floor(Date.now() / 1000),
@@ -225,7 +225,7 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
       const requirements: PaymentRequirementsV2 = {
         scheme: "exact",
         network: caip2Network,
-        amount: payload.amount,
+        maxAmountRequired: payload.amount,
         asset: payload.contractAddress as `0x${string}`,
         payTo: payload.to,
         maxTimeoutSeconds: validBefore - Math.floor(Date.now() / 1000),
