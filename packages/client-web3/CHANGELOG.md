@@ -1,5 +1,21 @@
 # @armory-sh/client-web3
 
+## 0.2.14
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+## 0.2.13
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
 ## 0.2.12
 
 ### Patch Changes

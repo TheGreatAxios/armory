@@ -1,5 +1,21 @@
 # @armory-sh/middleware-express
 
+## 0.4.5
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+## 0.4.4
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
 ## 0.4.3
 
 ### Patch Changes

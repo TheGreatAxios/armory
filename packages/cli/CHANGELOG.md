@@ -1,5 +1,17 @@
 # armory-cli
 
+## 0.2.9
+
+### Patch Changes
+
+- ALpah Test
+
+## 0.2.8
+
+### Patch Changes
+
+- Test Link
+
 ## 0.2.7
 
 ### Patch Changes

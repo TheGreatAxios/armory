@@ -1,5 +1,21 @@
 # @armory-sh/middleware-bun
 
+## 0.3.16
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+## 0.3.15
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
 ## 0.3.14
 
 ### Patch Changes

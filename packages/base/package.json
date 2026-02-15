@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/base",
-  "version": "0.2.16",
+  "version": "0.2.18",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",

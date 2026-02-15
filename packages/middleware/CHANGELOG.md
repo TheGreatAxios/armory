@@ -1,5 +1,27 @@
 # @armory-sh/middleware
 
+## 0.3.13
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.5
+  - @armory-sh/middleware-elysia@0.3.16
+  - @armory-sh/middleware-hono@0.3.18
+  - @armory-sh/middleware-bun@0.3.16
+
+## 0.3.12
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.4
+  - @armory-sh/middleware-elysia@0.3.15
+  - @armory-sh/middleware-hono@0.3.17
+  - @armory-sh/middleware-bun@0.3.15
+
 ## 0.3.11
 
 ### Patch Changes

@@ -38,7 +38,7 @@
     },
     "packages/base": {
       "name": "@armory-sh/base",
-      "version": "0.2.16",
+      "version": "0.2.18",
       "devDependencies": {
         "@types/node": "^25.2.1",
         "bun-types": "latest",
@@ -47,7 +47,7 @@
     },
     "packages/cli": {
       "name": "armory-cli",
-      "version": "0.2.7",
+      "version": "0.2.9",
       "bin": {
         "armory-cli": "./dist/cli.js",
       },
@@ -61,9 +61,9 @@
     },
     "packages/client-ethers": {
       "name": "@armory-sh/client-ethers",
-      "version": "0.2.15",
+      "version": "0.2.17",
       "dependencies": {
-        "@armory-sh/base": "^0.2.16",
+        "@armory-sh/base": "^0.2.18",
         "ethers": "6.16.0",
       },
       "devDependencies": {
@@ -73,9 +73,9 @@
     },
     "packages/client-viem": {
       "name": "@armory-sh/client-viem",
-      "version": "0.2.15",
+      "version": "0.2.17",
       "dependencies": {
-        "@armory-sh/base": "^0.2.16",
+        "@armory-sh/base": "^0.2.18",
         "viem": "2.45.0",
       },
       "devDependencies": {
@@ -85,9 +85,9 @@
     },
     "packages/client-web3": {
       "name": "@armory-sh/client-web3",
-      "version": "0.2.12",
+      "version": "0.2.14",
       "dependencies": {
-        "@armory-sh/base": "^0.2.16",
+        "@armory-sh/base": "^0.2.18",
         "web3": "4.16.0",
         "web3-types": "1.10.0",
       },
@@ -98,7 +98,7 @@
     },
     "packages/middleware": {
       "name": "@armory-sh/middleware",
-      "version": "0.3.11",
+      "version": "0.3.13",
       "dependencies": {
         "@armory-sh/middleware-bun": "workspace:*",
         "@armory-sh/middleware-elysia": "workspace:*",
@@ -108,7 +108,7 @@
     },
     "packages/middleware-bun": {
       "name": "@armory-sh/middleware-bun",
-      "version": "0.3.14",
+      "version": "0.3.16",
       "dependencies": {
         "@armory-sh/base": "workspace:*",
       },
@@ -119,7 +119,7 @@
     },
     "packages/middleware-elysia": {
       "name": "@armory-sh/middleware-elysia",
-      "version": "0.3.14",
+      "version": "0.3.16",
       "dependencies": {
         "@armory-sh/base": "workspace:*",
       },
@@ -134,7 +134,7 @@
     },
     "packages/middleware-express": {
       "name": "@armory-sh/middleware-express",
-      "version": "0.4.3",
+      "version": "0.4.5",
       "dependencies": {
         "@armory-sh/base": "workspace:*",
       },
@@ -150,7 +150,7 @@
     },
     "packages/middleware-express-v4": {
       "name": "@armory-sh/middleware-express-v4",
-      "version": "0.3.16",
+      "version": "0.3.18",
       "dependencies": {
         "@armory-sh/base": "workspace:*",
       },
@@ -160,7 +160,7 @@
     },
     "packages/middleware-hono": {
       "name": "@armory-sh/middleware-hono",
-      "version": "0.3.16",
+      "version": "0.3.18",
       "dependencies": {
         "@armory-sh/base": "workspace:*",
       },
@@ -175,7 +175,7 @@
     },
     "packages/tokens": {
       "name": "@armory-sh/tokens",
-      "version": "0.2.14",
+      "version": "0.2.16",
       "devDependencies": {
         "bun-types": "latest",
         "tsup": "8.3.5",
