@@ -1,5 +1,13 @@
 # @armory-sh/middleware-elysia
 
+## 0.3.12
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
 ## 0.3.11
 
 ### Patch Changes

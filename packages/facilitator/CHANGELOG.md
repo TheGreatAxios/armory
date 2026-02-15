@@ -1,5 +1,13 @@
 # @armory-sh/facilitator
 
+## 0.2.13
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
 ## 0.2.12
 
 ### Patch Changes

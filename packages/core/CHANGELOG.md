@@ -1,5 +1,11 @@
 # @armory-sh/base
 
+## 0.2.13
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+
 ## 0.2.12
 
 ### Patch Changes

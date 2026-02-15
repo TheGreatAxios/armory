@@ -1,5 +1,16 @@
 # @armory-sh/middleware
 
+## 0.3.9
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/middleware-express@0.4.1
+  - @armory-sh/middleware-elysia@0.3.12
+  - @armory-sh/middleware-hono@0.3.14
+  - @armory-sh/middleware-bun@0.3.12
+
 ## 0.3.8
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @armory-sh/middleware-hono
 
+## 0.3.14
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
 ## 0.3.13
 
 ### Patch Changes
