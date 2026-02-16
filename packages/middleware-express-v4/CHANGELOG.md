@@ -1,5 +1,13 @@
 # @armory-sh/middleware-express-v4
 
+## 0.1.5
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
 ## 0.1.4
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @armory-sh/middleware-elysia
 
+## 0.3.22
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
 ## 0.3.21
 
 ### Patch Changes
