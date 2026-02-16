@@ -62,6 +62,32 @@ const result = await armory.pay({
 });
 ```
 
+## Configuration Options
+
+```typescript
+import { createX402Client } from '@armory-sh/client-viem';
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+
+  // Protocol version (default: 2)
+  version: 2,
+
+  // Authorization expiry in seconds (default: 3600)
+  defaultExpiry: 7200,
+
+  // Custom nonce generator - MUST return bytes32 hex string
+  nonceGenerator: () => `0x${Date.now().toString(16).padStart(64, '0')}` as `0x${string}`,
+
+  // Enable debug logging
+  debug: true,
+});
+```
+
+<Callout type="warn">
+**Nonce Format**: The `nonceGenerator` must return a `bytes32` hex string (64 hex characters after `0x`). This is required for EIP-712 signature compatibility with the x402 specification.
+</Callout>
+
 ## Extension Hooks
 
 The client supports an extension hook system for handling protocol extensions like Sign-In-With-X and Payment Identifier.

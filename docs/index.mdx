@@ -5,6 +5,10 @@ title: Overview
 
 Armory is a payment protocol for APIs, built on EIP-3009. Let your users pay with USDC directly from their wallet—no credit cards, no middlemen.
 
+<Callout type="info">
+**x402 Specification Compatibility**: Armory is fully compatible with the [Coinbase x402 specification](https://github.com/coinbase/x402). All protocol changes must be validated against the official spec to ensure cross-SDK compatibility. See the [x402 V2 spec](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md) for details.
+</Callout>
+
 ## How it works
 
 Your client signs a payment authorization (off-chain, no gas) and sends it with their API request. You verify the signature, respond with the data they paid for, and settle the payment on-chain. Simple as that.

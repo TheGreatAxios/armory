@@ -166,6 +166,25 @@ src/
 - **Signature**: EIP-712 `TransferWithAuthorization` typed data
 - **Networks**: Uses Viem's `Chain` type internally
 
+### EIP-712 Types
+
+The `EIP712_TYPES` constant defines the typed data structure for EIP-3009 signatures:
+
+```typescript
+{
+  TransferWithAuthorization: [
+    { name: "from", type: "address" },
+    { name: "to", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "validAfter", type: "uint256" },
+    { name: "validBefore", type: "uint256" },
+    { name: "nonce", type: "bytes32" },  // 64-character hex string
+  ]
+}
+```
+
+**Important**: The `nonce` field MUST be a `bytes32` hex string (e.g., `0x0000...0001`), not a number or BigInt. This matches the Coinbase x402 SDK specification for signature compatibility.
+
 ---
 
 ## Token Object Usage

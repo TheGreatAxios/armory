@@ -2,7 +2,7 @@ import type { CustomToken } from "../types/networks";
 
 export const USDC_BASE: CustomToken = {
   symbol: "USDC",
-  name: "USD Coin",
+  name: "USDC",
   version: "2",
   contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
   chainId: 8453,
@@ -20,7 +20,7 @@ export const EURC_BASE: CustomToken = {
 
 export const USDC_BASE_SEPOLIA: CustomToken = {
   symbol: "USDC",
-  name: "USD Coin",
+  name: "USDC",
   version: "2",
   contractAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as `0x${string}`,
   chainId: 84532,
@@ -29,7 +29,7 @@ export const USDC_BASE_SEPOLIA: CustomToken = {
 
 export const USDC_SKALE_BASE: CustomToken = {
   symbol: "USDC",
-  name: "USD Coin",
+  name: "Bridged USDC (SKALE Bridge)",
   version: "2",
   contractAddress: "0x85889c8c714505E0c94b30fcfcF64fE3Ac8FCb20" as `0x${string}`,
   chainId: 1187947933,
@@ -83,7 +83,7 @@ export const SKL_SKALE_BASE_SEPOLIA: CustomToken = {
 
 export const USDC_SKALE_BASE_SEPOLIA: CustomToken = {
   symbol: "USDC",
-  name: "USD Coin",
+  name: "Bridged USDC (SKALE Bridge)",
   version: "2",
   contractAddress: "0x2e08028E3C4c2356572E096d8EF835cD5C6030bD" as `0x${string}`,
   chainId: 324705682,
