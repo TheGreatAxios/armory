@@ -1,6 +1,8 @@
 # @armory-sh/middleware-express
 
-x402 payment middleware for Express applications.
+Armory x402 SDK — Payment middleware for Express v5. Accept x402 payments from any client in your Express app. 100% compatible with Coinbase x402 SDKs.
+
+[Documentation](https://armory.sh) | [License](LICENSE)
 
 ## Installation
 
@@ -8,70 +10,66 @@ x402 payment middleware for Express applications.
 bun add @armory-sh/middleware-express
 ```
 
+## Why Armory?
+
+Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Accept payments from any x402-compatible client—Coinbase SDK, Armory SDK, or your own implementation.
+
+## Key Exports
+
+```typescript
+import {
+  paymentMiddleware,
+  routeAwarePaymentMiddleware,
+  type PaymentConfig,
+  type RouteAwarePaymentConfig,
+} from '@armory-sh/middleware-express';
+```
+
+## Quick Start
+
+```typescript
+import express from 'express'
+import { paymentMiddleware } from '@armory-sh/middleware-express'
+
+const app = express()
+
+app.use(paymentMiddleware({
+  requirements: {
+    scheme: 'exact',
+    network: 'eip155:8453',
+    amount: '1000000',
+    asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    payTo: '0xYourAddress...',
+    maxTimeoutSeconds: 300,
+    extra: {}
+  }
+}))
+
+app.get('/api/data', (req, res) => {
+  const payment = (req as AugmentedRequest).payment
+  res.json({ payerAddress: payment?.payerAddress })
+})
+
+app.listen(3000)
+```
+
 ## Features
 
-- Simple payment middleware for Express
-- Route-aware payment configuration
-- Multi-network, multi-token support
-- Full TypeScript support
+- **x402 Compatible**: Accept payments from any x402 client
+- **Route-Aware**: Different pricing for different routes
+- **Multi-Network**: Ethereum, Base, SKALE support
+- **Multi-Token**: USDC, EURC, USDT, WBTC, WETH, SKL
 
-## Basic Usage
+## Supported Networks
 
-```typescript
-import express from "express";
-import { paymentMiddleware } from "@armory-sh/middleware-express";
+| Network | Chain ID |
+|---------|----------|
+| Ethereum | 1 |
+| Base | 8453 |
+| Base Sepolia | 84532 |
+| SKALE Base | 1187947933 |
+| SKALE Base Sepolia | 324705682 |
 
-const app = express();
+## License
 
-const requirements = {
-  scheme: "exact" as const,
-  network: "eip155:8453",
-  amount: "1000000",
-  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-  payTo: "0xYourAddress..." as `0x${string}`,
-  maxTimeoutSeconds: 300,
-  extra: {},
-};
-
-app.use(paymentMiddleware({ requirements }));
-
-app.get("/api/data", (req, res) => {
-  const payment = (req as AugmentedRequest).payment;
-  res.json({
-    data: "protected data",
-    payerAddress: payment?.payerAddress,
-  });
-});
-```
-
-## Route-Aware Middleware
-
-```typescript
-import { routeAwarePaymentMiddleware } from "@armory-sh/middleware-express";
-import type { PaymentRequirementsV2 } from "@armory-sh/base";
-
-const premiumRequirements: PaymentRequirementsV2 = {
-  scheme: "exact",
-  network: "eip155:8453",
-  amount: "5000000",
-  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-  payTo: "0xYourAddress..." as `0x${string}`,
-  maxTimeoutSeconds: 300,
-  extra: {},
-};
-
-app.use("/api/premium", routeAwarePaymentMiddleware({
-  "/api/premium": { requirements: premiumRequirements },
-  "/api/basic": { requirements: basicRequirements },
-}));
-```
-
-## API
-
-### `paymentMiddleware(config)`
-
-Creates a payment middleware for Express.
-
-### `routeAwarePaymentMiddleware(perRouteConfig)`
-
-Creates a route-aware payment middleware for Express. Takes a record mapping route patterns to payment configuration entries.
+MIT © [Sawyer Cutler](https://github.com/TheGreatAxios/armory)
