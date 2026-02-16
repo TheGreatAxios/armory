@@ -1,5 +1,13 @@
 # @armory-sh/middleware-bun
 
+## 0.3.23
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/base@0.2.25
+
 ## 0.3.22
 
 ### Patch Changes

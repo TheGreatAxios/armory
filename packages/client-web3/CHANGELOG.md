@@ -1,5 +1,13 @@
 # @armory-sh/client-web3
 
+## 0.2.21
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/base@0.2.25
+
 ## 0.2.20
 
 ### Patch Changes
