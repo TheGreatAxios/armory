@@ -44,11 +44,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -61,6 +63,20 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Bump versions
+        run: bun run ci:version
+
+      - name: Commit version changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "packages/*/package.json"
+          git add "package.json"
+          git add "bun.lockb"
+          git add ".changeset/*.md"
+          git commit -m "chore: version packages [skip ci]"
+          git push
 
       - name: Build
         run: bun run build
