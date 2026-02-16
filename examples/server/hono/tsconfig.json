@@ -6,7 +6,7 @@
     "paths": {
       "@armory/middleware": ["../../../packages/middleware/dist"],
       "@armory/facilitator": ["../../../packages/facilitator/dist"],
-      "@armory/base": ["../../../packages/core/dist"]
+      "@armory/base": ["../../../packages/base/dist"]
     }
   },
   "include": ["*.ts"],

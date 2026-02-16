@@ -38,12 +38,13 @@ async function main() {
 
   let client;
 
-  // Check if running in browser with wallet
   if (typeof window !== "undefined" && window.ethereum) {
     console.log("Browser wallet detected (MetaMask, etc.)");
 
+    const ethereum = window.ethereum;
+
     // Create Web3 instance with browser provider
-    const web3 = new Web3(window.ethereum);
+    const web3 = new Web3(ethereum);
 
     // Request account access
     console.log("\nRequesting account access...");
@@ -55,13 +56,13 @@ async function main() {
       address: accounts[0],
       privateKey: "", // Not available in browser wallet
       signTransaction: async (tx: unknown) => {
-        return await window.ethereum!.request({
+        return await ethereum.request({
           method: "eth_signTransaction",
           params: [tx],
         });
       },
       signTypedData: async (typedData: unknown) => {
-        return await window.ethereum!.request({
+        return await ethereum.request({
           method: "eth_signTypedData_v4",
           params: [accounts[0], typedData],
         });

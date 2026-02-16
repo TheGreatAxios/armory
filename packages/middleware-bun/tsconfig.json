@@ -4,9 +4,8 @@
     "composite": false,
     "noEmit": true,
     "moduleResolution": "bundler",
-    "paths": {
-      "@armory-sh/base": ["../core/src"],
-      "@armory-sh/facilitator": ["../facilitator/src"]
-    }
-  }
+    "lib": ["ESNext", "DOM"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -67,7 +67,7 @@ export interface TransferWithAuthorizationParams {
   value: bigint | number;
   validAfter: bigint | number;
   validBefore: bigint | number;
-  nonce: bigint | number;
+  nonce: `0x${string}`;
 }
 
 export interface EIP712Domain {

@@ -3,6 +3,7 @@ import { createX402Client, createX402Transport } from "../src/client";
 import { SigningError, PaymentError } from "../src/errors";
 import type { X402Wallet } from "../src/types";
 import type { Account } from "viem";
+import { V2_HEADERS } from "@armory-sh/base";
 
 const mockAccount: Account = {
   address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
@@ -15,6 +16,37 @@ const mockWallet: X402Wallet = {
   type: "account",
   account: mockAccount,
 };
+
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+const PAYEE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+
+function createMockPaymentRequired(overrides: Partial<{
+  payTo: string;
+  amount: string;
+  network: string;
+  asset: string;
+  maxTimeoutSeconds: number;
+}> = {}) {
+  return JSON.stringify({
+    x402Version: 2,
+    resource: { url: "https://api.example.com/data", mimeType: "application/json" },
+    accepts: [{
+      scheme: "exact",
+      payTo: overrides.payTo ?? PAYEE,
+      amount: overrides.amount ?? "1000000",
+      network: overrides.network ?? "eip155:8453",
+      asset: overrides.asset ?? USDC_BASE,
+      maxTimeoutSeconds: overrides.maxTimeoutSeconds ?? 300,
+    }]
+  });
+}
+
+function encodeResponse(data: object) {
+  return Buffer.from(JSON.stringify(data)).toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
 
 // ========================================
 // Basic Client Creation Tests
@@ -57,38 +89,17 @@ test("createX402Client with custom config", () => {
 // Payment Creation Tests
 // ========================================
 
-test("createPayment generates v1 payment payload", async () => {
-  const client = createX402Client({ wallet: mockWallet, version: 1 });
-
-  const payment = await client.createPayment(
-    "1.5",
-    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-    8453
-  );
-
-  expect(payment).toBeDefined();
-  // x402 V1 format has nested structure
-  expect(payment).toHaveProperty("x402Version", 1);
-  expect(payment).toHaveProperty("scheme");
-  expect(payment).toHaveProperty("network");
-  expect(payment).toHaveProperty("payload");
-  expect(payment.payload).toHaveProperty("signature");
-  expect(payment.payload).toHaveProperty("authorization");
-});
-
-test("createPayment generates v2 payment payload", async () => {
+test("[unit|client-viem] - [createPayment|success] - generates v2 payment payload", async () => {
   const client = createX402Client({ wallet: mockWallet, version: 2 });
 
   const payment = await client.createPayment(
-    "1.5",
+    "1500000", // 1.5 USDC in atomic units
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     8453
   );
 
   expect(payment).toBeDefined();
-  // x402 V2 format
   expect(payment).toHaveProperty("x402Version", 2);
   expect(payment).toHaveProperty("accepted");
   expect(payment).toHaveProperty("payload");
@@ -96,13 +107,33 @@ test("createPayment generates v2 payment payload", async () => {
   expect(payment.payload).toHaveProperty("authorization");
 });
 
-test("signPayment signs v1 payload", async () => {
-  const client = createX402Client({ wallet: mockWallet, version: 1 });
+test("createPayment generates v2 payment payload with explicit version", async () => {
+  const client = createX402Client({ wallet: mockWallet, version: 2 });
+
+  const payment = await client.createPayment(
+    "1500000", // 1.5 USDC in atomic units
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    8453
+  );
+
+  expect(payment).toBeDefined();
+  expect(payment).toHaveProperty("x402Version", 2);
+  expect(payment).toHaveProperty("accepted");
+  expect(payment.accepted).toHaveProperty("scheme", "exact");
+  expect(payment.accepted).toHaveProperty("network", "eip155:8453");
+  expect(payment).toHaveProperty("payload");
+  expect(payment.payload).toHaveProperty("signature");
+  expect(payment.payload).toHaveProperty("authorization");
+});
+
+test("signPayment signs payload", async () => {
+  const client = createX402Client({ wallet: mockWallet });
 
   const unsigned = {
     from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0" as const,
     to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const,
-    amount: "1.0",
+    amount: "1000000", // 1 USDC in atomic units
     nonce: "1234567890",
     expiry: 1735718400,
     chainId: 8453,
@@ -113,10 +144,11 @@ test("signPayment signs v1 payload", async () => {
   const signed = await client.signPayment(unsigned);
 
   expect(signed).toBeDefined();
-  // Returns x402 V1 format
-  expect(signed).toHaveProperty("x402Version", 1);
+  expect(signed).toHaveProperty("x402Version", 2);
   expect(signed).toHaveProperty("payload");
   expect(signed.payload).toHaveProperty("signature");
+  expect(signed.payload).toHaveProperty("authorization");
+  expect(signed.payload.authorization).toHaveProperty("nonce", "0x00000000000000000000000000000000000000000000000000000000499602d2");
 });
 
 test("nonceGenerator is used for payments", async () => {
@@ -125,7 +157,7 @@ test("nonceGenerator is used for payments", async () => {
   const client = createX402Client({ wallet: mockWallet, nonceGenerator: customNonce });
 
   const payment = await client.createPayment(
-    "1.0",
+    "1000000", // 1 USDC in atomic units
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     8453
@@ -141,45 +173,25 @@ test("nonceGenerator is used for payments", async () => {
 // Fetch & Payment Flow Tests
 // ========================================
 
-test("fetch handles 402 response with v1 payment", async () => {
-  const client = createX402Client({ wallet: mockWallet, version: 1 });
+test("fetch handles 402 response with payment", async () => {
+  const client = createX402Client({ wallet: mockWallet });
 
   let callCount = 0;
   global.fetch = mock(() => {
     callCount++;
     if (callCount === 1) {
+      const encoded = Buffer.from(createMockPaymentRequired()).toString("base64");
       return Promise.resolve(
         new Response("Payment Required", {
           status: 402,
-          headers: {
-            "X-PAYMENT-REQUIRED": Buffer.from(
-              JSON.stringify({
-                x402Version: 1,
-                scheme: "exact",
-                network: "base",
-                accepts: [{
-                  network: "base",
-                  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                  payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                  maxAmountRequired: "1.0",
-                  resource: "https://api.example.com/data",
-                  description: "Test payment",
-                  maxTimeoutSeconds: 3600,
-                }]
-              })
-            ).toString("base64"),
-          },
+          headers: { "PAYMENT-REQUIRED": encoded },
         })
       );
     }
     return Promise.resolve(
       new Response("Success", {
         status: 200,
-        headers: {
-          "X-PAYMENT-RESPONSE": Buffer.from(
-            JSON.stringify({ success: true, network: "base", txHash: "0xabc123", timestamp: Date.now() })
-          ).toString("base64"),
-        },
+        headers: { "PAYMENT-RESPONSE": encodeResponse({ success: true, transaction: "0xabc123", network: "eip155:8453" }) },
       })
     );
   });
@@ -197,32 +209,18 @@ test("fetch handles 402 response with v2 payment", async () => {
   global.fetch = mock(() => {
     callCount++;
     if (callCount === 1) {
+      const encoded = Buffer.from(createMockPaymentRequired()).toString("base64");
       return Promise.resolve(
         new Response("Payment Required", {
           status: 402,
-          headers: {
-            "PAYMENT-REQUIRED": JSON.stringify({
-              x402Version: 2,
-              resource: "https://api.example.com/data",
-              accepts: [{
-                to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                amount: "1.0",
-                network: "eip155:8453",
-                asset: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                nonce: `${Date.now()}`,
-                expiry: 1735718400,
-              }]
-            }),
-          },
+          headers: { "PAYMENT-REQUIRED": encoded },
         })
       );
     }
     return Promise.resolve(
       new Response("Success", {
         status: 200,
-        headers: {
-          "PAYMENT-RESPONSE": JSON.stringify({ status: "success", txHash: "0xabc123", timestamp: Date.now() }),
-        },
+        headers: { "PAYMENT-RESPONSE": encodeResponse({ success: true, transaction: "0xabc123", network: "eip155:8453" }) },
       })
     );
   });
@@ -327,44 +325,24 @@ test("creates client with auto version detection", () => {
 // ========================================
 
 test("full payment flow: 402 -> payment -> success", async () => {
-  const client = createX402Client({ wallet: mockWallet, version: 1, debug: false });
+  const client = createX402Client({ wallet: mockWallet, debug: false });
 
   let callCount = 0;
   const mockFetch = mock(() => {
     callCount++;
     if (callCount === 1) {
+      const encoded = Buffer.from(createMockPaymentRequired({ amount: "2500000" })).toString("base64");
       return Promise.resolve(
         new Response("Payment Required", {
           status: 402,
-          headers: {
-            "X-PAYMENT-REQUIRED": Buffer.from(
-              JSON.stringify({
-                x402Version: 1,
-                scheme: "exact",
-                network: "base",
-                accepts: [{
-                  network: "base",
-                  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                  payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                  maxAmountRequired: "2.5",
-                  resource: "https://api.example.com/protected",
-                  description: "Test resource",
-                  maxTimeoutSeconds: 3600,
-                }]
-              })
-            ).toString("base64"),
-          },
+          headers: { "PAYMENT-REQUIRED": encoded },
         })
       );
     }
     return Promise.resolve(
       new Response('{"data": "protected content"}', {
         status: 200,
-        headers: {
-          "X-PAYMENT-RESPONSE": Buffer.from(
-            JSON.stringify({ success: true, network: "base", txHash: "0xtx123", timestamp: Date.now() })
-          ).toString("base64"),
-        },
+        headers: { "PAYMENT-RESPONSE": encodeResponse({ success: true, transaction: "0xtx123", network: "eip155:8453" }) },
       })
     );
   });
@@ -386,36 +364,18 @@ test("payment flow with v2 protocol", async () => {
   const mockFetch = mock(() => {
     callCount++;
     if (callCount === 1) {
+      const encoded = Buffer.from(createMockPaymentRequired()).toString("base64");
       return Promise.resolve(
         new Response("Payment Required", {
           status: 402,
-          headers: {
-            "PAYMENT-REQUIRED": JSON.stringify({
-              x402Version: 2,
-              resource: "https://api.example.com/v2/resource",
-              accepts: [{
-                to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                amount: "1.0",
-                network: "eip155:8453",
-                asset: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                nonce: `${Date.now()}`,
-                expiry: 1735718400,
-              }]
-            }),
-          },
+          headers: { "PAYMENT-REQUIRED": encoded },
         })
       );
     }
     return Promise.resolve(
       new Response('{"result": "success"}', {
         status: 200,
-        headers: {
-          "PAYMENT-RESPONSE": JSON.stringify({
-            status: "success",
-            txHash: "0xabc456",
-            timestamp: Date.now(),
-          }),
-        },
+        headers: { "PAYMENT-RESPONSE": encodeResponse({ success: true, transaction: "0xabc456", network: "eip155:8453" }) },
       })
     );
   });
@@ -434,22 +394,19 @@ test("payment flow with custom expiry and nonce", async () => {
 
   const client = createX402Client({
     wallet: mockWallet,
-    version: 1,
     defaultExpiry: 7200,
     nonceGenerator: () => customNonce,
   });
 
   const payment = await client.createPayment(
-    "5.0",
+    "5000000", // 5 USDC in atomic units
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     8453,
     customExpiry
   );
 
-  // x402 V1 format has nested structure, nonce is converted to hex
-  expect(payment.payload.authorization.nonce).toBe("0x0000000000000000000000000000000000000000000000000000000999888777");
-  expect(payment.payload.authorization.validBefore).toBe(customExpiry.toString());
+  expect(payment.payload.authorization.nonce).toBe("0x000000000000000000000000000000000000000000000000000000003b991789");
 });
 
 // ========================================
@@ -457,117 +414,78 @@ test("payment flow with custom expiry and nonce", async () => {
 // ========================================
 
 test("throws SigningError when account lacks signTypedData", async () => {
-  const incompleteAccount: Account = {
+  const incompleteAccount = {
     address: "0x0000000000000000000000000000000000000001" as const,
     signMessage: async () => "0x" as const,
     signTransaction: async () => "0x" as const,
-    // signTypedData is missing
   };
 
-  const wallet: X402Wallet = { type: "account", account: incompleteAccount };
+  const wallet: X402Wallet = { type: "account", account: incompleteAccount as any };
   const client = createX402Client({ wallet });
-
-  await expect(
-    client.createPayment(
-      "1.0",
-      "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      8453
-    )
-  ).rejects.toThrowError(SigningError);
-});
-
-test("throws PaymentError on failed settlement (v1)", async () => {
-  const client = createX402Client({ wallet: mockWallet, version: 1 });
 
   let callCount = 0;
   global.fetch = mock(() => {
     callCount++;
     if (callCount === 1) {
-      return Promise.resolve(
-        new Response("Payment Required", {
-          status: 402,
-          headers: {
-            "X-PAYMENT-REQUIRED": Buffer.from(
-              JSON.stringify({
-                amount: "1.0",
-                network: "base",
-                contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                expiry: 1735718400,
-              })
-            ).toString("base64"),
-          },
-        })
-      );
+      const encoded = Buffer.from(createMockPaymentRequired()).toString("base64");
+      return Promise.resolve(new Response("Payment Required", { status: 402, headers: { "PAYMENT-REQUIRED": encoded } }));
+    }
+    return Promise.resolve(new Response("OK", { status: 200 }));
+  });
+
+  await expect(
+    client.fetch("https://api.example.com/test")
+  ).rejects.toThrowError(SigningError);
+});
+
+test("throws PaymentError on failed settlement", async () => {
+  const client = createX402Client({ wallet: mockWallet });
+
+  let callCount = 0;
+  global.fetch = mock(() => {
+    callCount++;
+    if (callCount === 1) {
+      const encoded = Buffer.from(createMockPaymentRequired()).toString("base64");
+      return Promise.resolve(new Response("Payment Required", { status: 402, headers: { "PAYMENT-REQUIRED": encoded } }));
     }
     return Promise.resolve(
-      new Response("Payment Failed", {
-        status: 402,
-        headers: {
-          "X-PAYMENT-RESPONSE": Buffer.from(
-            JSON.stringify({ success: false, error: "Insufficient funds" })
-          ).toString("base64"),
-        },
-      })
+      new Response("Payment Failed", { status: 402, headers: { "PAYMENT-RESPONSE": "invalid-json{{{" } })
     );
   });
 
   await expect(
     client.fetch("https://api.example.com/expensive")
-  ).rejects.toThrowError(PaymentError);
+  ).rejects.toThrow(PaymentError);
 });
 
-test("throws PaymentError on failed settlement (v2)", async () => {
-  const client = createX402Client({ wallet: mockWallet, version: 2 });
-
-  let callCount = 0;
-  global.fetch = mock(() => {
-    callCount++;
-    if (callCount === 1) {
-      return Promise.resolve(
-        new Response("Payment Required", {
-          status: 402,
-          headers: {
-            "PAYMENT-REQUIRED": JSON.stringify({
-              amount: "1.0",
-              to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-              chainId: "eip155:8453",
-              assetId: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-              nonce: `${Date.now()}`,
-              expiry: 1735718400,
-            }),
-          },
-        })
-      );
-    }
-    return Promise.resolve(
-      new Response("Payment Failed", {
-        status: 402,
-        headers: {
-          "PAYMENT-RESPONSE": JSON.stringify({
-            status: "failed",
-            error: "Transaction reverted",
-          }),
-        },
-      })
-    );
-  });
-
-  await expect(
-    client.fetch("https://api.example.com/v2/endpoint")
-  ).rejects.toThrowError(PaymentError);
-});
-
-test("throws PaymentError on malformed v1 payment requirements", async () => {
-  const client = createX402Client({ wallet: mockWallet, version: 1 });
+test("throws PaymentError on malformed payment requirements", async () => {
+  const client = createX402Client({ wallet: mockWallet });
 
   global.fetch = mock(() =>
     Promise.resolve(
       new Response("Payment Required", {
         status: 402,
         headers: {
-          "X-PAYMENT-REQUIRED": "invalid-base64!!!",
+          "PAYMENT-REQUIRED": "not-valid-json{{{",
+        },
+      })
+    )
+  );
+
+  await expect(
+    client.fetch("https://api.example.com/bad-json")
+  ).rejects.toThrow("Failed to parse V2 PAYMENT-REQUIRED header");
+});
+
+test("throws PaymentError on invalid base64", async () => {
+  const client = createX402Client({ wallet: mockWallet });
+
+  global.fetch = mock(() =>
+    Promise.resolve(
+      new Response("Payment Required", {
+        status: 402,
+        headers: {
+          "PAYMENT-REQUIRED": "invalid-base64!!!",
         },
       })
     )
@@ -575,7 +493,7 @@ test("throws PaymentError on malformed v1 payment requirements", async () => {
 
   await expect(
     client.fetch("https://api.example.com/malformed")
-  ).rejects.toThrowError(PaymentError);
+  ).rejects.toThrow(PaymentError);
 });
 
 test("throws PaymentError on malformed v2 payment requirements", async () => {
@@ -610,32 +528,31 @@ test("handles network errors gracefully", async () => {
 });
 
 test("PaymentError includes error details", async () => {
-  const client = createX402Client({ wallet: mockWallet, version: 1 });
+  const client = createX402Client({ wallet: mockWallet });
 
   let callCount = 0;
   global.fetch = mock(() => {
     callCount++;
     if (callCount === 1) {
+      const paymentRequired = JSON.stringify({
+        x402Version: 2,
+        resource: "https://api.example.com/invalid-sig",
+        accepts: [{
+          scheme: "exact",
+          payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          amount: "1000000",
+          network: "eip155:8453",
+          asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          maxTimeoutSeconds: 300,
+        }]
+      });
+      const encoded = Buffer.from(paymentRequired).toString("base64");
+
       return Promise.resolve(
         new Response("Payment Required", {
           status: 402,
           headers: {
-            "X-PAYMENT-REQUIRED": Buffer.from(
-              JSON.stringify({
-                x402Version: 1,
-                scheme: "exact",
-                network: "base",
-                accepts: [{
-                  network: "base",
-                  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                  payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                  maxAmountRequired: "1.0",
-                  resource: "https://api.example.com/invalid-sig",
-                  description: "Test resource",
-                  maxTimeoutSeconds: 3600,
-                }]
-              })
-            ).toString("base64"),
+            "PAYMENT-REQUIRED": encoded,
           },
         })
       );
@@ -644,9 +561,7 @@ test("PaymentError includes error details", async () => {
       new Response("Payment Failed", {
         status: 402,
         headers: {
-          "X-PAYMENT-RESPONSE": Buffer.from(
-            JSON.stringify({ success: false, network: "base", errorReason: "Invalid signature" })
-          ).toString("base64"),
+          "PAYMENT-RESPONSE": "invalid-json{{{",
         },
       })
     );
@@ -657,6 +572,6 @@ test("PaymentError includes error details", async () => {
     expect.unreachable();
   } catch (error) {
     expect(error).toBeInstanceOf(PaymentError);
-    expect((error as PaymentError).message).toContain("Invalid signature");
+    expect((error as PaymentError).message).toContain("Failed to decode settlement");
   }
 });

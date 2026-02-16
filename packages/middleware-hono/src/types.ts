@@ -8,6 +8,17 @@ export interface FacilitatorConfig {
 export type SettlementMode = "verify" | "settle" | "async";
 export type PayToAddress = Address | CAIP2ChainId | CAIPAssetId;
 
+export interface RouteAwarePaymentConfig {
+  route?: string;
+  routes?: string[];
+  perRoute?: Record<string, Partial<MiddlewareConfig>>;
+  payTo: PayToAddress;
+  network: string | number;
+  amount: string;
+  facilitator?: FacilitatorConfig;
+  settlementMode?: SettlementMode;
+}
+
 export interface MiddlewareConfig {
   payTo: PayToAddress;
   network: string | number;

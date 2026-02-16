@@ -1,0 +1,59 @@
+{
+  "name": "@armory-sh/extensions",
+  "version": "0.1.4",
+  "license": "MIT",
+  "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./bazaar": {
+      "types": "./dist/bazaar.d.ts",
+      "bun": "./src/bazaar.ts",
+      "default": "./dist/bazaar.js"
+    },
+    "./sign-in-with-x": {
+      "types": "./dist/sign-in-with-x.d.ts",
+      "bun": "./src/sign-in-with-x.ts",
+      "default": "./dist/sign-in-with-x.js"
+    },
+    "./payment-identifier": {
+      "types": "./dist/payment-identifier.d.ts",
+      "bun": "./src/payment-identifier.ts",
+      "default": "./dist/payment-identifier.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheGreatAxios/armory.git",
+    "directory": "packages/extensions"
+  },
+  "dependencies": {
+    "@armory-sh/base": "workspace:*",
+    "ajv": "^8.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.1",
+    "bun-types": "latest",
+    "tsup": "^8.0.0",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsup",
+    "build:dts": "rm -rf dist && tsc --declaration --skipLibCheck",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  }
+}

@@ -9,16 +9,17 @@ TypeScript libraries for the X-402 payment protocol (EIP-3009). Enable server-to
 - **Comprehensive Validation** - Clear errors before you make requests
 - **Multi-Chain Support** - Base, Ethereum, SKALE, and more
 - **Multi-Token Support** - USDC, EURC, USDT, WBTC, WETH, and custom tokens
+- **Route-Based Configuration** - Per-route payment settings for complex APIs
 - **Type-Safe** - Full TypeScript with strict mode
 
 ## Installation
 
 ```bash
 # For clients (making payments)
-bun add @armory/client-viem
+bun add @armory-sh/client-viem
 
 # For merchants (accepting payments)
-bun add @armory/middleware
+bun add @armory-sh/middleware-hono  # or middleware-express, middleware-bun, etc.
 ```
 
 ## Quick Start
@@ -26,7 +27,7 @@ bun add @armory/middleware
 ### For Buyers (Making Payments)
 
 ```typescript
-import { armoryPay } from '@armory/client-viem';
+import { armoryPay } from '@armory-sh/client-viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const account = privateKeyToAccount('0x...');
@@ -50,7 +51,7 @@ if (result.success) {
 ### For Merchants (Accepting Payments)
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory/middleware';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware-hono';
 
 // Simple - single network, default USDC
 app.use(acceptPaymentsViaArmory({
@@ -58,20 +59,70 @@ app.use(acceptPaymentsViaArmory({
   amount: '1.0'
 }));
 
-// Advanced - multi-network, multi-token, multi-facilitator
+// Advanced - multi-network, multi-token
 app.use(acceptPaymentsViaArmory({
   payTo: '0xYourAddress...',
   amount: '1.0',
   accept: {
     networks: ['base', 'ethereum', 'skale-base'],
-    tokens: ['usdc', 'eurc'],
-    facilitators: [
-      { url: 'https://facilitator1.com' },
-      { url: 'https://facilitator2.com' }
-    ]
+    tokens: ['usdc', 'eurc']
   }
 }));
+
+// Route-based - different pricing per endpoint
+app.use('/api/premium/*', acceptPaymentsViaArmory({
+  payTo: '0xYourAddress...',
+  amount: '5.0',  // Higher price for premium routes
+  route: '/api/premium/*'
+}));
+
+app.use('/api/basic/*', acceptPaymentsViaArmory({
+  payTo: '0xYourAddress...',
+  amount: '0.5',  // Lower price for basic routes
+  route: '/api/basic/*'
+}));
 ```
+
+## CLI
+
+The `armory-cli` tool helps you scaffold projects and query protocol data.
+
+```bash
+# Install globally
+bun add -g armory-cli
+
+# Create a project
+armory create bun-server my-api
+armory create viem-client my-client
+
+# Query networks and tokens
+armory networks              # List all networks
+armory networks --mainnet    # Mainnets only
+armory tokens base           # Tokens on Base
+
+# Validate identifiers
+armory validate network 8453
+armory validate token usdc
+
+# Check endpoints
+armory verify https://api.example.com/data
+
+# List extensions
+armory extensions
+```
+
+### Available Templates
+
+| Template | Description |
+|----------|-------------|
+| `bun-server` | Bun server with payment middleware |
+| `express-server` | Express v5 server |
+| `hono-server` | Hono server with extensions |
+| `elysia-server` | Elysia/Bun server |
+| `next-server` | Next.js middleware |
+| `viem-client` | Viem x402 client |
+| `ethers-client` | Ethers.js v6 client |
+| `web3-client` | Web3.js client |
 
 ## All Input Formats
 
@@ -91,10 +142,10 @@ app.use(acceptPaymentsViaArmory({
 
 ## Documentation
 
-- [Quick Start Guide](./docs/quickstart) - Get started in minutes
-- [Token Registry](./docs/tokens) - Pre-configured tokens and how to add your own
-- [API Examples](./docs/examples) - Cross-reference examples for all input formats
-- [Deployment Guide](./DEPLOYMENT.md) - Deploy your own facilitator
+- [Overview](./docs/index.mdx) - Protocol overview and architecture
+- [Accept Payments](./docs/accept-payments/express.mdx) - Add payments to your API
+- [Make Payments](./docs/make-payments/viem.mdx) - Pay for APIs from your app
+- [Custom Tokens](./docs/advanced/custom-tokens.mdx) - Add your own tokens
 - [Agent Guidelines](./AGENTS.md) - Building AI agents with Armory
 
 ## Supported Networks
@@ -116,13 +167,17 @@ Pre-configured tokens include USDC, EURC, USDT, WBTC, and WETH across all suppor
 
 | Package | Description |
 |---------|-------------|
-| **@armory/base** | Protocol types, encoding, EIP-712, network configs, validation |
-| **@armory/middleware** | HTTP middleware for Bun, Express, Hono, Elysia |
-| **@armory/client-viem** | Viem v2 payment client |
-| **@armory/client-ethers** | Ethers.js v6 payment client |
-| **@armory/client-web3** | Web3.js payment client |
-| **@armory/tokens** | Pre-configured token objects |
-| **@armory/facilitator** | Payment verification and settlement server |
+| **@armory-sh/base** | Protocol types, encoding, EIP-712, network configs, tokens, validation |
+| **@armory-sh/middleware-express** | Express v5 middleware |
+| **@armory-sh/middleware-express-v4** | Express v4 middleware |
+| **@armory-sh/middleware-hono** | Hono middleware |
+| **@armory-sh/middleware-bun** | Bun middleware |
+| **@armory-sh/middleware-elysia** | Elysia middleware |
+| **@armory-sh/middleware-next** | Next.js App Router middleware |
+| **@armory-sh/client-viem** | Viem v2 payment client |
+| **@armory-sh/client-ethers** | Ethers.js v6 payment client |
+| **@armory-sh/client-web3** | Web3.js payment client |
+| **@armory-sh/extensions** | Protocol extensions (SIWX, payment ID) |
 | **armory-cli** | Scaffold tool for x402 payment-enabled apps |
 
 ## Development
@@ -135,7 +190,7 @@ bun install
 bun test
 
 # Run tests for a specific package
-bun test packages/core
+bun test packages/base
 ```
 
 ## Automatic Validation
@@ -147,26 +202,12 @@ Armory validates everything upfront with clear error messages:
 await armoryPay(wallet, url, 'ethereum', 'usdc');
 // Error: TOKEN_NOT_ON_NETWORK
 // "Token USDC is on chain 8453, but expected chain 1"
-
-// Facilitator doesn't support network
-await acceptPaymentsViaArmory({
-  payTo: '0x...',
-  accept: { networks: ['polygon'] },
-  facilitators: [{ networks: ['base'] }]
-});
-// Error: FACILITATOR_NO_NETWORK_SUPPORT
-// "Facilitator does not support network Polygon. Supported: Base"
-
-// Facilitator doesn't support token
-// Error: FACILITATOR_NO_TOKEN_SUPPORT
-// "Facilitator does not support token EURC on Base. Supported: USDC"
 ```
 
 ## Protocol Reference
 
 ### X-402 Protocol
 
-- **v1**: `X-PAYMENT` header (legacy)
 - **v2**: `PAYMENT-SIGNATURE` header (CAIP-2/CAIP-10 compliant)
 
 ### EIP-3009 transferWithAuthorization
@@ -187,10 +228,9 @@ interface TransferWithAuthorization {
 
 ### Headers
 
-| Version | Payment Header | Response Header |
-|---------|---------------|-----------------|
-| v1 | `X-PAYMENT` | `X-PAYMENT-RESPONSE` |
-| v2 | `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
+| Payment Header | Response Header |
+|---------------|-----------------|
+| `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
 
 ## Key Technologies
 

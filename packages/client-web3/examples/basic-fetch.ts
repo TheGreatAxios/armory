@@ -11,7 +11,7 @@
  * ```
  */
 
-import { createX402Client } from "@armory-sh/client-web3";
+import { createX402Client, createX402Transport } from "@armory-sh/client-web3";
 import { Web3 } from "web3";
 import { registerToken } from "@armory-sh/base";
 

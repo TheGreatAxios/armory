@@ -30,27 +30,33 @@ Configure RPC URLs for your custom network:
 #### Bun
 
 ```typescript
-import { paymentMiddleware } from '@armory-sh/middleware/bun';
-import { USDC_BASE } from '@armory-sh/tokens';
+import { createBunMiddleware } from '@armory-sh/middleware-bun';
+import { USDC_BASE } from '@armory-sh/base';
+
+const middleware = createBunMiddleware({
+  payTo: '0x...',
+  amount: '2000000',
+  token: USDC_BASE,
+  rpcUrls: {
+    8453: 'https://mainnet.base.org',
+    // Add your custom network
+    123456: 'https://your-custom-rpc.com',
+  }
+});
 
 const app = Bun.serve({
-  fetch: paymentMiddleware({
-    payTo: '0x...',
-    amount: '2000000',
-    token: USDC_BASE,
-    rpcUrls: {
-      8453: 'https://mainnet.base.org',
-      // Add your custom network
-      123456: 'https://your-custom-rpc.com',
-    }
-  }),
+  fetch: async (req) => {
+    const result = await middleware(req);
+    if (result) return result;
+    return new Response(JSON.stringify({ data: 'protected content' }));
+  }
 });
 ```
 
 #### Express
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware-express';
 
 app.use(acceptPaymentsViaArmory({
   payTo: '0x...',
@@ -60,26 +66,6 @@ app.use(acceptPaymentsViaArmory({
     123456: 'https://your-custom-rpc.com',
   }
 }));
-```
-
-### For Facilitator
-
-Configure facilitator with custom network:
-
-```typescript
-import { createFacilitatorServer } from '@armory-sh/facilitator';
-
-const server = createFacilitatorServer({
-  port: 3000,
-  rpcUrls: {
-    // Built-in networks
-    1: 'https://eth.llamarpc.com',
-    8453: 'https://mainnet.base.org',
-    // Your custom network
-    123456: 'https://your-custom-rpc.com',
-  },
-  privateKey: process.env.PRIVATE_KEY,
-});
 ```
 
 ### For Client
@@ -137,7 +123,7 @@ const caipAssetId = `eip155:${chainId}/erc20:${contractAddress}`;
 ## Example: Arbitrum Sepolia
 
 ```typescript
-import { paymentMiddleware } from '@armory-sh/middleware/bun';
+import { createBunMiddleware } from '@armory-sh/middleware-bun';
 
 // Custom token on Arbitrum Sepolia
 const USDC_ARB_SEPOLIA = {
@@ -149,15 +135,21 @@ const USDC_ARB_SEPOLIA = {
   decimals: 6,
 };
 
+const middleware = createBunMiddleware({
+  payTo: '0x...',
+  amount: '2000000',
+  token: USDC_ARB_SEPOLIA,
+  rpcUrls: {
+    421614: 'https://sepolia-rollup.arbitrum.one/rpc',
+  }
+});
+
 const app = Bun.serve({
-  fetch: paymentMiddleware({
-    payTo: '0x...',
-    amount: '2000000',
-    token: USDC_ARB_SEPOLIA,
-    rpcUrls: {
-      421614: 'https://sepolia-rollup.arbitrum.one/rpc',
-    }
-  }),
+  fetch: async (req) => {
+    const result = await middleware(req);
+    if (result) return result;
+    return new Response(JSON.stringify({ data: 'protected content' }));
+  }
 });
 ```
 

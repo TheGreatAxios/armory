@@ -1,8 +1,24 @@
 # @armory-sh/client-viem
 
-X-402 payment client for viem-based EVM wallets.
+x402 payment client for viem-based EVM wallets.
 
-## Local Commands
+---
+
+## Code Style
+
+- **TypeScript strict mode** - No `any`, use proper typing
+- **ES Modules** - Use `import { x } from 'y'` at top of files
+- **No IIFE** - Use named functions
+- **No dynamic imports** - All imports at compile time
+- **Avoid closures** - Prefer explicit function parameters over captured variables
+- **No OOP classes** - Prefer functional patterns
+- **Modular exports** - Export functions individually
+
+---
+
+## Testing
+
+- **NEVER skip tests** - Do not use `test.skip`, `describe.skip`, or `test.todo`
 
 ```bash
 # Run tests
@@ -19,7 +35,7 @@ bun --hot ./src/index.ts
 
 ### Main Functions
 
-- `createX402Client(config)` - Create X-402 client with Account or WalletClient
+- `createX402Client(config)` - Create x402 client with Account or WalletClient
 - `createX402Transport(config)` - Create fetch wrapper with payment handling
 
 ### Types
@@ -79,7 +95,7 @@ const response = await client.fetch("https://api.example.com/data");
 
 ```ts
 // Using token object (recommended)
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const payment = await client.createPayment({
   token: TOKENS.USDC_BASE,
@@ -120,10 +136,12 @@ const client = createX402Client({
   wallet: { type: "account", account },
   version: "auto",           // "auto" | 1 | 2
   defaultExpiry: 3600,       // seconds (default: 1 hour)
-  nonceGenerator: () => `${Date.now()}`,
+  nonceGenerator: () => `0x${Date.now().toString(16).padStart(64, "0")}` as `0x${string}`,  // bytes32 hex string
   debug: true,               // enable logging
 });
 ```
+
+**Note**: The `nonceGenerator` must return a `bytes32` hex string (64 hex characters after `0x`). This is required for EIP-712 signature compatibility with the Coinbase x402 SDK.
 
 ## Protocol Support
 
@@ -135,11 +153,11 @@ const client = createX402Client({
 
 ## Token Object Usage
 
-### Using Pre-configured Tokens from @armory-sh/tokens
+### Using Pre-configured Tokens
 
 ```ts
 import { createX402Client } from "@armory-sh/client-viem";
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const client = createX402Client({
   wallet: { type: "account", account },

@@ -13,7 +13,14 @@ bun add @armory-sh/middleware-express
 
 ## Quick Start
 
-```typescript
+Use the version of the Express package that matches your framework:
+
+- **Express v5+:** `@armory-sh/middleware-express` (shown in the first tab)
+- **Express v4:** `@armory-sh/middleware-express-v4` (shown in the second tab)
+
+<CodeGroup>
+
+```typescript Express v5
 import express from 'express';
 import { paymentMiddleware } from '@armory-sh/middleware-express';
 
@@ -25,7 +32,7 @@ app.use(paymentMiddleware({
     amount: 1000000n, // 1 USDC (6 decimals)
     expiry: Date.now() + 3600 * 1000,
     chainId: 'eip155:8453',
-    assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913'
   },
   facilitatorUrl: 'https://facilitator.armory.sh'
 }));
@@ -38,6 +45,36 @@ app.get('/api/protected', (req, res) => {
 
 app.listen(3000);
 ```
+
+```typescript Express v4
+import express from 'express';
+import { paymentMiddleware } from '@armory-sh/middleware-express-v4';
+
+const app = express();
+
+app.use(paymentMiddleware({
+  requirements: {
+    scheme: 'exact',
+    network: 'eip155:8453',
+    amount: '1000000',
+    asset: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913',
+    payTo: '0xYourWalletAddress...',
+    maxTimeoutSeconds: 3600
+  },
+  facilitatorUrl: 'https://facilitator.armory.sh'
+}));
+
+app.get('/api/protected', (req, res) => {
+  console.log(req.payment);
+  res.json({ message: 'Payment verified!' });
+});
+
+app.listen(3000);
+```
+
+</CodeGroup>
+
+Both tabs show the same protection flow; use the v4 package if you are still on Express 4 and the core package once you upgrade to Express 5+.
 
 ---
 
@@ -90,10 +127,7 @@ For production use, specify a facilitator for payment verification:
 
 ```typescript
 {
-  verifyOptions: {
-    timeout: 5000,   // Request timeout in ms
-    retries: 3       // Number of retries
-  }
+  facilitatorUrl: string  // Required for payment verification
 }
 ```
 
@@ -174,15 +208,6 @@ Payment signature or amount was invalid.
 
 ## Tips
 
-<Tip>
-Use `skipVerification: true` in development to bypass facilitator verification while still testing the middleware flow.
-</Tip>
-
 <Note>
 Express middleware runs in order — place `paymentMiddleware` before any routes that require payment.
 </Note>
-
-<Warning>
-Always validate `req.payment.verified` is `true` before processing paid requests. The middleware may skip verification if configured to do so.
-</Warning>
-

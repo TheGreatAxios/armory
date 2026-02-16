@@ -1,0 +1,43 @@
+{
+  "name": "@armory-sh/middleware-next",
+  "version": "0.1.4",
+  "license": "MIT",
+  "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheGreatAxios/armory.git",
+    "directory": "packages/middleware-next"
+  },
+  "peerDependencies": {
+    "next": ">=13"
+  },
+  "dependencies": {
+    "@armory-sh/base": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "next": "latest",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsup",
+    "build:dts": "rm -rf dist && tsc --emitDeclarationOnly",
+    "test": "bun test"
+  }
+}

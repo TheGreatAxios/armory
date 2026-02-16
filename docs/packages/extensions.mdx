@@ -1,0 +1,170 @@
+---
+description: x402 protocol extensions
+title: "@armory-sh/extensions"
+---
+
+Protocol extensions for the x402 payment standard.
+
+## Installation
+
+```bash
+bun add @armory-sh/extensions
+```
+
+## Available Extensions
+
+| Extension | Purpose |
+|-----------|---------|
+| Sign-In-With-X | Wallet authentication for repeat access |
+| Payment Identifier | Idempotency for payment requests |
+| Bazaar | Resource discovery |
+
+## Hook Creators
+
+Hooks allow you to automatically handle server extension requirements.
+
+### createSIWxHook
+
+Creates a hook that handles Sign-In-With-X authentication:
+
+```typescript
+import { createSIWxHook } from '@armory-sh/extensions';
+
+const hook = createSIWxHook({
+  domain: 'example.com',
+  statement: 'Sign in to access premium content',
+  expirationSeconds: 3600
+});
+```
+
+**Config Options:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `domain` | `string` | Domain requesting sign-in |
+| `statement` | `string` | Human-readable statement |
+| `expirationSeconds` | `number` | Seconds until expiration |
+
+### createPaymentIdHook
+
+Creates a hook that adds payment idempotency:
+
+```typescript
+import { createPaymentIdHook } from '@armory-sh/extensions';
+
+// Auto-generate payment ID
+const hook = createPaymentIdHook();
+
+// Or specify a custom ID
+const hook = createPaymentIdHook({
+  paymentId: 'my-custom-id-123'
+});
+```
+
+**Config Options:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `paymentId` | `string` | Custom payment identifier |
+
+### createCustomHook
+
+Create custom extension hooks:
+
+```typescript
+import { createCustomHook } from '@armory-sh/extensions';
+
+const customHook = createCustomHook({
+  key: 'my-extension',
+  handler: async (context) => {
+    // Modify the payment payload
+    if (context.payload) {
+      context.payload.extensions = {
+        ...(context.payload.extensions ?? {}),
+        'my-extension': { data: 'value' }
+      };
+    }
+  },
+  priority: 75  // Higher priority runs first
+});
+```
+
+## Server Extension Declaration
+
+For server-side middleware, declare extensions that clients should provide:
+
+### declareSIWxExtension
+
+```typescript
+import { declareSIWxExtension } from '@armory-sh/extensions';
+
+const extension = declareSIWxExtension({
+  domain: 'api.example.com',
+  statement: 'Sign in to access this API',
+  network: 'eip155:8453',
+  expirationSeconds: 3600
+});
+```
+
+### declarePaymentIdentifierExtension
+
+```typescript
+import { declarePaymentIdentifierExtension } from '@armory-sh/extensions';
+
+// Require payment ID from clients
+const extension = declarePaymentIdentifierExtension({
+  required: true
+});
+```
+
+## Verification
+
+Verify client-provided extension data:
+
+### validateSIWxMessage
+
+```typescript
+import { validateSIWxMessage, parseSIWxHeader } from '@armory-sh/extensions';
+
+const payload = parseSIWxHeader(header);
+
+const result = validateSIWxMessage(
+  payload,
+  'https://api.example.com/resource',
+  { maxAge: 3600 }
+);
+
+if (result.valid) {
+  console.log('Valid SIWX message');
+} else {
+  console.error('Invalid:', result.error);
+}
+```
+
+### verifySIWxSignature
+
+```typescript
+import { verifySIWxSignature } from '@armory-sh/extensions';
+
+const result = await verifySIWxSignature(payload, {
+  evmVerifier: async (message, signature, address) => {
+    // Custom signature verification
+    return true;
+  }
+});
+```
+
+## Exports
+
+| Export | Description |
+|--------|-------------|
+| `createSIWxHook` | Hook for Sign-In-With-X |
+| `createPaymentIdHook` | Hook for payment idempotency |
+| `createCustomHook` | Create custom hooks |
+| `declareSIWxExtension` | Declare SIWX extension for server |
+| `declarePaymentIdentifierExtension` | Declare payment ID extension |
+| `validateSIWxMessage` | Validate SIWX payload |
+| `verifySIWxSignature` | Verify SIWX signature |
+| `parseSIWxHeader` | Parse SIWX header |
+| `encodeSIWxHeader` | Encode SIWX header |
+| `generatePaymentId` | Generate random payment ID |

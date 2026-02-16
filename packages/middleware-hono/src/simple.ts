@@ -1,284 +1,418 @@
 /**
- * Simple one-line middleware API for Armory merchants
- * Focus on DX/UX - "everything just magically works"
+ * Simplified middleware API for easy x402 payment integration
+ * Just specify payTo address and optional chains/tokens by name
  */
 
+import type { Context, Next } from "hono";
 import type {
-  Address,
-  PaymentRequirements,
-  PaymentRequirementsV1,
   PaymentRequirementsV2,
-} from "@armory-sh/base";
-import type {
-  NetworkId,
-  TokenId,
-  FacilitatorConfig,
-  AcceptPaymentOptions,
-  ResolvedPaymentConfig,
-  ValidationError,
-  PricingConfig,
+  PaymentRequiredV2,
+  ResourceInfo,
+  CustomToken,
+  Extensions,
+  X402PaymentPayload,
+  VerifyResponse,
+  X402SettlementResponse,
 } from "@armory-sh/base";
 import {
   resolveNetwork,
   resolveToken,
-  validateAcceptConfig,
-  isValidationError,
-  getNetworkConfig,
-  getNetworkByChainId,
-  normalizeNetworkName,
-} from "@armory-sh/base";
-import {
-  createPaymentRequirements,
+  safeBase64Encode,
+  V2_HEADERS,
+  registerToken,
   createPaymentRequiredHeaders,
-} from "./core";
-import type { MiddlewareConfig, FacilitatorConfig as CoreFacilitatorConfig } from "./types";
+  createSettlementHeaders,
+  decodePayloadHeader,
+  verifyPayment,
+  settlePayment,
+} from "@armory-sh/base";
+import type { ResolvedNetwork, ResolvedToken, ValidationError } from "@armory-sh/base";
+import {
+  TOKENS,
+} from "@armory-sh/base";
+import type { ExtensionConfig } from "./extensions";
+import { buildExtensions } from "./extensions";
 
-// ═══════════════════════════════════════════════════════════════
-// Simple Middleware Configuration
-// ═══════════════════════════════════════════════════════════════
+type NetworkId = string | number;
+type TokenId = string;
 
-/**
- * Simple configuration for acceptPaymentsViaArmory middleware
- */
-export interface SimpleMiddlewareConfig {
-  /** Address to receive payments */
-  payTo: Address;
-  /** Default amount to charge (default: "1.0") */
+export interface PaymentConfig {
+  payTo: string;
+  chains?: NetworkId[];
+  chain?: NetworkId;
+  tokens?: TokenId[];
+  token?: TokenId;
   amount?: string;
-  /** Payment acceptance options */
-  accept?: AcceptPaymentOptions;
-  /** Fallback facilitator URL (if not using accept.facilitators) */
+  maxTimeoutSeconds?: number;
+
+  payToByChain?: Record<NetworkId, string>;
+  payToByToken?: Record<NetworkId, Record<TokenId, string>>;
+
   facilitatorUrl?: string;
-  /** Per-network/token/facilitator pricing overrides */
-  pricing?: PricingConfig[];
+  facilitatorUrlByChain?: Record<NetworkId, string>;
+  facilitatorUrlByToken?: Record<NetworkId, Record<TokenId, string>>;
+
+  extensions?: ExtensionConfig;
 }
 
-/**
- * Resolved middleware configuration with all options validated
- */
-export interface ResolvedMiddlewareConfig {
-  /** All valid payment configurations (network/token combinations) */
-  configs: ResolvedPaymentConfigWithPricing[];
-  /** Protocol version */
-  version: 1 | 2 | "auto";
-  /** Facilitator configs */
-  facilitators: CoreFacilitatorConfig[];
+export interface ResolvedSimpleConfig {
+  requirements: PaymentRequirementsV2[];
+  error?: ValidationError;
 }
 
-/** Extended config with pricing info */
-export interface ResolvedPaymentConfigWithPricing extends ResolvedPaymentConfig {
-  /** Facilitator URL (for per-facilitator pricing) */
-  facilitatorUrl?: string;
-  /** Pricing config entry (if any) */
-  pricing?: PricingConfig;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Configuration Resolution
-// ═══════════════════════════════════════════════════════════════
-
-/**
- * Find matching pricing config for a network/token/facilitator combination
- */
-const findPricingConfig = (
-  pricing: PricingConfig[] | undefined,
-  network: string,
-  token: string,
-  facilitatorUrl: string
-): PricingConfig | undefined => {
-  if (!pricing) return undefined;
-
-  // First try exact match with facilitator
-  const withFacilitator = pricing.find(
-    p =>
-      p.network === network &&
-      p.token === token &&
-      p.facilitator === facilitatorUrl
-  );
-  if (withFacilitator) return withFacilitator;
-
-  // Then try network/token match (any facilitator)
-  const withNetworkToken = pricing.find(
-    p =>
-      p.network === network &&
-      p.token === token &&
-      !p.facilitator
-  );
-  if (withNetworkToken) return withNetworkToken;
-
-  // Then try network-only match
-  const networkOnly = pricing.find(
-    p => p.network === network && !p.token && !p.facilitator
-  );
-  if (networkOnly) return networkOnly;
-
-  return undefined;
+const isValidationError = (value: unknown): value is ValidationError => {
+  return typeof value === "object" && value !== null && "code" in value;
 };
 
-/**
- * Resolve simple middleware config to full config
- */
-export const resolveMiddlewareConfig = (
-  config: SimpleMiddlewareConfig
-): ResolvedMiddlewareConfig | ValidationError => {
-  const { payTo, amount = "1.0", accept = {}, facilitatorUrl, pricing } = config;
-
-  // If using legacy facilitatorUrl, convert to AcceptPaymentOptions
-  const acceptOptions: AcceptPaymentOptions = facilitatorUrl
-    ? {
-        ...accept,
-        facilitators: accept.facilitators
-          ? [...(Array.isArray(accept.facilitators) ? accept.facilitators : [accept.facilitators]), { url: facilitatorUrl }]
-          : { url: facilitatorUrl },
-      }
-    : accept;
-
-  // Validate accept configuration
-  const result = validateAcceptConfig(acceptOptions, payTo, amount);
-  if (!result.success) {
-    return result.error;
+function ensureTokensRegistered() {
+  for (const token of Object.values(TOKENS)) {
+    try {
+      registerToken(token);
+    } catch {
+    }
   }
+}
 
-  // Convert to core facilitator configs
-  const facilitatorConfigs: CoreFacilitatorConfig[] = result.config[0]?.facilitators.map((f) => ({
-    url: f.url,
-    createHeaders: f.input.headers,
-  })) ?? [];
+function resolveChainTokenInputs(
+  chains: NetworkId[] | undefined,
+  tokens: TokenId[] | undefined
+): { networks: ResolvedNetwork[]; tokens: ResolvedToken[]; error?: ValidationError } {
+  const resolvedNetworks: ResolvedNetwork[] = [];
+  const resolvedTokens: ResolvedToken[] = [];
+  const errors: string[] = [];
 
-  // Enrich configs with pricing info
-  const enrichedConfigs: ResolvedPaymentConfigWithPricing[] = result.config.map((c) => {
-    const networkName = normalizeNetworkName(c.network.config.name);
-    const tokenSymbol = c.token.config.symbol;
-
-    // Check each facilitator for pricing
-    const facilitatorPricing: { url: string; pricing?: PricingConfig }[] = c.facilitators.map((f) => {
-      const pricingConfig = findPricingConfig(pricing, networkName, tokenSymbol, f.url);
-      return { url: f.url, pricing: pricingConfig };
-    });
-
-    // Get default pricing for this network/token
-    const defaultPricing = findPricingConfig(pricing, networkName, tokenSymbol, "");
-
-    return {
-      ...c,
-      amount: defaultPricing?.amount ?? c.amount,
-      facilitatorUrl: facilitatorPricing[0]?.url,
-      pricing: defaultPricing,
-    };
+  const networkInputs = chains?.length ? chains : Object.keys({
+    ethereum: 1,
+    base: 8453,
+    "base-sepolia": 84532,
+    "skale-base": 1187947933,
+    "skale-base-sepolia": 324705682,
+    "ethereum-sepolia": 11155111,
   });
 
-  return {
-    configs: enrichedConfigs,
-    version: acceptOptions.version ?? "auto",
-    facilitators: facilitatorConfigs,
-  };
-};
-
-/**
- * Get payment requirements for a specific network/token combination
- */
-export const getRequirements = (
-  config: ResolvedMiddlewareConfig,
-  network: NetworkId,
-  token: TokenId
-): PaymentRequirements | ValidationError => {
-  // Find matching config
-  const resolvedNetwork = resolveNetwork(network);
-  if (isValidationError(resolvedNetwork)) {
-    return resolvedNetwork;
+  for (const networkId of networkInputs) {
+    const resolved = resolveNetwork(networkId);
+    if (isValidationError(resolved)) {
+      errors.push(`Network "${networkId}": ${resolved.message}`);
+    } else {
+      resolvedNetworks.push(resolved);
+    }
   }
 
-  const resolvedToken = resolveToken(token, resolvedNetwork);
-  if (isValidationError(resolvedToken)) {
-    return resolvedToken;
+  const tokenInputs = tokens?.length ? tokens : ["usdc"];
+
+  for (const tokenId of tokenInputs) {
+    let found = false;
+    for (const network of resolvedNetworks) {
+      const resolved = resolveToken(tokenId, network);
+      if (isValidationError(resolved)) {
+        continue;
+      }
+      resolvedTokens.push(resolved);
+      found = true;
+      break;
+    }
+    if (!found) {
+      errors.push(`Token "${tokenId}" not found on any specified network`);
+    }
   }
 
-  const matchingConfig = config.configs.find(
-    (c) =>
-      c.network.config.chainId === resolvedNetwork.config.chainId &&
-      c.token.config.contractAddress.toLowerCase() === resolvedToken.config.contractAddress.toLowerCase()
-  );
-
-  if (!matchingConfig) {
+  if (errors.length > 0) {
     return {
-      code: "TOKEN_NOT_ON_NETWORK",
-      message: `No configuration found for network "${network}" with token "${token}"`,
-    } as ValidationError;
+      networks: resolvedNetworks,
+      tokens: resolvedTokens,
+      error: {
+        code: "VALIDATION_FAILED",
+        message: errors.join("; "),
+      },
+    };
   }
 
-  // Determine version
-  const version = config.version === "auto" ? 2 : config.version;
+  return { networks: resolvedNetworks, tokens: resolvedTokens };
+}
 
-  return createPaymentRequirements(
-    {
-      payTo: matchingConfig.payTo,
-      network: normalizeNetworkName(matchingConfig.network.config.name),
-      amount: matchingConfig.amount,
-      facilitator: config.facilitators[0],
-    },
-    version
+function toAtomicUnits(amount: string): string {
+  if (amount.includes(".")) {
+    const [whole, fractional = ""] = amount.split(".");
+    const paddedFractional = fractional.padEnd(6, "0").slice(0, 6);
+    return `${whole}${paddedFractional}`.replace(/^0+/, "") || "0";
+  }
+  return `${amount}000000`;
+}
+
+function resolvePayTo(
+  config: PaymentConfig,
+  network: ResolvedNetwork,
+  token: ResolvedToken
+): string {
+  const chainId = network.config.chainId;
+
+  if (config.payToByToken) {
+    for (const [chainKey, tokenMap] of Object.entries(config.payToByToken)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        for (const [tokenKey, address] of Object.entries(tokenMap)) {
+          const resolvedToken = resolveToken(tokenKey, network);
+          if (!isValidationError(resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === token.config.contractAddress.toLowerCase()) {
+            return address;
+          }
+        }
+      }
+    }
+  }
+
+  if (config.payToByChain) {
+    for (const [chainKey, address] of Object.entries(config.payToByChain)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        return address;
+      }
+    }
+  }
+
+  return config.payTo;
+}
+
+function resolveFacilitatorUrl(
+  config: PaymentConfig,
+  network: ResolvedNetwork,
+  token: ResolvedToken
+): string | undefined {
+  const chainId = network.config.chainId;
+
+  if (config.facilitatorUrlByToken) {
+    for (const [chainKey, tokenMap] of Object.entries(config.facilitatorUrlByToken)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        for (const [tokenKey, url] of Object.entries(tokenMap)) {
+          const resolvedToken = resolveToken(tokenKey, network);
+          if (!isValidationError(resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === token.config.contractAddress.toLowerCase()) {
+            return url;
+          }
+        }
+      }
+    }
+  }
+
+  if (config.facilitatorUrlByChain) {
+    for (const [chainKey, url] of Object.entries(config.facilitatorUrlByChain)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        return url;
+      }
+    }
+  }
+
+  return config.facilitatorUrl;
+}
+
+export function resolveFacilitatorUrlFromRequirement(
+  config: PaymentConfig,
+  requirement: PaymentRequirementsV2
+): string | undefined {
+  const chainId = parseInt(requirement.network.split(":")[1] || "0", 10);
+  const assetAddress = requirement.asset.toLowerCase();
+
+  if (config.facilitatorUrlByToken) {
+    for (const [chainKey, tokenMap] of Object.entries(config.facilitatorUrlByToken)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        for (const [, url] of Object.entries(tokenMap)) {
+          const network = resolveNetwork(chainKey);
+          if (!isValidationError(network)) {
+            for (const tokenKey of Object.keys(tokenMap)) {
+              const resolvedToken = resolveToken(tokenKey, network);
+              if (!isValidationError(resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === assetAddress) {
+                return url;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (config.facilitatorUrlByChain) {
+    for (const [chainKey, url] of Object.entries(config.facilitatorUrlByChain)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        return url;
+      }
+    }
+  }
+
+  return config.facilitatorUrl;
+}
+
+export function createPaymentRequirements(
+  config: PaymentConfig
+): ResolvedSimpleConfig {
+  ensureTokensRegistered();
+
+  const {
+    payTo,
+    chains,
+    chain,
+    tokens,
+    token,
+    amount = "1.0",
+    maxTimeoutSeconds = 300,
+  } = config;
+
+  const chainInputs = chain ? [chain] : chains;
+  const tokenInputs = token ? [token] : tokens;
+
+  const { networks, tokens: resolvedTokens, error } = resolveChainTokenInputs(
+    chainInputs,
+    tokenInputs
   );
-};
 
-// ═══════════════════════════════════════════════════════════════
-// Helper to get default config from first result
-// ═══════════════════════════════════════════════════════════════
-
-/**
- * Get primary/default middleware config for legacy middlewares
- */
-export const getPrimaryConfig = (resolved: ResolvedMiddlewareConfig): MiddlewareConfig => {
-  const primary = resolved.configs[0];
-  if (!primary) {
-    throw new Error("No valid payment configurations found");
+  if (error) {
+    return { requirements: [], error };
   }
 
-  return {
-    payTo: primary.payTo,
-    network: normalizeNetworkName(primary.network.config.name),
-    amount: primary.amount,
-    facilitator: resolved.facilitators[0],
-    settlementMode: "verify",
+  const requirements: PaymentRequirementsV2[] = [];
+
+  for (const network of networks) {
+    for (const resolvedToken of resolvedTokens) {
+      if (resolvedToken.network.config.chainId !== network.config.chainId) {
+        continue;
+      }
+
+      const atomicAmount = toAtomicUnits(amount);
+      const tokenConfig = resolvedToken.config;
+
+      const resolvedPayTo = resolvePayTo(config, network, resolvedToken);
+      const resolvedFacilitatorUrl = resolveFacilitatorUrl(config, network, resolvedToken);
+
+      requirements.push({
+        scheme: "exact",
+        network: network.caip2,
+        amount: atomicAmount,
+        asset: tokenConfig.contractAddress,
+        payTo: resolvedPayTo as `0x${string}`,
+        maxTimeoutSeconds,
+        extra: {
+          name: tokenConfig.name,
+          version: tokenConfig.version,
+        },
+      });
+    }
+  }
+
+  return { requirements };
+}
+
+export function paymentMiddleware(config: PaymentConfig) {
+  const { requirements, error } = createPaymentRequirements(config);
+
+  console.log("[payment-middleware] Initialized with requirements:", JSON.stringify(requirements, null, 2));
+
+  return async (c: Context, next: Next): Promise<Response | void> => {
+    if (error) {
+      console.log("[payment-middleware] Configuration error:", error.message);
+      c.status(500);
+      return c.json({
+        error: "Payment middleware configuration error",
+        details: error.message,
+      });
+    }
+
+    const paymentHeader = c.req.header(V2_HEADERS.PAYMENT_SIGNATURE);
+    console.log("[payment-middleware] Payment header present:", !!paymentHeader);
+
+    if (!paymentHeader) {
+      const resource: ResourceInfo = {
+        url: c.req.url,
+        description: "API Access",
+        mimeType: "application/json",
+      };
+
+      const paymentRequired: PaymentRequiredV2 = {
+        x402Version: 2,
+        error: "Payment required",
+        resource,
+        accepts: requirements,
+        extensions: config.extensions ? buildExtensions(config.extensions) : undefined,
+      };
+
+      console.log("[payment-middleware] Returning 402 with requirements:", JSON.stringify(paymentRequired.accepts, null, 2));
+      c.status(402);
+      c.header(V2_HEADERS.PAYMENT_REQUIRED, safeBase64Encode(JSON.stringify(paymentRequired)));
+      return c.json({
+        error: "Payment required",
+        accepts: requirements,
+      });
+    }
+
+    const primaryRequirement = requirements[0];
+    if (!primaryRequirement) {
+      console.log("[payment-middleware] No requirements configured");
+      c.status(500);
+      return c.json({ error: "Payment middleware configuration error", details: "No payment requirements configured" });
+    }
+
+    console.log("[payment-middleware] Primary requirement:", JSON.stringify(primaryRequirement, null, 2));
+
+    let parsedPayload: X402PaymentPayload;
+    try {
+      parsedPayload = decodePayloadHeader(paymentHeader, {
+        accepted: primaryRequirement,
+      });
+    } catch {
+      c.status(400);
+      return c.json({ error: "Invalid payment payload" });
+    }
+
+    const facilitatorUrl = resolveFacilitatorUrlFromRequirement(config, primaryRequirement);
+
+    console.log("[payment-middleware] Facilitator URL:", facilitatorUrl);
+
+    if (!facilitatorUrl) {
+      console.log("[payment-middleware] No facilitator URL configured");
+      c.status(500);
+      return c.json({ error: "Payment middleware configuration error", message: "Facilitator URL is required for verification" });
+    }
+
+    console.log("[payment-middleware] Verifying payment with facilitator...");
+    const verifyResult: VerifyResponse = await verifyPayment(parsedPayload, primaryRequirement, { url: facilitatorUrl });
+    console.log("[payment-middleware] Verify result:", JSON.stringify(verifyResult, null, 2));
+
+    if (!verifyResult.isValid) {
+      console.log("[payment-middleware] Verification failed:", verifyResult.invalidReason);
+      c.status(402);
+      c.header(V2_HEADERS.PAYMENT_REQUIRED, createPaymentRequiredHeaders(requirements)[V2_HEADERS.PAYMENT_REQUIRED]);
+      return c.json({ error: "Payment verification failed", message: verifyResult.invalidReason });
+    }
+
+    console.log("[payment-middleware] Payment verified, setting payment context");
+    c.set("payment", {
+      payload: parsedPayload,
+      payerAddress: verifyResult.payer,
+      verified: true,
+    });
+
+    await next();
+
+    if (c.res.status >= 400) {
+      return;
+    }
+
+    console.log("[payment-middleware] Settling payment...");
+    const settleResult: X402SettlementResponse = await settlePayment(parsedPayload, primaryRequirement, { url: facilitatorUrl });
+    console.log("[payment-middleware] Settle result:", JSON.stringify(settleResult, null, 2));
+
+    if (!settleResult.success) {
+      console.log("[payment-middleware] Settlement failed:", settleResult.errorReason);
+      c.status(502);
+      c.res = c.json({ error: "Settlement failed", details: settleResult.errorReason }, 502);
+      return;
+    }
+
+    console.log("[payment-middleware] Payment settled, tx:", settleResult.transaction);
+    const headers = createSettlementHeaders(settleResult);
+    for (const [key, value] of Object.entries(headers)) {
+      c.header(key, value);
+    }
   };
-};
-
-/**
- * Get all supported networks from config
- */
-export const getSupportedNetworks = (config: ResolvedMiddlewareConfig): string[] => {
-  const networks = new Set(config.configs.map((c) => normalizeNetworkName(c.network.config.name)));
-  return Array.from(networks);
-};
-
-/**
- * Get all supported tokens from config
- */
-export const getSupportedTokens = (config: ResolvedMiddlewareConfig): string[] => {
-  const tokens = new Set(config.configs.map((c) => c.token.config.symbol));
-  return Array.from(tokens);
-};
-
-/**
- * Check if a network/token combination is supported
- */
-export const isSupported = (
-  config: ResolvedMiddlewareConfig,
-  network: NetworkId,
-  token: TokenId
-): boolean => {
-  const resolvedNetwork = resolveNetwork(network);
-  if (isValidationError(resolvedNetwork)) {
-    return false;
-  }
-
-  const resolvedToken = resolveToken(token, resolvedNetwork);
-  if (isValidationError(resolvedToken)) {
-    return false;
-  }
-
-  return config.configs.some(
-    (c) =>
-      c.network.config.chainId === resolvedNetwork.config.chainId &&
-      c.token.config.contractAddress.toLowerCase() === resolvedToken.config.contractAddress.toLowerCase()
-  );
-};
+}

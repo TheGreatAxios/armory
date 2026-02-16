@@ -1,0 +1,118 @@
+---
+title: "@armory-sh/middleware-next"
+---
+
+# @armory-sh/middleware-next
+
+x402 payment middleware for Next.js App Router.
+
+## Installation
+
+```bash
+bun add @armory-sh/middleware-next
+```
+
+## Features
+
+- Per-route payment configuration
+- Route pattern matching (exact, wildcard, parameterized)
+- Resource server for payment scheme management
+- Built-in facilitator integration
+- Full TypeScript support
+
+## Quick Start
+
+```typescript
+// middleware.ts
+import { paymentProxy, x402ResourceServer } from "@armory-sh/middleware-next";
+
+const facilitatorClient = {
+  async verify(headers: Headers) {
+    return { success: true, payerAddress: "0x..." };
+  },
+};
+
+const resourceServer = new x402ResourceServer(facilitatorClient);
+
+export const proxy = paymentProxy(
+  {
+    "/api/protected": {
+      accepts: {
+        scheme: "exact",
+        price: "1000000",
+        network: "eip155:8453",
+        payTo: "0xYourAddress...",
+      },
+    },
+  },
+  resourceServer
+);
+
+export const config = { matcher: ["/api/protected/:path*"] };
+```
+
+## API
+
+### `paymentProxy(routes, resourceServer)`
+
+Creates a payment proxy handler for Next.js middleware.
+
+**Parameters:**
+- `routes`: Record mapping route patterns to payment config
+- `resourceServer`: x402ResourceServer instance
+
+**Returns:** Next.js middleware function
+
+### `x402ResourceServer`
+
+Registers and manages payment schemes.
+
+**Methods:**
+- `register(chainId, scheme)`: Register a payment scheme
+- `getRequirements(chainId)`: Get requirements for a chain
+- `getAllRequirements()`: Get all registered requirements
+- `getFacilitator()`: Get the facilitator client
+
+### Types
+
+```typescript
+interface HTTPFacilitatorClient {
+  verify(headers: Headers): Promise<{
+    success: boolean;
+    payerAddress?: string;
+    error?: string
+  }>;
+  settle?(headers: Headers): Promise<{
+    success: boolean;
+    txHash?: string;
+    error?: string
+  }>;
+}
+
+interface PaymentScheme {
+  name: string;
+  getRequirements(): PaymentRequirementsV2;
+}
+
+interface RoutePaymentConfig {
+  accepts: {
+    scheme: string;
+    price: string;
+    network: string;
+    payTo: string;
+  };
+  description?: string;
+}
+```
+
+## Route Patterns
+
+Supports three types of route patterns:
+
+- **Exact**: `/api/users` - matches only `/api/users`
+- **Wildcard**: `/api/*` - matches `/api/users`, `/api/posts/123`
+- **Parameterized**: `/api/users/:id` - matches `/api/users/123`
+
+## Examples
+
+See the [Next.js Middleware guide](../../accept-payments/next) for complete examples.

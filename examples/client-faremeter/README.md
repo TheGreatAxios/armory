@@ -107,10 +107,6 @@ const settlement = await settleFaremeterPayment(faremeterRequest);
 
 ## Configuration
 
-### Environment Variables
-
-- `FACILITATOR_URL`: URL of the X-402 facilitator server (default: `http://localhost:3000`)
-
 ### Custom Currency Mapping
 
 To add support for more currencies:

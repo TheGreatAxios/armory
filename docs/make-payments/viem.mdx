@@ -9,7 +9,7 @@ Make payments to Armory-protected APIs using Viem wallets.
 ## Basic Payment
 
 ```typescript
-import { armoryPay } from '@armory/client-viem';
+import { armoryPay } from '@armory-sh/client-viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const account = privateKeyToAccount('0x...');
@@ -23,6 +23,35 @@ const result = await armoryPay(
 
 console.log(result.data);
 ```
+
+## Prefer the Armory object (method-based API)
+
+For multi-call flows the new `createArmory` object bundles the payment client with method helpers and automatic server option selection.
+
+```typescript
+import { createArmory } from '@armory-sh/client-viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0x...');
+
+const armory = createArmory({
+  wallet: { account },
+  // Restrict the object to Base + USDC if you want to avoid extra lookups
+  chains: 'base',
+  tokens: 'usdc',
+  debug: true,
+});
+
+const premium = await armory.post('https://api.example.com/premium', { signal: 'upgrade' });
+const info = await armory.call('https://api.example.com/data');
+
+console.log(premium.data, info.data);
+```
+
+`createArmory` continually selects the best matching payment requirement from the server's `accepts[]` array, scoring options that run on Base (chainId `8453`), list the Base USDC contract (`0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913`), or specify the lowest amount. Leaving `chains`/`tokens` empty lets Armory serve any compatible option while still favoring Base/USDC. The object exposes `.get`, `.post`, `.put`, `.delete`, `.patch`, `.pay`, and a `.call` shorthand for GET requests.
+
+Use `armory.pay(url, { method: 'PATCH', body })` when you need to override the HTTP method; call `.call` for a simple GET.
+
 
 ## With Custom Amount
 
@@ -53,4 +82,80 @@ const result = await armoryPay(
   'base',
   'usdc'
 );
+```
+
+## With Extension Hooks
+
+For servers that require protocol extensions (like Sign-In-With-X):
+
+```typescript
+import { createX402Client } from '@armory-sh/client-viem';
+import { createSIWxHook, createPaymentIdHook } from '@armory-sh/extensions';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0x...');
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  hooks: {
+    // Automatically handle SIWX authentication
+    siwx: createSIWxHook({
+      domain: 'example.com',
+      statement: 'Sign in to access premium content'
+    }),
+    // Add payment idempotency
+    paymentId: createPaymentIdHook()
+  }
+});
+
+// Hooks automatically add extensions when server requests them
+const response = await client.fetch('https://api.example.com/protected');
+const data = await response.json();
+```
+
+## Multiple Requests
+
+Reuse the client for multiple requests:
+
+```typescript
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  hooks: {
+    siwx: createSIWxHook()
+  }
+});
+
+// First request - may trigger SIWX signing
+const response1 = await client.fetch('https://api.example.com/data1');
+
+// Subsequent requests - hooks execute as needed
+const response2 = await client.fetch('https://api.example.com/data2');
+```
+
+## Custom Extensions
+
+Create custom hooks for your own extensions:
+
+```typescript
+import { createCustomHook } from '@armory-sh/extensions';
+
+const myExtensionHook = createCustomHook({
+  key: 'my-extension',
+  handler: async (context) => {
+    if (context.payload) {
+      context.payload.extensions = {
+        ...(context.payload.extensions ?? {}),
+        'my-extension': { timestamp: Date.now() }
+      };
+    }
+  },
+  priority: 75
+});
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  hooks: {
+    custom: myExtensionHook
+  }
+});
 ```

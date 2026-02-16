@@ -26,6 +26,7 @@
         "pages": [
           "accept-payments/express",
           "accept-payments/hono",
+          "accept-payments/next",
           "accept-payments/elysia",
           "accept-payments/bun"
         ]
@@ -41,6 +42,8 @@
       {
         "group": "Advanced Guides",
         "pages": [
+          "route-configuration",
+          "advanced/extension-hooks",
           "advanced/custom-tokens",
           "advanced/custom-networks"
         ]
@@ -49,16 +52,17 @@
         "group": "Packages",
         "pages": [
           "packages/base",
-          "packages/facilitator",
           "packages/middleware",
           "packages/middleware-bun",
           "packages/middleware-express",
+          "packages/middleware-express-v4",
           "packages/middleware-hono",
           "packages/middleware-elysia",
+          "packages/middleware-next",
           "packages/client-viem",
           "packages/client-ethers",
           "packages/client-web3",
-          "packages/tokens"
+          "packages/extensions"
         ]
       }
     ]

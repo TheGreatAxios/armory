@@ -1,89 +1,149 @@
 import type { Request, Response, NextFunction } from "express";
 import type {
-  PaymentPayload,
+  X402PaymentPayload,
   PaymentRequirements,
-} from "./payment-utils";
-import type { VerifyPaymentOptions } from "@armory-sh/facilitator";
+  VerifyResponse,
+  X402SettlementResponse,
+} from "@armory-sh/base";
 import {
-  getRequirementsVersion,
-  getHeadersForVersion,
-  encodeRequirements,
-  decodePayload,
-  verifyPaymentWithRetry,
-  extractPayerAddress,
-} from "./payment-utils";
+  createPaymentRequiredHeaders,
+  createSettlementHeaders,
+  PAYMENT_SIGNATURE_HEADER,
+  decodePayloadHeader,
+  verifyPayment,
+  settlePayment,
+} from "@armory-sh/base";
 
 export interface PaymentMiddlewareConfig {
   requirements: PaymentRequirements;
-  facilitatorUrl?: string;
-  verifyOptions?: VerifyPaymentOptions;
-  skipVerification?: boolean;
+  facilitatorUrl: string;
 }
 
 export interface AugmentedRequest extends Request {
   payment?: {
-    payload: PaymentPayload;
+    payload: X402PaymentPayload;
     payerAddress: string;
-    version: 1 | 2;
     verified: boolean;
   };
 }
 
-const sendError = (
+const installSettlementHook = (
   res: Response,
-  status: number,
-  headers: Record<string, string>,
-  body: unknown
+  settle: () => Promise<X402SettlementResponse>
 ): void => {
-  res.status(status);
-  Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
-  res.json(body);
+  const end = res.end.bind(res);
+  let intercepted = false;
+
+  type EndFn = Response["end"];
+
+  res.end = ((...args: Parameters<EndFn>) => {
+    if (intercepted) {
+      return end(...args);
+    }
+
+    intercepted = true;
+
+    if (res.statusCode >= 400) {
+      return end(...args);
+    }
+
+    void (async () => {
+      const settlement = await settle();
+
+      if (!settlement.success) {
+        if (!res.headersSent) {
+          res.statusCode = 502;
+          res.setHeader("Content-Type", "application/json");
+          end(JSON.stringify({ error: "Settlement failed", details: settlement.errorReason }));
+          return;
+        }
+
+        return;
+      }
+
+      const settlementHeaders = createSettlementHeaders(settlement);
+      for (const [key, value] of Object.entries(settlementHeaders)) {
+        if (!res.headersSent) {
+          res.setHeader(key, value);
+        }
+      }
+
+      end(...args);
+    })();
+
+    return res;
+  }) as EndFn;
 };
 
 export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
-  const { requirements, facilitatorUrl, verifyOptions, skipVerification = false } = config;
-  const version = getRequirementsVersion(requirements);
-  const headers = getHeadersForVersion(version);
+  const { requirements, facilitatorUrl } = config;
 
   return async (req: AugmentedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const paymentHeader = req.headers[headers.payment.toLowerCase()] as string | undefined;
+      const paymentHeader = req.headers[PAYMENT_SIGNATURE_HEADER.toLowerCase()] as string | undefined;
 
       if (!paymentHeader) {
-        sendError(res, 402, { [headers.required]: encodeRequirements(requirements), "Content-Type": "application/json" }, { error: "Payment required", requirements });
+        const requiredHeaders = createPaymentRequiredHeaders(requirements);
+        res.statusCode = 402;
+        for (const [key, value] of Object.entries(requiredHeaders)) {
+          res.setHeader(key, value);
+        }
+        res.json({
+          error: "Payment required",
+          accepts: [requirements],
+        });
         return;
       }
 
-      let payload: PaymentPayload;
-      let payloadVersion: 1 | 2;
+      let paymentPayload: X402PaymentPayload;
       try {
-        ({ payload, version: payloadVersion } = decodePayload(paymentHeader));
+        paymentPayload = decodePayloadHeader(paymentHeader, {
+          accepted: requirements,
+        });
       } catch (error) {
-        sendError(res, 400, {}, { error: "Invalid payment payload", message: error instanceof Error ? error.message : "Unknown error" });
+        res.statusCode = 400;
+        res.json({
+          error: "Invalid payment payload",
+          message: error instanceof Error ? error.message : "Unknown error",
+        });
         return;
       }
 
-      if (payloadVersion !== version) {
-        sendError(res, 400, {}, { error: "Payment version mismatch", expected: version, received: payloadVersion });
+      if (!facilitatorUrl) {
+        res.statusCode = 500;
+        res.json({ error: "Payment middleware configuration error", message: "Facilitator URL is required for verification" });
         return;
       }
 
-      const payerAddress = skipVerification
-        ? extractPayerAddress(payload)
-        : await (async () => {
-            const result = await verifyPaymentWithRetry(payload, requirements, facilitatorUrl, verifyOptions);
-            if (!result.success) {
-              sendError(res, 402, { [headers.required]: encodeRequirements(requirements) }, { error: result.error });
-              throw new Error("Verification failed");
-            }
-            return result.payerAddress!;
-          })();
+      const verifyResult: VerifyResponse = await verifyPayment(paymentPayload, requirements, { url: facilitatorUrl });
 
-      req.payment = { payload, payerAddress, version, verified: !skipVerification };
-      res.setHeader(headers.response, JSON.stringify({ status: "verified", payerAddress, version }));
+      if (!verifyResult.isValid) {
+        const requiredHeaders = createPaymentRequiredHeaders(requirements);
+        res.statusCode = 402;
+        for (const [key, value] of Object.entries(requiredHeaders)) {
+          res.setHeader(key, value);
+        }
+        res.json({
+          error: "Payment verification failed",
+          message: verifyResult.invalidReason,
+        });
+        return;
+      }
+
+      const payerAddress = verifyResult.payer ?? paymentPayload.payload.authorization.from;
+
+      req.payment = { payload: paymentPayload, payerAddress, verified: true };
+      installSettlementHook(res, async () => settlePayment(paymentPayload, requirements, { url: facilitatorUrl }));
+
       next();
     } catch (error) {
-      sendError(res, 500, {}, { error: "Payment middleware error", message: error instanceof Error ? error.message : "Unknown error" });
+      res.statusCode = 500;
+      res.json({
+        error: "Payment middleware error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   };
 };
+
+export { routeAwarePaymentMiddleware, type RouteAwarePaymentMiddlewareConfig, type PaymentMiddlewareConfigEntry } from "./routes";

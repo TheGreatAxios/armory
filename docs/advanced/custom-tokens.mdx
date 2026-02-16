@@ -30,21 +30,27 @@ Pass your custom token directly to the middleware:
 ### Bun
 
 ```typescript
-import { paymentMiddleware } from '@armory-sh/middleware/bun';
+import { createBunMiddleware } from '@armory-sh/middleware-bun';
+
+const middleware = createBunMiddleware({
+  payTo: '0xYourWalletAddress...',
+  amount: '1000000000000000000', // 1 token (18 decimals)
+  token: MY_TOKEN,
+});
 
 const app = Bun.serve({
-  fetch: paymentMiddleware({
-    payTo: '0xYourWalletAddress...',
-    amount: '1000000000000000000', // 1 token (18 decimals)
-    token: MY_TOKEN,
-  }),
+  fetch: async (req) => {
+    const result = await middleware(req);
+    if (result) return result;
+    return new Response(JSON.stringify({ data: 'protected content' }));
+  }
 });
 ```
 
 ### Express
 
 ```typescript
-import { acceptPaymentsViaArmory } from '@armory-sh/middleware';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware-express';
 
 app.use(acceptPaymentsViaArmory({
   payTo: '0xYourWalletAddress...',
@@ -56,9 +62,9 @@ app.use(acceptPaymentsViaArmory({
 ### Hono
 
 ```typescript
-import { armoryMiddleware } from '@armory-sh/middleware/hono';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware-hono';
 
-app.use('/api/*', armoryMiddleware({
+app.use('/api/*', acceptPaymentsViaArmory({
   payTo: '0xYourWalletAddress...',
   amount: '1000000000000000000',
   token: MY_TOKEN,
@@ -68,10 +74,10 @@ app.use('/api/*', armoryMiddleware({
 ### Elysia
 
 ```typescript
-import { elysiaPaymentMiddleware } from '@armory-sh/middleware/elysia';
+import { paymentMiddleware } from '@armory-sh/middleware-elysia';
 
 const app = new Elysia()
-  .use(elysiaPaymentMiddleware({
+  .use(paymentMiddleware({
     requirements: {
       to: '0xYourWalletAddress...',
       amount: '1000000000000000000',
@@ -133,12 +139,11 @@ const client = createArmoryClient({
 If you want your token to be discoverable via the token registry:
 
 ```typescript
-import { registerToken } from '@armory-sh/tokens';
+import { registerToken, getToken } from '@armory-sh/base';
 
 registerToken(MY_TOKEN);
 
 // Now available via:
-import { getToken } from '@armory-sh/tokens';
 const token = getToken(8453, '0x1234...');
 ```
 
@@ -147,13 +152,13 @@ const token = getToken(8453, '0x1234...');
 Accept multiple custom tokens:
 
 ```typescript
-import { armoryMiddleware } from '@armory-sh/middleware/hono';
+import { acceptPaymentsViaArmory } from '@armory-sh/middleware-hono';
 
 const TOKEN_1 = { symbol: 'TKN1', contractAddress: '0x...', chainId: 8453, decimals: 18 };
 const TOKEN_2 = { symbol: 'TKN2', contractAddress: '0x...', chainId: 8453, decimals: 6 };
 
 // Middleware accepts either token
-app.use('/api/*', armoryMiddleware({
+app.use('/api/*', acceptPaymentsViaArmory({
   payTo: '0x...',
   amount: '1000000',
   accept: {

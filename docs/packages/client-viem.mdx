@@ -61,3 +61,121 @@ const result = await armory.pay({
   token: TOKENS.USDC_BASE,
 });
 ```
+
+## Configuration Options
+
+```typescript
+import { createX402Client } from '@armory-sh/client-viem';
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+
+  // Protocol version (default: 2)
+  version: 2,
+
+  // Authorization expiry in seconds (default: 3600)
+  defaultExpiry: 7200,
+
+  // Custom nonce generator - MUST return bytes32 hex string
+  nonceGenerator: () => `0x${Date.now().toString(16).padStart(64, '0')}` as `0x${string}`,
+
+  // Enable debug logging
+  debug: true,
+});
+```
+
+<Callout type="warn">
+**Nonce Format**: The `nonceGenerator` must return a `bytes32` hex string (64 hex characters after `0x`). This is required for EIP-712 signature compatibility with the x402 specification.
+</Callout>
+
+## Extension Hooks
+
+The client supports an extension hook system for handling protocol extensions like Sign-In-With-X and Payment Identifier.
+
+### Using Hooks
+
+```typescript
+import { createX402Client } from '@armory-sh/client-viem';
+import { createSIWxHook, createPaymentIdHook } from '@armory-sh/extensions';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0x...');
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  hooks: {
+    siwx: createSIWxHook({
+      domain: 'example.com',
+      statement: 'Sign in to access premium content'
+    }),
+    paymentId: createPaymentIdHook()
+  }
+});
+
+// Hooks automatically add extensions when server requests them
+const response = await client.fetch('https://api.example.com/protected');
+```
+
+### Hook Priority
+
+Hooks execute in priority order (higher first):
+
+| Hook | Default Priority |
+|------|------------------|
+| `createSIWxHook` | 100 |
+| `createPaymentIdHook` | 50 |
+| Custom hooks | 0 (default) |
+
+### Custom Hooks
+
+Create custom hooks for your own extensions:
+
+```typescript
+import { createCustomHook } from '@armory-sh/extensions';
+
+const myHook = createCustomHook({
+  key: 'my-extension',
+  handler: async (context) => {
+    // context.payload - the payment payload (when available)
+    // context.paymentContext - the original payment required context
+    // context.serverExtensions - extensions requested by server
+
+    if (context.payload) {
+      context.payload.extensions = {
+        ...(context.payload.extensions ?? {}),
+        'my-extension': { customData: 'value' }
+      };
+    }
+  },
+  priority: 75
+});
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  hooks: {
+    custom: myHook
+  }
+});
+```
+
+### Hook Execution Points
+
+Hooks execute at two points in the payment flow:
+
+1. **onPaymentRequired** - After receiving 402, before payment creation
+2. **beforePayment** - After payment creation, before sending to server
+
+Both hooks receive the same context, but `beforePayment` hooks have access to the created `payload`.
+
+## Exports
+
+| Export | Description |
+|--------|-------------|
+| `createX402Client` | Create a full x402 client |
+| `createX402Transport` | Create a fetch function for payments |
+| `armoryPay` | One-line payment function |
+| `executeHooks` | Execute a hook registry |
+| `mergeExtensions` | Merge extension objects |
+| `ViemHookRegistry` | Type for hook registry |
+| `ViemHookConfig` | Type for individual hook config |
+

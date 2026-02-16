@@ -102,7 +102,6 @@ curl http://localhost:3004/api/user/profile \
 | `PAYMENT_AMOUNT` | Payment amount (smallest unit) | `1000000` (1 USDC) |
 | `PAYMENT_NETWORK` | Blockchain network | `base` |
 | `PAYMENT_EXPIRY` | Payment expiry (seconds) | `3600` |
-| `FACILITATOR_URL` | Optional facilitator URL for remote verification | - |
 | `USDC_*` | USDC contract addresses | - |
 | `RPC_*` | RPC URLs for local verification | - |
 
@@ -182,7 +181,6 @@ const app = new Elysia()
         chainId: "eip155:8453",
         assetId: "eip155:8453/erc20:0x8335...",
       },
-      facilitatorUrl: "http://localhost:3000", // Optional
     })
   )
   .get("/api/protected", ({ store }) => {
@@ -275,5 +273,4 @@ Client Request
 3. **Rate limiting** - Prevent abuse (use Elysia rate limiting plugins)
 4. **Logging** - Track payment verifications
 5. **Error handling** - Graceful payment failures
-6. **Facilitator URL** - Use dedicated facilitator for scalability
-7. **Schema validation** - Use Elysia's typed schemas for all endpoints
+6. **Schema validation** - Use Elysia's typed schemas for all endpoints

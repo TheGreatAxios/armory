@@ -7,8 +7,6 @@ A complete Express.js server example demonstrating the X-402 payment middleware 
 - Protected routes requiring X-402 payment
 - Public routes accessible without payment
 - Returns 402 with payment requirements when payment is missing
-- Facilitator integration for payment verification
-- Support for both local and remote facilitator services
 
 ## Installation
 
@@ -33,9 +31,6 @@ PORT=3000
 
 # Your wallet address to receive payments
 PAYMENT_RECIPIENT=0xYourWalletAddressHere
-
-# Facilitator URL (leave empty to use local facilitator)
-FACILITATOR_URL=
 ```
 
 ## Running the Server
@@ -148,33 +143,6 @@ curl -X POST \
 
 5. **Server verifies payment** and returns protected content
 
-## Facilitator Integration
-
-### Local Facilitator (Development)
-
-By default, the server starts a local facilitator for development:
-
-```typescript
-// No FACILITATOR_URL needed - starts automatically
-const facilitator = await startFacilitator();
-```
-
-The local facilitator runs on `http://localhost:3001` and supports:
-- Payment verification via EIP-3009 signatures
-- On-chain settlement (requires private key)
-- In-memory nonce tracking
-- In-memory job queue
-
-### Remote Facilitator (Production)
-
-To use a remote facilitator service:
-
-```env
-FACILITATOR_URL=https://facilitator.example.com
-```
-
-The middleware will forward payment payloads to the remote service for verification.
-
 ## Middleware Configuration
 
 ```typescript
@@ -192,7 +160,6 @@ app.use(
       expiry: Math.floor(Date.now() / 1000) + 3600,
     },
     facilitatorUrl: process.env.FACILITATOR_URL,
-    skipVerification: false, // Set true for testing
   })
 );
 ```

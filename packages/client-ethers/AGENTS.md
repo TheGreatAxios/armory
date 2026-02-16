@@ -1,10 +1,24 @@
 # @armory-sh/client-ethers
 
-X-402 protocol client implementation for ethers.js v6.
+x402 protocol client implementation for ethers.js v6.
+
+---
+
+## Code Style
+
+- **TypeScript strict mode** - No `any`, use proper typing
+- **ES Modules** - Use `import { x } from 'y'` at top of files
+- **No IIFE** - Use named functions
+- **No dynamic imports** - All imports at compile time
+- **Avoid closures** - Prefer explicit function parameters over captured variables
+- **No OOP classes** - Prefer functional patterns
+- **Modular exports** - Export functions individually
+
+---
 
 ## Overview
 
-This package provides an X-402 client that works with ethers.js Signers and Providers. It automatically handles 402 Payment Required responses by creating EIP-3009 signatures and retrying requests with payment headers.
+This package provides an x402 client that works with ethers.js Signers and Providers. It automatically handles 402 Payment Required responses by creating EIP-3009 signatures and retrying requests with payment headers.
 
 ## Key Features
 
@@ -18,7 +32,7 @@ This package provides an X-402 client that works with ethers.js Signers and Prov
 
 ### Main Functions
 
-- `createX402Client(config)` - Create X-402 client with Signer
+- `createX402Client(config)` - Create x402 client with Signer
 - `createX402Transport(config)` - Create fetch wrapper with payment handling
 - `signPayment()` - Manual EIP-3009 payment signing
 - `signEIP3009()` - Low-level EIP-3009 signing
@@ -81,7 +95,7 @@ const response = await transport.get("/protected-resource");
 import { signPayment } from "@armory-sh/client-ethers";
 
 // Using token object (recommended)
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const signature = await signPayment(
   signer,
@@ -107,7 +121,7 @@ const signature = await signPayment(
 
 ### `createX402Client(config)`
 
-Create an X-402 client.
+Create an x402 client.
 
 **Parameters:**
 - `config.signer` - ethers.js Signer (can sign payments)
@@ -182,10 +196,11 @@ Recover signer address from signature.
 bun test
 ```
 
+- **NEVER skip tests** - Do not use `test.skip`, `describe.skip`, or `test.todo`
+
 ## Dependencies
 
 - `@armory-sh/base` - Core types, utilities, and token registry
-- `@armory-sh/tokens` - Pre-configured token objects (optional)
 - `ethers` v6 - Ethereum library
 
 ---
@@ -196,7 +211,7 @@ bun test
 
 ```ts
 import { createX402Client } from "@armory-sh/client-ethers";
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const client = createX402Client({
   signer,

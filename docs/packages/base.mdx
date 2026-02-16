@@ -29,6 +29,7 @@ import {
   // EIP-712
   createEIP712Domain,
   createTransferWithAuthorization,
+  EIP712_TYPES,
 
   // Networks
   getNetworkConfig,
@@ -38,13 +39,57 @@ import {
   registerToken,
   getCustomToken,
   type CustomToken,
-} from '@armory/base';
+} from '@armory-sh/base';
+```
+
+## EIP-712 Typed Data
+
+Armory uses EIP-712 typed data for EIP-3009 `TransferWithAuthorization` signatures. The types are defined as:
+
+```typescript
+const EIP712_TYPES = {
+  TransferWithAuthorization: [
+    { name: "from", type: "address" },
+    { name: "to", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "validAfter", type: "uint256" },
+    { name: "validBefore", type: "uint256" },
+    { name: "nonce", type: "bytes32" },  // Must be 64-character hex string
+  ]
+};
+```
+
+<Callout type="warn">
+**Important**: The `nonce` field MUST be a `bytes32` hex string (e.g., `0x0000000000000000000000000000000000000000000000000000000000000001`), not a number or BigInt. This matches the [x402 specification](https://github.com/coinbase/x402) for signature compatibility with Coinbase SDKs.
+</Callout>
+
+### Creating Authorization Messages
+
+```typescript
+import {
+  createEIP712Domain,
+  createTransferWithAuthorization,
+  validateTransferWithAuthorization
+} from '@armory-sh/base';
+
+const domain = createEIP712Domain(8453, '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913');
+
+const auth = createTransferWithAuthorization({
+  from: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0',
+  to: '0xRecipientAddress...',
+  value: 1000000n,  // 1 USDC (6 decimals)
+  validAfter: 0n,
+  validBefore: BigInt(Math.floor(Date.now() / 1000) + 3600),
+  nonce: '0x0000000000000000000000000000000000000000000000000000000000000001',
+});
+
+validateTransferWithAuthorization(auth); // Throws on invalid data
 ```
 
 ## Network Configuration
 
 ```typescript
-import { getNetworkConfig } from '@armory/base';
+import { getNetworkConfig } from '@armory-sh/base';
 
 const base = getNetworkConfig(8453);
 // { name: 'base', chainId: 8453, caip2Id: 'eip155:8453', ... }
@@ -53,7 +98,7 @@ const base = getNetworkConfig(8453);
 ## Custom Tokens
 
 ```typescript
-import { registerToken, type CustomToken } from '@armory/base';
+import { registerToken, type CustomToken } from '@armory-sh/base';
 
 const myToken: CustomToken = {
   symbol: 'MYTOKEN',

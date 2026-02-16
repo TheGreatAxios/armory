@@ -1,17 +1,12 @@
 /**
- * X402 Protocol Implementation for Ethers Client
+ * X402 Protocol Implementation for Ethers Client (V2 Only)
  *
- * Handles parsing x402 V1 and V2 PAYMENT-REQUIRED headers
- * and generating x402 V1 and V2 PAYMENT-SIGNATURE payloads
+ * Handles parsing x402 V2 PAYMENT-REQUIRED headers
+ * and generating x402 V2 PAYMENT-SIGNATURE payloads
  */
 
 import type { Signer } from "ethers";
 import type {
-  // x402 V1 types
-  X402PaymentRequirementsV1,
-  X402PaymentPayloadV1,
-  X402SchemePayloadV1,
-  EIP3009AuthorizationV1,
   // x402 V2 types
   PaymentRequirementsV2,
   PaymentPayloadV2,
@@ -20,12 +15,8 @@ import type {
   Address,
 } from "@armory-sh/base";
 import {
-  V1_HEADERS,
   V2_HEADERS,
-  safeBase64Decode,
-  isX402V1PaymentRequired,
   isX402V2PaymentRequired,
-  isX402V1Requirements,
   getNetworkByChainId,
   getNetworkConfig,
   createEIP712Domain,
@@ -39,107 +30,69 @@ import { signEIP3009 } from "./eip3009";
 import { PaymentError } from "./errors";
 
 // ============================================================================
-// Version Detection
+// Version Detection (V2 Only)
 // ============================================================================
 
 /**
  * Detect x402 protocol version from response headers
+ * V2-only: Always returns 2
  */
-export function detectX402Version(response: Response): 1 | 2 {
-  // Check for x402 V2 PAYMENT-REQUIRED header first
-  const v2Header = response.headers.get(V2_HEADERS.PAYMENT_REQUIRED);
-  if (v2Header) {
-    try {
-      const parsed = JSON.parse(v2Header);
-      if (parsed.x402Version === 2) return 2;
-    } catch {
-      // Continue to V1 check
-    }
-  }
-
-  // Check for x402 V1 X-PAYMENT-REQUIRED header
-  const v1Header = response.headers.get(V1_HEADERS.PAYMENT_REQUIRED);
-  if (v1Header) {
-    try {
-      const decoded = safeBase64Decode(v1Header);
-      const parsed = JSON.parse(decoded);
-      if (parsed.x402Version === 1) return 1;
-      // Legacy format without x402Version defaults to V1
-      return 1;
-    } catch {
-      // Continue to legacy detection
-    }
-  }
-
-  // Default to V2 for new implementations
+export function detectX402Version(_response: Response): 2 {
   return 2;
 }
 
-// ============================================================================
-// Parse Payment Requirements
+/**
+ * Get payment header name for protocol version
+ */
+export function getPaymentHeaderName(_version: 2): string {
+  return V2_HEADERS.PAYMENT_SIGNATURE;
+}
+
 // ============================================================================
 
-/**
- * Parsed payment requirements with version info
- */
 export interface ParsedPaymentRequirements {
-  version: 1 | 2;
-  requirements: X402PaymentRequirementsV1 | PaymentRequirementsV2;
+  version: 2;
+  requirements: PaymentRequirementsV2;
+}
+
+function parseJsonOrBase64(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+  }
+
+  const normalized = value
+    .replace(/-/g, "+")
+    .replace(/_/g, "/")
+    .padEnd(Math.ceil(value.length / 4) * 4, "=");
+  return JSON.parse(Buffer.from(normalized, "base64").toString("utf-8"));
 }
 
 /**
  * Parse x402 PAYMENT-REQUIRED header from response
- * Automatically detects V1 or V2 format
+ * V2 only
  */
 export function parsePaymentRequired(response: Response): ParsedPaymentRequirements {
-  const version = detectX402Version(response);
-
-  if (version === 2) {
-    const v2Header = response.headers.get(V2_HEADERS.PAYMENT_REQUIRED);
-    if (!v2Header) {
-      throw new PaymentError("No PAYMENT-REQUIRED header found in 402 response");
-    }
-
-    try {
-      const parsed = JSON.parse(v2Header);
-      if (!isX402V2PaymentRequired(parsed)) {
-        throw new PaymentError("Invalid x402 V2 payment required format");
-      }
-      if (!parsed.accepts || parsed.accepts.length === 0) {
-        throw new PaymentError("No payment requirements found in accepts array");
-      }
-      return {
-        version: 2,
-        requirements: parsed.accepts[0],
-      };
-    } catch (error) {
-      if (error instanceof PaymentError) throw error;
-      throw new PaymentError(`Failed to parse V2 PAYMENT-REQUIRED header: ${error}`);
-    }
-  }
-
-  // V1
-  const v1Header = response.headers.get(V1_HEADERS.PAYMENT_REQUIRED);
-  if (!v1Header) {
-    throw new PaymentError("No X-PAYMENT-REQUIRED header found in 402 response");
+  const v2Header = response.headers.get(V2_HEADERS.PAYMENT_REQUIRED);
+  if (!v2Header) {
+    throw new PaymentError("No PAYMENT-REQUIRED header found in V2 response");
   }
 
   try {
-    const decoded = safeBase64Decode(v1Header);
-    const parsed = JSON.parse(decoded);
-    if (!isX402V1PaymentRequired(parsed)) {
-      throw new PaymentError("Invalid x402 V1 payment required format");
+    const parsed = parseJsonOrBase64(v2Header);
+    if (!isX402V2PaymentRequired(parsed)) {
+      throw new PaymentError("Invalid x402 V2 payment required format");
     }
     if (!parsed.accepts || parsed.accepts.length === 0) {
       throw new PaymentError("No payment requirements found in accepts array");
     }
     return {
-      version: 1,
+      version: 2,
       requirements: parsed.accepts[0],
     };
   } catch (error) {
     if (error instanceof PaymentError) throw error;
-    throw new PaymentError(`Failed to parse V1 PAYMENT-REQUIRED header: ${error}`);
+    throw new PaymentError(`Failed to parse V2 PAYMENT-REQUIRED header: ${error}`);
   }
 }
 
@@ -156,7 +109,7 @@ function toAtomicUnits(amount: string): string {
 
 /**
  * Extract chain ID from network identifier
- * Supports both CAIP-2 format (eip155:84532) and network names (base-sepolia)
+ * Supports CAIP-2 format (eip155:84532) and network names (base-sepolia)
  */
 function extractChainId(network: string): number {
   if (network.startsWith("eip155:")) {
@@ -194,74 +147,6 @@ function createNonce(): `0x${string}` {
   return `0x${(now * 1000).toString(16).padStart(64, "0")}` as `0x${string}`;
 }
 
-// ============================================================================
-// Create x402 V1 Payment Payload
-// ============================================================================
-
-/**
- * Create x402 V1 payment payload
- */
-export async function createX402V1Payment(
-  signer: Signer,
-  requirements: X402PaymentRequirementsV1,
-  fromAddress: Address,
-  nonce: `0x${string}`,
-  validBefore: number,
-  domainName?: string,
-  domainVersion?: string
-): Promise<X402PaymentPayloadV1> {
-  const network = getNetworkSlug(requirements.network);
-  const contractAddress = requirements.asset;
-  const chainId = extractChainId(requirements.network);
-
-  // Create EIP-712 domain
-  const domain = createEIP712Domain(chainId, contractAddress);
-  const customDomain: EIP712Domain = domainName || domainVersion
-    ? { ...domain, name: domainName ?? domain.name, version: domainVersion ?? domain.version }
-    : domain;
-
-  // Create EIP-3009 authorization
-  const authorization: EIP3009AuthorizationV1 = {
-    from: fromAddress,
-    to: requirements.payTo,
-    value: toAtomicUnits(requirements.maxAmountRequired),
-    validAfter: "0",
-    validBefore: validBefore.toString(),
-    nonce,
-  };
-
-  // Sign the authorization
-  const authParams: TransferWithAuthorizationParams = {
-    from: authorization.from,
-    to: authorization.to,
-    value: BigInt(authorization.value),
-    validAfter: BigInt(authorization.validAfter),
-    validBefore: BigInt(authorization.validBefore),
-    nonce: BigInt(authorization.nonce),
-  };
-
-  const signature = await signEIP3009(signer, authParams, customDomain);
-
-  // Combine signature into 65-byte hex
-  const combinedSignature = `0x${signature.r.slice(2)}${signature.s.slice(2)}${signature.v.toString(16).padStart(2, "0")}` as `0x${string}`;
-
-  const payload: X402SchemePayloadV1 = {
-    signature: combinedSignature,
-    authorization,
-  };
-
-  return {
-    x402Version: 1,
-    scheme: "exact",
-    network,
-    payload,
-  };
-}
-
-// ============================================================================
-// Create x402 V2 Payment Payload
-// ============================================================================
-
 /**
  * Create x402 V2 payment payload
  */
@@ -277,13 +162,11 @@ export async function createX402V2Payment(
   const contractAddress = requirements.asset;
   const chainId = extractChainId(requirements.network);
 
-  // Create EIP-712 domain
   const domain = createEIP712Domain(chainId, contractAddress);
   const customDomain: EIP712Domain = domainName || domainVersion
     ? { ...domain, name: domainName ?? domain.name, version: domainVersion ?? domain.version }
     : domain;
 
-  // Create EIP-3009 authorization
   const authorization: EIP3009Authorization = {
     from: fromAddress,
     to: requirements.payTo,
@@ -293,19 +176,17 @@ export async function createX402V2Payment(
     nonce,
   };
 
-  // Sign the authorization
   const authParams: TransferWithAuthorizationParams = {
     from: authorization.from,
     to: authorization.to,
     value: BigInt(authorization.value),
     validAfter: BigInt(authorization.validAfter),
     validBefore: BigInt(authorization.validBefore),
-    nonce: BigInt(authorization.nonce),
+    nonce: authorization.nonce,
   };
 
   const signature = await signEIP3009(signer, authParams, customDomain);
 
-  // Combine signature into 65-byte hex
   const combinedSignature = `0x${signature.r.slice(2)}${signature.s.slice(2)}${signature.v.toString(16).padStart(2, "0")}` as `0x${string}`;
 
   const payload: SchemePayloadV2 = {
@@ -320,12 +201,8 @@ export async function createX402V2Payment(
   };
 }
 
-// ============================================================================
-// Create x402 Payment (Auto-detect version)
-// ============================================================================
-
 /**
- * Create x402 payment payload (auto-detects version)
+ * Create x402 payment payload (V2-only wrapper)
  */
 export async function createX402Payment(
   signer: Signer,
@@ -335,25 +212,13 @@ export async function createX402Payment(
   validBefore?: number,
   domainName?: string,
   domainVersion?: string
-): Promise<X402PaymentPayloadV1 | PaymentPayloadV2> {
+): Promise<PaymentPayloadV2> {
   const effectiveNonce = nonce ?? createNonce();
   const effectiveValidBefore = validBefore ?? Math.floor(Date.now() / 1000) + 3600;
 
-  if (parsed.version === 1) {
-    return createX402V1Payment(
-      signer,
-      parsed.requirements as X402PaymentRequirementsV1,
-      fromAddress,
-      effectiveNonce,
-      effectiveValidBefore,
-      domainName,
-      domainVersion
-    );
-  }
-
   return createX402V2Payment(
     signer,
-    parsed.requirements as PaymentRequirementsV2,
+    parsed.requirements,
     fromAddress,
     effectiveNonce,
     effectiveValidBefore,
@@ -369,61 +234,6 @@ export async function createX402Payment(
 /**
  * Encode x402 payment payload to Base64 for transport
  */
-export function encodeX402Payment(payload: X402PaymentPayloadV1 | PaymentPayloadV2): string {
+export function encodeX402Payment(payload: PaymentPayloadV2): string {
   return Buffer.from(JSON.stringify(payload)).toString("base64");
-}
-
-/**
- * Get the correct header name for payment based on version
- */
-export function getPaymentHeaderName(version: 1 | 2): string {
-  return version === 1 ? V1_HEADERS.PAYMENT : V2_HEADERS.PAYMENT_SIGNATURE;
-}
-
-// ============================================================================
-// Legacy Compatibility (deprecated)
-// ============================================================================
-
-/**
- * @deprecated Use createX402Payment instead
- */
-export async function createPaymentPayload(
-  requirements: unknown,
-  signer: Signer,
-  from: string
-): Promise<[string, string]> {
-  // Convert legacy requirements to parsed format
-  const parsed: ParsedPaymentRequirements = isX402V1Requirements(requirements)
-    ? { version: 1, requirements: requirements as X402PaymentRequirementsV1 }
-    : { version: 2, requirements: requirements as PaymentRequirementsV2 };
-
-  const payload = await createX402Payment(signer, parsed, from as Address);
-  const encoded = encodeX402Payment(payload);
-
-  return [encoded, getPaymentHeaderName(parsed.version)];
-}
-
-/**
- * @deprecated Use parsePaymentRequired instead
- */
-export async function parsePaymentRequirements(response: Response): Promise<unknown> {
-  const parsed = parsePaymentRequired(response);
-  return parsed.requirements;
-}
-
-/**
- * @deprecated Use detectX402Version instead
- */
-export function detectProtocolVersion(requirements: unknown): 1 | 2 {
-  // Check for x402 V2 format (has x402Version === 2)
-  if (typeof requirements === "object" && requirements !== null) {
-    if ("x402Version" in requirements && (requirements as { x402Version: number }).x402Version === 2) {
-      return 2;
-    }
-    // Check for legacy V2 format (has chainId/assetId, no contractAddress)
-    if ("chainId" in requirements && "assetId" in requirements && !("contractAddress" in requirements)) {
-      return 2;
-    }
-  }
-  return 1;
 }

@@ -1,18 +1,18 @@
 {
   "name": "armory-cli",
-  "version": "0.2.4",
+  "version": "0.3.3",
   "description": "Scaffold x402 payment-enabled apps",
   "type": "module",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thegreataxios/armory.git",
+    "url": "git+https://github.com/TheGreatAxios/armory.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/thegreataxios/armory#readme",
+  "homepage": "https://github.com/TheGreatAxios/armory#readme",
   "bugs": {
-    "url": "https://github.com/thegreataxios/armory/issues"
+    "url": "https://github.com/TheGreatAxios/armory/issues"
   },
   "keywords": [
     "x402",
@@ -33,11 +33,14 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsup",
     "dev": "bun run src/cli.ts",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "test": "bun test"
   },
   "dependencies": {
+    "@armory-sh/base": "workspace:*",
+    "@armory-sh/extensions": "workspace:*",
     "prompts": "2.4.2"
   },
   "devDependencies": {
