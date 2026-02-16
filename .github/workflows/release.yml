@@ -115,7 +115,7 @@ jobs:
       - name: Publish to npm (beta)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public --tag beta --workspaces
+        run: npm publish --provenance --access public --tag beta --workspaces || true
 
   release-alpha:
     if: >-
