@@ -250,7 +250,7 @@ describe("[unit|middleware-hono]: Simple Middleware API", () => {
     const body = await res.json();
     expect(body.error).toBeDefined();
     expect(body.accepts).toBeDefined();
-    expect(body.accepts[0].extra?.name).toBe("USD Coin");
+    expect(body.accepts[0].extra?.name).toBe("USDC");
     expect(body.accepts[0].extra?.version).toBe("2");
   });
 

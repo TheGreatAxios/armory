@@ -24,6 +24,7 @@ import {
   getNetworkByChainId,
 } from "@armory-sh/base";
 import { createX402Client } from "./client";
+import { decodeBase64ToUtf8, encodeUtf8ToBase64 } from "./bytes";
 
 // ═══════════════════════════════════════════════════════════════
 // Types
@@ -193,7 +194,7 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
           };
         }
 
-        const decoded = Buffer.from(paymentRequiredHeader, "base64").toString("utf-8");
+        const decoded = decodeBase64ToUtf8(paymentRequiredHeader);
         const paymentRequired = JSON.parse(decoded) as { x402Version: number; accepts: PaymentRequirementsV2[] };
 
         if (paymentRequired.x402Version !== 2 || !paymentRequired.accepts) {
@@ -258,7 +259,7 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
           validBefore
         );
 
-        const signatureHeader = Buffer.from(JSON.stringify(payment)).toString("base64");
+        const signatureHeader = encodeUtf8ToBase64(JSON.stringify(payment));
         headers.set("PAYMENT-SIGNATURE", signatureHeader);
 
         response = await fetch(url, {
