@@ -312,6 +312,72 @@ test("[unit|client-viem] - [fetch|success] - uses requirement domain metadata fo
   expect(capturedDomainVersion).toBe("2");
 });
 
+test("[unit|client-viem] - [fetch|success] - uses requirement maxTimeoutSeconds for validBefore", async () => {
+  let capturedValidBefore: bigint | undefined;
+
+  const timeoutAwareWallet: X402Wallet = {
+    type: "account",
+    account: {
+      ...mockAccount,
+      signTypedData: async (params) => {
+        capturedValidBefore = params.message.validBefore;
+        return "0x".padEnd(130, "a") + "1b";
+      },
+    },
+  };
+
+  const client = createX402Client({ wallet: timeoutAwareWallet });
+  const start = Math.floor(Date.now() / 1000);
+
+  let callCount = 0;
+  global.fetch = mock(() => {
+    callCount += 1;
+    if (callCount === 1) {
+      const encoded = Buffer.from(JSON.stringify({
+        x402Version: 2,
+        resource: { url: "https://api.example.com/data", mimeType: "application/json" },
+        accepts: [{
+          scheme: "exact",
+          payTo: PAYEE,
+          amount: "1000000",
+          network: "eip155:8453",
+          asset: USDC_BASE,
+          maxTimeoutSeconds: 300,
+        }],
+      })).toString("base64");
+
+      return Promise.resolve(
+        new Response("Payment Required", {
+          status: 402,
+          headers: { [V2_HEADERS.PAYMENT_REQUIRED]: encoded },
+        })
+      );
+    }
+
+    return Promise.resolve(
+      new Response("Success", {
+        status: 200,
+        headers: {
+          [V2_HEADERS.PAYMENT_RESPONSE]: encodeResponse({
+            success: true,
+            transaction: "0xabc123",
+            network: "eip155:8453",
+          }),
+        },
+      })
+    );
+  });
+
+  const response = await client.fetch("https://api.example.com/data");
+  const expectedMin = BigInt(start + 300);
+  const expectedMax = BigInt(start + 302);
+
+  expect(response.status).toBe(200);
+  expect(capturedValidBefore).toBeDefined();
+  expect(capturedValidBefore! >= expectedMin).toBe(true);
+  expect(capturedValidBefore! <= expectedMax).toBe(true);
+});
+
 test("fetch handles 402 response with v2 payment", async () => {
   const client = createX402Client({ wallet: mockWallet, version: 2 });
 

@@ -148,6 +148,7 @@ export async function createX402Payment(
 ): Promise<PaymentPayloadV2> {
   const chainId = getChainIdFromNetwork(requirements.network);
   const domain = createEIP712Domain(chainId, requirements.asset);
+  const now = Math.floor(Date.now() / 1000);
 
   if (domainName || domainVersion) {
     domain.name = domainName ?? domain.name;
@@ -158,8 +159,8 @@ export async function createX402Payment(
     from,
     to: requirements.payTo,
     value: requirements.amount,
-    validAfter: "0",
-    validBefore: (validBefore ?? Math.floor(Date.now() / 1000 + 3600)).toString(),
+    validAfter: (now - 600).toString(),
+    validBefore: (validBefore ?? now + 3600).toString(),
     nonce,
   };
 

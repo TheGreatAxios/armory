@@ -160,11 +160,13 @@ const signPaymentV2 = async (
 
   const chainId = parseInt(defaultAccepted.network.split(":")[1], 10);
   const domain = createEIP712Domain(chainId, defaultAccepted.asset, effectiveDomainName, effectiveDomainVersion);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const validAfterHex = `0x${(nowSeconds - 600).toString(16)}`;
   const message = createTransferWithAuthorization({
     from,
     to,
     value: amount,
-    validAfter: "0x0",
+    validAfter: validAfterHex,
     validBefore: `0x${expiry.toString(16)}`,
     nonce: `0x${nonce}`,
   });
@@ -177,7 +179,7 @@ const signPaymentV2 = async (
     to,
     value: amount,
     nonce: `0x${nonce.padStart(64, "0")}`,
-    validAfter: "0x0",
+    validAfter: validAfterHex,
     validBefore: `0x${expiry.toString(16)}`,
     signature: combinedSig,
     network: defaultAccepted.network,
@@ -236,7 +238,7 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
         to,
         amount: req.amount,
         nonce: crypto.randomUUID(),
-        expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
+        expiry: Math.floor(Date.now() / 1000) + req.maxTimeoutSeconds,
         accepted: req,
       });
 

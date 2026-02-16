@@ -96,7 +96,7 @@ const handlePaymentRequired = async (
       parsed,
       from as `0x${string}`,
       undefined,
-      undefined,
+      Math.floor(Date.now() / 1000) + parsed.requirements.maxTimeoutSeconds,
       requirementDomain.domainName,
       requirementDomain.domainVersion
     );

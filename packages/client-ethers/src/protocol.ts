@@ -152,6 +152,7 @@ export async function createX402V2Payment(
 ): Promise<PaymentPayloadV2> {
   const contractAddress = requirements.asset;
   const chainId = extractChainId(requirements.network);
+  const now = Math.floor(Date.now() / 1000);
 
   const domain = createEIP712Domain(chainId, contractAddress);
   const customDomain: EIP712Domain = domainName || domainVersion
@@ -162,7 +163,7 @@ export async function createX402V2Payment(
     from: fromAddress,
     to: requirements.payTo,
     value: requirements.amount,
-    validAfter: "0",
+    validAfter: (now - 600).toString(),
     validBefore: validBefore.toString(),
     nonce,
   };

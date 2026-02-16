@@ -135,7 +135,7 @@ const createFetch = (
 
       const fromAddress = getAddress();
       const nonce = generateNonce(nonceGenerator);
-      const validBefore = Math.floor(Date.now() / 1000) + defaultExpiry;
+      const validBefore = Math.floor(Date.now() / 1000) + parsed.maxTimeoutSeconds;
       const requirementDomain = getRequirementDomainOverrides(parsed);
 
       const paymentRequiredContext: PaymentRequiredContext = {
