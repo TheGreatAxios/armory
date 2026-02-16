@@ -26,6 +26,7 @@ import {
   getNetworkByChainId,
 } from "@armory-sh/base";
 import { createEIP712Domain, createTransferWithAuthorization } from "@armory-sh/base";
+import { decodeBase64ToUtf8, encodeUtf8ToBase64, normalizeBase64Url } from "./bytes";
 
 export type X402Wallet =
   | { type: "account"; account: Account }
@@ -57,11 +58,8 @@ function parseJsonOrBase64(value: string): unknown {
   } catch {
   }
 
-  const normalized = value
-    .replace(/-/g, "+")
-    .replace(/_/g, "/")
-    .padEnd(Math.ceil(value.length / 4) * 4, "=");
-  return JSON.parse(Buffer.from(normalized, "base64").toString("utf-8"));
+  const normalized = normalizeBase64Url(value);
+  return JSON.parse(decodeBase64ToUtf8(normalized));
 }
 
 export function parsePaymentRequired(response: Response): ParsedPaymentRequirements {
@@ -92,7 +90,7 @@ export function getPaymentHeaderName(_version: X402Version): string {
 }
 
 export function encodeX402Payment(payload: PaymentPayloadV2): string {
-  return Buffer.from(JSON.stringify(payload)).toString("base64");
+  return encodeUtf8ToBase64(JSON.stringify(payload));
 }
 
 async function signTypedData(

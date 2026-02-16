@@ -125,7 +125,12 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
 
       installSettlementHook(res, async () => facilitatorUrl
         ? settlePayment(paymentPayload, requirements, { url: facilitatorUrl })
-        : { success: false, errorReason: "Facilitator URL is required for settlement" }
+        : {
+          success: false,
+          errorReason: "Facilitator URL is required for settlement",
+          transaction: "",
+          network: requirements.network,
+        }
       );
 
       next();

@@ -16,6 +16,7 @@ import type {
 } from "@armory-sh/extensions";
 import type { X402Wallet } from "./protocol";
 import { getWalletAddress } from "./protocol";
+import { encodeUtf8ToBase64 } from "./bytes";
 
 export interface ClientExtensionContext {
   bazaar?: BazaarExtensionInfo;
@@ -114,7 +115,7 @@ export async function createSIWxProof(
 }
 
 function base64UrlEncode(str: string): string {
-  return btoa(str)
+  return encodeUtf8ToBase64(str)
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=/g, "");
