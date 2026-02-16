@@ -76,7 +76,7 @@ jobs:
           git add "bun.lock"
           git add ".changeset/*.md"
           git commit -m "chore: version packages [skip ci]"
-          git push
+          git push --no-verify
 
       - name: Build
         run: bun run build
