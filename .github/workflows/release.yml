@@ -17,7 +17,8 @@ jobs:
     if: >-
       github.event_name == 'pull_request'
       && github.actor == 'TheGreatAxios'
-      && (github.base_ref == 'main' || github.base_ref == 'staging')
+      && github.base_ref != 'main'
+      && github.base_ref != 'staging'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -100,7 +101,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   release-alpha:
-    if: github.event_name == 'pull_request' && github.actor == 'TheGreatAxios'
+    if: >-
+      github.event_name == 'pull_request'
+      && github.actor == 'TheGreatAxios'
+      && github.base_ref != 'main'
+      && github.base_ref != 'staging'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
