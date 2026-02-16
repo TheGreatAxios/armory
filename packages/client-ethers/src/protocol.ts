@@ -182,7 +182,7 @@ export async function createX402V2Payment(
     value: BigInt(authorization.value),
     validAfter: BigInt(authorization.validAfter),
     validBefore: BigInt(authorization.validBefore),
-    nonce: BigInt(authorization.nonce),
+    nonce: authorization.nonce,
   };
 
   const signature = await signEIP3009(signer, authParams, customDomain);

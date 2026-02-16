@@ -26,6 +26,8 @@ const DEFAULT_REQUIREMENTS: PaymentRequirementsV2 = {
   maxTimeoutSeconds: 300,
 };
 
+const TEST_NONCE = "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`;
+
 describe("[unit|base]: Base Package Tests", () => {
   describe("[unit|base]: V2 Headers", () => {
     test("[V2_HEADERS|success] - headers are correct", () => {
@@ -192,7 +194,7 @@ describe("[unit|base]: Base Package Tests", () => {
         { name: "value", type: "uint256" },
         { name: "validAfter", type: "uint256" },
         { name: "validBefore", type: "uint256" },
-        { name: "nonce", type: "uint256" },
+        { name: "nonce", type: "bytes32" },
       ]);
     });
   });
@@ -205,7 +207,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: 0,
         validBefore: Math.floor(Date.now() / 1000) + 3600,
-        nonce: Date.now(),
+        nonce: TEST_NONCE,
       });
 
       expect(validateTransferWithAuthorization(auth)).toBe(true);
@@ -225,7 +227,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: 0,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => {
@@ -243,7 +245,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: 0,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => {
@@ -261,7 +263,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: -100,
         validAfter: 0,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => validateTransferWithAuthorization(auth)).toThrow('"value" must be non-negative');
@@ -274,7 +276,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: 1000,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => validateTransferWithAuthorization(auth)).toThrow('"validAfter" (1000) must be before "validBefore" (1000)');
@@ -287,7 +289,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: 2000,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => validateTransferWithAuthorization(auth)).toThrow();
@@ -300,7 +302,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: -1,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => validateTransferWithAuthorization(auth)).toThrow('"validAfter" must be non-negative');
@@ -319,17 +321,17 @@ describe("[unit|base]: Base Package Tests", () => {
       expect(() => validateTransferWithAuthorization(auth)).toThrow('"validBefore" must be non-negative');
     });
 
-    test("[validateTransferWithAuthorization|error] - throws on negative nonce", () => {
-      const auth = createTransferWithAuthorization({
+    test("[validateTransferWithAuthorization|error] - throws on invalid nonce format", () => {
+      const auth = {
         from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
         to: "0x1234567890123456789012345678901234567890",
-        value: 1000000,
-        validAfter: 0,
-        validBefore: 1000,
-        nonce: -1,
-      });
+        value: 1000000n,
+        validAfter: 0n,
+        validBefore: 1000n,
+        nonce: "invalid-nonce",
+      };
 
-      expect(() => validateTransferWithAuthorization(auth)).toThrow('"nonce" must be non-negative');
+      expect(() => validateTransferWithAuthorization(auth as any)).toThrow('"nonce" must be a valid bytes32 hex string');
     });
 
     test("[validateTransferWithAuthorization|success] - handles max safe integer values", () => {
@@ -339,7 +341,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: Number.MAX_SAFE_INTEGER,
         validAfter: 0,
         validBefore: Number.MAX_SAFE_INTEGER,
-        nonce: Number.MAX_SAFE_INTEGER,
+        nonce: "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" as `0x${string}`,
       });
 
       expect(validateTransferWithAuthorization(auth)).toBe(true);
@@ -352,17 +354,17 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 12345,
         validAfter: 100,
         validBefore: 200,
-        nonce: 999,
+        nonce: TEST_NONCE,
       });
 
       expect(typeof auth.value).toBe("bigint");
       expect(typeof auth.validAfter).toBe("bigint");
       expect(typeof auth.validBefore).toBe("bigint");
-      expect(typeof auth.nonce).toBe("bigint");
+      expect(typeof auth.nonce).toBe("string");
       expect(auth.value).toBe(12345n);
       expect(auth.validAfter).toBe(100n);
       expect(auth.validBefore).toBe(200n);
-      expect(auth.nonce).toBe(999n);
+      expect(auth.nonce).toBe(TEST_NONCE);
     });
 
     test("[createTransferWithAuthorization|success] - accepts bigint params", () => {
@@ -372,13 +374,13 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 12345n,
         validAfter: 100n,
         validBefore: 200n,
-        nonce: 999n,
+        nonce: TEST_NONCE,
       });
 
       expect(auth.value).toBe(12345n);
       expect(auth.validAfter).toBe(100n);
       expect(auth.validBefore).toBe(200n);
-      expect(auth.nonce).toBe(999n);
+      expect(auth.nonce).toBe(TEST_NONCE);
     });
   });
 

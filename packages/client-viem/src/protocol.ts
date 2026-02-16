@@ -100,8 +100,6 @@ async function signTypedData(
   domain: TypedDataDomain,
   authorization: EIP3009Authorization
 ): Promise<`0x${string}`> {
-  const nonceBigInt = BigInt(authorization.nonce);
-
   const params = {
     domain,
     types: EIP712_TYPES,
@@ -112,7 +110,7 @@ async function signTypedData(
       value: BigInt(authorization.value),
       validAfter: BigInt(authorization.validAfter),
       validBefore: BigInt(authorization.validBefore),
-      nonce: nonceBigInt,
+      nonce: authorization.nonce,
     },
   };
 

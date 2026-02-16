@@ -19,7 +19,7 @@ export interface TransferWithAuthorization {
   value: bigint;
   validAfter: bigint;
   validBefore: bigint;
-  nonce: bigint;
+  nonce: `0x${string}`;
 }
 
 export type TransferWithAuthorizationRecord = TransferWithAuthorization & Record<string, unknown>;
@@ -37,7 +37,7 @@ export const EIP712_TYPES = {
     { name: "value", type: "uint256" },
     { name: "validAfter", type: "uint256" },
     { name: "validBefore", type: "uint256" },
-    { name: "nonce", type: "uint256" },
+    { name: "nonce", type: "bytes32" },
   ] as const,
 } as const satisfies EIP712Types;
 
@@ -61,7 +61,7 @@ export const createTransferWithAuthorization = (
     value: bigint | number;
     validAfter: bigint | number;
     validBefore: bigint | number;
-    nonce: bigint | number;
+    nonce: `0x${string}`;
   }
 ): TransferWithAuthorizationRecord => ({
   from: params.from,
@@ -69,10 +69,12 @@ export const createTransferWithAuthorization = (
   value: BigInt(params.value),
   validAfter: BigInt(params.validAfter),
   validBefore: BigInt(params.validBefore),
-  nonce: BigInt(params.nonce),
+  nonce: params.nonce,
 });
 
 const isAddress = (value: string): boolean => /^0x[a-fA-F0-9]{40}$/.test(value);
+
+const isBytes32 = (value: string): boolean => /^0x[a-fA-F0-9]{64}$/.test(value);
 
 export const validateTransferWithAuthorization = (message: TransferWithAuthorization): boolean => {
   if (!isAddress(message.from)) throw new Error(`Invalid "from" address: ${message.from}`);
@@ -83,6 +85,6 @@ export const validateTransferWithAuthorization = (message: TransferWithAuthoriza
   if (message.validAfter >= message.validBefore) {
     throw new Error(`"validAfter" (${message.validAfter}) must be before "validBefore" (${message.validBefore})`);
   }
-  if (message.nonce < 0n) throw new Error(`"nonce" must be non-negative: ${message.nonce}`);
+  if (!isBytes32(message.nonce)) throw new Error(`"nonce" must be a valid bytes32 hex string: ${message.nonce}`);
   return true;
 };
