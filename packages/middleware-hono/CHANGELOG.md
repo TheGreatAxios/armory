@@ -1,5 +1,22 @@
 # @armory-sh/middleware-hono
 
+## 0.3.23
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/extensions@0.1.4
+  - @armory-sh/base@0.2.23
+
 ## 0.3.22
 
 ### Patch Changes

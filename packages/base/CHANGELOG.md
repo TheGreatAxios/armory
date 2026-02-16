@@ -1,5 +1,15 @@
 # @armory-sh/base
 
+## 0.2.23
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+
 ## 0.2.22
 
 ### Patch Changes
