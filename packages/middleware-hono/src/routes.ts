@@ -19,7 +19,7 @@ import {
   settlePayment,
 } from "@armory-sh/base";
 import type { PaymentConfig } from "./simple";
-import { createPaymentRequirements } from "./simple";
+import { createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "./simple";
 
 interface LocalValidationError {
   code: string;
@@ -144,9 +144,8 @@ export const routeAwarePaymentMiddleware = (
       return c.json({ error: "Invalid payment payload" });
     }
 
-    const requirementFacilitatorUrl = primaryRequirement.extra?.facilitatorUrl;
     const facilitatorUrl = matchedRoute.config.facilitatorUrl
-      ?? (typeof requirementFacilitatorUrl === "string" ? requirementFacilitatorUrl : undefined);
+      ?? resolveFacilitatorUrlFromRequirement(matchedRoute.config, primaryRequirement);
 
     if (!facilitatorUrl) {
       c.status(500);

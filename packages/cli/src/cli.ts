@@ -246,7 +246,7 @@ app.use(
     requirements: {
       scheme: "exact",
       network: "base",
-      maxAmountRequired: "2000000",
+      amount: "2000000",
       resource: "https://example.com/api",
       description: "API access",
       mimeType: "application/json",

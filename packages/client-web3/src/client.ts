@@ -153,7 +153,7 @@ const signPaymentV2 = async (
   const defaultAccepted: PaymentRequirementsV2 = accepted ?? {
     scheme: "exact",
     network: networkToCaip2(network.name) as `eip155:${string}`,
-    maxAmountRequired: amount,
+    amount: amount,
     asset: network.usdcAddress as `0x${string}`,
     payTo: to as `0x${string}`,
     maxTimeoutSeconds: expiry - Math.floor(Date.now() / 1000),
@@ -221,7 +221,7 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
       const result = await signPaymentV2(state, network, {
         from,
         to,
-        amount: req.maxAmountRequired,
+        amount: req.amount,
         nonce: crypto.randomUUID(),
         expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
         accepted: req,
@@ -277,7 +277,7 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
       return signPaymentV2(state, network, {
         from,
         to,
-        amount: requirements.maxAmountRequired,
+        amount: requirements.amount,
         nonce: crypto.randomUUID(),
         expiry: Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS,
         accepted: requirements,

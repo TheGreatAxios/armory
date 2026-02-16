@@ -113,7 +113,7 @@ const scorePaymentOption = (
     score += 1;
   }
 
-  const amount = parseInt(option.maxAmountRequired, 10);
+  const amount = parseInt(option.amount, 10);
   if (amount < 1000000) score += 1;
 
   return score;

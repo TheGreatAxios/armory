@@ -77,7 +77,7 @@ export function extractDiscoveryInfo(
     output: bazaarExtension.info.output,
     network: paymentRequirements.network,
     token: paymentRequirements.asset,
-    amount: paymentRequirements.maxAmountRequired,
+    amount: paymentRequirements.amount,
     payTo: paymentRequirements.payTo,
   };
 }

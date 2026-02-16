@@ -150,17 +150,31 @@ export function extractPaymentFromHeaders(headers: Headers): PaymentPayload | nu
   }
 }
 
+export interface PaymentRequiredOptions {
+  error?: string;
+  resource?: {
+    url: string;
+    description?: string;
+    mimeType?: string;
+  };
+  extensions?: Record<string, unknown>;
+}
+
 /**
  * Create payment required headers (V2 format)
  */
 export function createPaymentRequiredHeaders(
-  requirements: PaymentRequirements | PaymentRequirements[]
+  requirements: PaymentRequirements | PaymentRequirements[],
+  options?: PaymentRequiredOptions
 ): Record<string, string> {
   const accepts = Array.isArray(requirements) ? requirements : [requirements];
 
   const response = {
     x402Version: 2,
+    error: options?.error ?? "Payment required",
+    resource: options?.resource ?? { url: "", mimeType: "application/json" },
     accepts,
+    extensions: options?.extensions ?? {},
   };
 
   return {

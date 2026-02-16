@@ -118,7 +118,7 @@ const scorePaymentOption = (
     score += 1;
   }
 
-  const amount = parseInt(option.maxAmountRequired, 10);
+  const amount = parseInt(option.amount, 10);
   if (amount < 1000000) score += 1;
 
   return score;
@@ -251,7 +251,7 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
         const validBefore = Math.floor(Date.now() / 1000) + 3600;
 
         const payment = await client.createPayment(
-          selectedOption.maxAmountRequired,
+          selectedOption.amount,
           selectedOption.payTo as Address,
           selectedOption.asset,
           chainId,

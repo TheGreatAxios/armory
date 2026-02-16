@@ -146,7 +146,7 @@ async function createPaymentPayload(
   const authorization: ExactEvmAuthorization = {
     from,
     to: requirements.payTo,
-    value: requirements.maxAmountRequired,
+    value: requirements.amount,
     validAfter: validAfter.toString(),
     validBefore: validBefore.toString(),
     nonce,

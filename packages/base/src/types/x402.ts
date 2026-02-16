@@ -89,7 +89,7 @@ export interface UnsignedPaymentPayload {
 export interface PaymentRequirements {
   scheme: Scheme;
   network: Network;
-  maxAmountRequired: string;       // Atomic units (x402 SDK format - sent to facilitator)
+  amount: string;                  // Atomic units (x402 V2 spec)
   payTo: Address;
   maxTimeoutSeconds: number;
   asset: Address;                  // Token contract address

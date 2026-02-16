@@ -8,6 +8,8 @@ import type {
   Account,
   Address,
   Hash,
+  TypedDataDomain,
+  WalletClient,
 } from "viem";
 import { PaymentError, SigningError } from "./errors";
 import type {
@@ -20,12 +22,14 @@ import {
   isX402V2PaymentRequired,
   encodePaymentV2,
   networkToCaip2,
+  EIP712_TYPES,
+  getNetworkByChainId,
 } from "@armory-sh/base";
 import { createEIP712Domain, createTransferWithAuthorization } from "@armory-sh/base";
 
 export type X402Wallet =
   | { type: "account"; account: Account }
-  | { type: "walletClient"; walletClient: { account: Account } };
+  | { type: "walletClient"; walletClient: WalletClient };
 
 export type X402Version = 2;
 
@@ -34,8 +38,14 @@ export function detectX402Version(_response: Response): X402Version {
 }
 
 export function getWalletAddress(wallet: X402Wallet): Address {
-  return wallet.type === "account"
-    ? wallet.account.address
+  if (wallet.type === "account") {
+    return wallet.account.address;
+  }
+  if (!wallet.walletClient.account) {
+    throw new SigningError("WalletClient account is not connected");
+  }
+  return typeof wallet.walletClient.account === "string"
+    ? (wallet.walletClient.account as Address)
     : wallet.walletClient.account.address;
 }
 
@@ -85,35 +95,90 @@ export function encodeX402Payment(payload: PaymentPayloadV2): string {
   return Buffer.from(JSON.stringify(payload)).toString("base64");
 }
 
+async function signTypedData(
+  wallet: X402Wallet,
+  domain: TypedDataDomain,
+  authorization: EIP3009Authorization
+): Promise<`0x${string}`> {
+  const nonceBigInt = BigInt(authorization.nonce);
+
+  const params = {
+    domain,
+    types: EIP712_TYPES,
+    primaryType: "TransferWithAuthorization" as const,
+    message: {
+      from: authorization.from,
+      to: authorization.to,
+      value: BigInt(authorization.value),
+      validAfter: BigInt(authorization.validAfter),
+      validBefore: BigInt(authorization.validBefore),
+      nonce: nonceBigInt,
+    },
+  };
+
+  let signature: Hash;
+
+  if (wallet.type === "account") {
+    if (!wallet.account.signTypedData) {
+      throw new SigningError("Account does not support signTypedData");
+    }
+    signature = await wallet.account.signTypedData(params);
+  } else {
+    const account = wallet.walletClient.account;
+    if (!account) {
+      throw new SigningError("WalletClient account is not connected");
+    }
+    signature = await wallet.walletClient.signTypedData({
+      ...params,
+      account,
+    });
+  }
+
+  return signature;
+}
+
+function getChainIdFromNetwork(network: string): number {
+  if (network.startsWith("eip155:")) {
+    return parseInt(network.split(":")[1], 10);
+  }
+  const net = getNetworkByChainId(parseInt(network, 10));
+  if (net) return net.chainId;
+  throw new PaymentError(`Unsupported network: ${network}`);
+}
+
 export async function createX402Payment(
   wallet: X402Wallet,
   requirements: PaymentRequirementsV2,
   from: Address,
   nonce: `0x${string}` = `0x${Date.now().toString(16).padStart(64, "0")}` as `0x${string}`,
   validBefore?: number,
-  _domainName?: string,
-  _domainVersion?: string
+  domainName?: string,
+  domainVersion?: string
 ): Promise<PaymentPayloadV2> {
-  const walletAccount = wallet.type === "account" ? wallet.account : wallet.walletClient.account;
+  const chainId = getChainIdFromNetwork(requirements.network);
+  const domain = createEIP712Domain(chainId, requirements.asset);
 
-  if (!walletAccount.signTypedData) {
-    throw new SigningError("Wallet account does not support signTypedData");
+  if (domainName || domainVersion) {
+    domain.name = domainName ?? domain.name;
+    domain.version = domainVersion ?? domain.version;
   }
 
   const authorization: EIP3009Authorization = {
     from,
     to: requirements.payTo,
-    value: requirements.maxAmountRequired,
+    value: requirements.amount,
     validAfter: "0",
     validBefore: (validBefore ?? Math.floor(Date.now() / 1000 + 3600)).toString(),
     nonce,
   };
 
+  const signature = await signTypedData(wallet, domain, authorization);
+
   return {
     x402Version: 2,
     accepted: requirements,
     payload: {
-      signature: "0x",
+      signature,
       authorization,
     },
   };

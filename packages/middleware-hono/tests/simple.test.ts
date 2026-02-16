@@ -4,7 +4,7 @@
  */
 import { test, expect, describe } from "bun:test";
 import { Hono } from "hono";
-import { paymentMiddleware, createPaymentRequirements } from "../src/simple";
+import { paymentMiddleware, createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "../src/simple";
 
 describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
   test("[resolvePayTo|success] - resolves global payTo when no overrides exist", () => {
@@ -107,34 +107,42 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     expect(skaleResult.requirements[0].payTo).toBe("0x3333333333333333333333333333333333333333");
   });
 
-  test("[resolveFacilitatorUrl|success] - resolves facilitatorUrl with same priority", () => {
-    const result = createPaymentRequirements({
+  test("[resolveFacilitatorUrl|success] - does NOT expose facilitatorUrl in requirements", () => {
+    const config = {
       payTo: "0x1111111111111111111111111111111111111111",
       facilitatorUrl: "https://global.facilitator.com",
       chain: "base",
       token: "usdc",
-    });
+    };
+    const result = createPaymentRequirements(config);
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].extra?.facilitatorUrl).toBe("https://global.facilitator.com");
+    expect(result.requirements[0].extra?.facilitatorUrl).toBeUndefined();
+
+    const resolvedUrl = resolveFacilitatorUrlFromRequirement(config, result.requirements[0]);
+    expect(resolvedUrl).toBe("https://global.facilitator.com");
   });
 
   test("[resolveFacilitatorUrl|success] - resolves per-chain facilitatorUrl override", () => {
-    const result = createPaymentRequirements({
+    const config = {
       payTo: "0x1111111111111111111111111111111111111111",
       facilitatorUrlByChain: {
         base: "https://base.facilitator.com",
       },
       chain: "base",
       token: "usdc",
-    });
+    };
+    const result = createPaymentRequirements(config);
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].extra?.facilitatorUrl).toBe("https://base.facilitator.com");
+    expect(result.requirements[0].extra?.facilitatorUrl).toBeUndefined();
+
+    const resolvedUrl = resolveFacilitatorUrlFromRequirement(config, result.requirements[0]);
+    expect(resolvedUrl).toBe("https://base.facilitator.com");
   });
 
   test("[resolveFacilitatorUrl|success] - resolves per-token-per-chain facilitatorUrl override", () => {
-    const result = createPaymentRequirements({
+    const config = {
       payTo: "0x1111111111111111111111111111111111111111",
       facilitatorUrlByToken: {
         base: {
@@ -143,14 +151,18 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
       },
       chain: "base",
       token: "usdc",
-    });
+    };
+    const result = createPaymentRequirements(config);
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].extra?.facilitatorUrl).toBe("https://base-usdc.facilitator.com");
+    expect(result.requirements[0].extra?.facilitatorUrl).toBeUndefined();
+
+    const resolvedUrl = resolveFacilitatorUrlFromRequirement(config, result.requirements[0]);
+    expect(resolvedUrl).toBe("https://base-usdc.facilitator.com");
   });
 
   test("[resolveFacilitatorUrl|success] - combines payTo and facilitatorUrl overrides", () => {
-    const result = createPaymentRequirements({
+    const config = {
       payTo: "0x1111111111111111111111111111111111111111",
       payToByChain: {
         base: "0x2222222222222222222222222222222222222222",
@@ -162,11 +174,15 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
       },
       chain: "base",
       token: "usdc",
-    });
+    };
+    const result = createPaymentRequirements(config);
 
     expect(result.error).toBeUndefined();
     expect(result.requirements[0].payTo).toBe("0x2222222222222222222222222222222222222222");
-    expect(result.requirements[0].extra?.facilitatorUrl).toBe("https://base-usdc.facilitator.com");
+    expect(result.requirements[0].extra?.facilitatorUrl).toBeUndefined();
+
+    const resolvedUrl = resolveFacilitatorUrlFromRequirement(config, result.requirements[0]);
+    expect(resolvedUrl).toBe("https://base-usdc.facilitator.com");
   });
 });
 
@@ -186,7 +202,7 @@ describe("[unit|middleware-hono]: Simple Middleware API", () => {
     expect(req.scheme).toBe("exact");
     expect(req.network).toBe("eip155:8453");
     expect(req.asset).toBe("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
-    expect(req.maxAmountRequired).toBe("1000000");
+    expect(req.amount).toBe("1000000");
     expect(req.extra?.name).toBe("USD Coin");
     expect(req.extra?.version).toBe("2");
   });
@@ -245,6 +261,6 @@ describe("[unit|middleware-hono]: Simple Middleware API", () => {
     });
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].maxAmountRequired).toBe("1000000");
+    expect(result.requirements[0].amount).toBe("1000000");
   });
 });

@@ -70,7 +70,7 @@ export const buildV1Scenario = (overrides?: Partial<PaymentScenario>): PaymentSc
   requirements: {
     scheme: "exact",
     network: "base-sepolia",
-    maxAmountRequired: "1000000",
+    amount: "1000000",
     asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
     payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
     resource: "https://api.example.com/protected",
@@ -91,7 +91,7 @@ export const buildV2Scenario = (overrides?: Partial<PaymentScenario>): PaymentSc
     accepted: {
       scheme: "exact",
       network: "eip155:84532",
-      maxAmountRequired: "1000000",
+      amount: "1000000",
       asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
       payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
       maxTimeoutSeconds: 300,
@@ -111,7 +111,7 @@ export const buildV2Scenario = (overrides?: Partial<PaymentScenario>): PaymentSc
   requirements: {
     scheme: "exact",
     network: "eip155:84532",
-    maxAmountRequired: "1000000",
+    amount: "1000000",
     asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
     payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
     maxTimeoutSeconds: 300,
@@ -139,7 +139,7 @@ export const errorScenarios = {
       accepted: {
         scheme: "exact",
         network: "eip155:84532",
-        maxAmountRequired: "1000000",
+        amount: "1000000",
         asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         maxTimeoutSeconds: 300,
@@ -167,7 +167,7 @@ export const errorScenarios = {
       accepted: {
         scheme: "exact",
         network: "eip155:84532",
-        maxAmountRequired: "1000000",
+        amount: "1000000",
         asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         maxTimeoutSeconds: 300,
@@ -195,7 +195,7 @@ export const errorScenarios = {
       accepted: {
         scheme: "exact",
         network: "eip155:1",
-        maxAmountRequired: "1000000",
+        amount: "1000000",
         asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         maxTimeoutSeconds: 300,
@@ -249,7 +249,7 @@ export const faremeterScenarios = {
     requirements: {
       scheme: "exact",
       network: "base",
-      maxAmountRequired: "1000000",
+      amount: "1000000",
       asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
       payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
       resource: "https://api.example.com/protected",

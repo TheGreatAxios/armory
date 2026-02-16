@@ -42,6 +42,8 @@ export {
   createSettlementHeaders,
 } from "./encoding/x402";
 
+export type { PaymentRequiredOptions } from "./encoding/x402";
+
 // ============================================
 // Utilities from x402
 // ============================================

@@ -53,7 +53,7 @@ const createRequirements = (config: ServerConfig) => {
   return {
     scheme: "exact",
     network: network.caip2Id,
-    maxAmountRequired: atomicAmount,
+    amount: atomicAmount,
     payTo: config.payTo as `0x${string}`,
     maxTimeoutSeconds: 300,
     asset: network.usdcAddress as `0x${string}`,

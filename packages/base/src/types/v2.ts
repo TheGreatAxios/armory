@@ -66,7 +66,7 @@ export interface PaymentRequirementsV2 {
   /** Blockchain network identifier in CAIP-2 format */
   network: CAIP2Network;
   /** Required payment amount in atomic token units */
-  maxAmountRequired: string;
+  amount: string;
   /** Token contract address (extracted from CAIP asset ID) */
   asset: Address;
   /** Recipient wallet address or role constant */

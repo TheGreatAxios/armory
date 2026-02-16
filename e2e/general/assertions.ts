@@ -147,7 +147,7 @@ export function assertPaymentRequirements(
   expect(r).toHaveProperty("network");
 
   if (version === 1) {
-    expect(r).toHaveProperty("maxAmountRequired");
+    expect(r).toHaveProperty("amount");
     expect(r).toHaveProperty("asset");
     expect(r).toHaveProperty("resource");
     expect(r).toHaveProperty("description");

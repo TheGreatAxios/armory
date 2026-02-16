@@ -17,6 +17,37 @@ const mockWallet: X402Wallet = {
   account: mockAccount,
 };
 
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+const PAYEE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+
+function createMockPaymentRequired(overrides: Partial<{
+  payTo: string;
+  amount: string;
+  network: string;
+  asset: string;
+  maxTimeoutSeconds: number;
+}> = {}) {
+  return JSON.stringify({
+    x402Version: 2,
+    resource: { url: "https://api.example.com/data", mimeType: "application/json" },
+    accepts: [{
+      scheme: "exact",
+      payTo: overrides.payTo ?? PAYEE,
+      amount: overrides.amount ?? "1000000",
+      network: overrides.network ?? "eip155:8453",
+      asset: overrides.asset ?? USDC_BASE,
+      maxTimeoutSeconds: overrides.maxTimeoutSeconds ?? 300,
+    }]
+  });
+}
+
+function encodeResponse(data: object) {
+  return Buffer.from(JSON.stringify(data)).toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
+
 // ========================================
 // Basic Client Creation Tests
 // ========================================
@@ -62,7 +93,7 @@ test("[unit|client-viem] - [createPayment|success] - generates v2 payment payloa
   const client = createX402Client({ wallet: mockWallet, version: 2 });
 
   const payment = await client.createPayment(
-    "1.5",
+    "1500000", // 1.5 USDC in atomic units
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     8453
@@ -80,7 +111,7 @@ test("createPayment generates v2 payment payload with explicit version", async (
   const client = createX402Client({ wallet: mockWallet, version: 2 });
 
   const payment = await client.createPayment(
-    "1.5",
+    "1500000", // 1.5 USDC in atomic units
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     8453
@@ -102,7 +133,7 @@ test("signPayment signs payload", async () => {
   const unsigned = {
     from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0" as const,
     to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const,
-    amount: "1.0",
+    amount: "1000000", // 1 USDC in atomic units
     nonce: "1234567890",
     expiry: 1735718400,
     chainId: 8453,
@@ -126,7 +157,7 @@ test("nonceGenerator is used for payments", async () => {
   const client = createX402Client({ wallet: mockWallet, nonceGenerator: customNonce });
 
   const payment = await client.createPayment(
-    "1.0",
+    "1000000", // 1 USDC in atomic units
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     8453
@@ -149,41 +180,18 @@ test("fetch handles 402 response with payment", async () => {
   global.fetch = mock(() => {
     callCount++;
     if (callCount === 1) {
-      const paymentRequired = JSON.stringify({
-        x402Version: 2,
-        resource: "https://api.example.com/data",
-        accepts: [{
-          to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          amount: "1.0",
-          network: "eip155:8453",
-          asset: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          nonce: `${Date.now()}`,
-          expiry: 1735718400,
-        }]
-      });
-      const encoded = Buffer.from(paymentRequired).toString("base64");
-
+      const encoded = Buffer.from(createMockPaymentRequired()).toString("base64");
       return Promise.resolve(
         new Response("Payment Required", {
           status: 402,
-          headers: {
-            "PAYMENT-REQUIRED": encoded,
-          },
+          headers: { "PAYMENT-REQUIRED": encoded },
         })
       );
     }
-    const settlementResponse = JSON.stringify({ success: true, txHash: "0xabc123", timestamp: Date.now() });
-    const encodedResponse = Buffer.from(settlementResponse).toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
-
     return Promise.resolve(
       new Response("Success", {
         status: 200,
-        headers: {
-          "PAYMENT-RESPONSE": encodedResponse,
-        },
+        headers: { "PAYMENT-RESPONSE": encodeResponse({ success: true, transaction: "0xabc123", network: "eip155:8453" }) },
       })
     );
   });
@@ -201,42 +209,18 @@ test("fetch handles 402 response with v2 payment", async () => {
   global.fetch = mock(() => {
     callCount++;
     if (callCount === 1) {
-      // Base64 encode the PAYMENT-REQUIRED header (V2 format)
-      const paymentRequired = JSON.stringify({
-              x402Version: 2,
-              resource: "https://api.example.com/data",
-              accepts: [{
-                to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                amount: "1.0",
-                network: "eip155:8453",
-                asset: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                nonce: `${Date.now()}`,
-                expiry: 1735718400,
-              }]
-            });
-      const encoded = Buffer.from(paymentRequired).toString("base64");
-
+      const encoded = Buffer.from(createMockPaymentRequired()).toString("base64");
       return Promise.resolve(
         new Response("Payment Required", {
           status: 402,
-          headers: {
-            "PAYMENT-REQUIRED": encoded,
-          },
+          headers: { "PAYMENT-REQUIRED": encoded },
         })
       );
     }
-    const settlementResponse = JSON.stringify({ status: "success", txHash: "0xabc123", timestamp: Date.now() });
-    const encodedResponse = Buffer.from(settlementResponse).toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
-
     return Promise.resolve(
       new Response("Success", {
         status: 200,
-        headers: {
-          "PAYMENT-RESPONSE": encodedResponse,
-        },
+        headers: { "PAYMENT-RESPONSE": encodeResponse({ success: true, transaction: "0xabc123", network: "eip155:8453" }) },
       })
     );
   });
@@ -347,41 +331,18 @@ test("full payment flow: 402 -> payment -> success", async () => {
   const mockFetch = mock(() => {
     callCount++;
     if (callCount === 1) {
-      const paymentRequired = JSON.stringify({
-        x402Version: 2,
-        resource: "https://api.example.com/protected",
-        accepts: [{
-          to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          amount: "2.5",
-          network: "eip155:8453",
-          asset: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          nonce: `${Date.now()}`,
-          expiry: 1735718400,
-        }]
-      });
-      const encoded = Buffer.from(paymentRequired).toString("base64");
-
+      const encoded = Buffer.from(createMockPaymentRequired({ amount: "2500000" })).toString("base64");
       return Promise.resolve(
         new Response("Payment Required", {
           status: 402,
-          headers: {
-            "PAYMENT-REQUIRED": encoded,
-          },
+          headers: { "PAYMENT-REQUIRED": encoded },
         })
       );
     }
-    const settlementResponse = JSON.stringify({ success: true, txHash: "0xtx123", timestamp: Date.now() });
-    const encodedResponse = Buffer.from(settlementResponse).toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
-
     return Promise.resolve(
       new Response('{"data": "protected content"}', {
         status: 200,
-        headers: {
-          "PAYMENT-RESPONSE": encodedResponse,
-        },
+        headers: { "PAYMENT-RESPONSE": encodeResponse({ success: true, transaction: "0xtx123", network: "eip155:8453" }) },
       })
     );
   });
@@ -403,46 +364,18 @@ test("payment flow with v2 protocol", async () => {
   const mockFetch = mock(() => {
     callCount++;
     if (callCount === 1) {
-      // Base64 encode the PAYMENT-REQUIRED header (V2 format)
-      const paymentRequired = JSON.stringify({
-              x402Version: 2,
-              resource: "https://api.example.com/v2/resource",
-              accepts: [{
-                to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                amount: "1.0",
-                network: "eip155:8453",
-                asset: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-                nonce: `${Date.now()}`,
-                expiry: 1735718400,
-              }]
-            });
-      const encoded = Buffer.from(paymentRequired).toString("base64");
-
+      const encoded = Buffer.from(createMockPaymentRequired()).toString("base64");
       return Promise.resolve(
         new Response("Payment Required", {
           status: 402,
-          headers: {
-            "PAYMENT-REQUIRED": encoded,
-          },
+          headers: { "PAYMENT-REQUIRED": encoded },
         })
       );
     }
-    const settlementResponse = JSON.stringify({
-      status: "success",
-      txHash: "0xabc456",
-      timestamp: Date.now(),
-    });
-    const encodedResponse = Buffer.from(settlementResponse).toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
-
     return Promise.resolve(
       new Response('{"result": "success"}', {
         status: 200,
-        headers: {
-          "PAYMENT-RESPONSE": encodedResponse,
-        },
+        headers: { "PAYMENT-RESPONSE": encodeResponse({ success: true, transaction: "0xabc456", network: "eip155:8453" }) },
       })
     );
   });
@@ -466,7 +399,7 @@ test("payment flow with custom expiry and nonce", async () => {
   });
 
   const payment = await client.createPayment(
-    "5.0",
+    "5000000", // 5 USDC in atomic units
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     8453,
@@ -485,18 +418,23 @@ test("throws SigningError when account lacks signTypedData", async () => {
     address: "0x0000000000000000000000000000000000000001" as const,
     signMessage: async () => "0x" as const,
     signTransaction: async () => "0x" as const,
-  } as const;
+  };
 
   const wallet: X402Wallet = { type: "account", account: incompleteAccount as any };
   const client = createX402Client({ wallet });
 
+  let callCount = 0;
+  global.fetch = mock(() => {
+    callCount++;
+    if (callCount === 1) {
+      const encoded = Buffer.from(createMockPaymentRequired()).toString("base64");
+      return Promise.resolve(new Response("Payment Required", { status: 402, headers: { "PAYMENT-REQUIRED": encoded } }));
+    }
+    return Promise.resolve(new Response("OK", { status: 200 }));
+  });
+
   await expect(
-    client.createPayment(
-      "1.0",
-      "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-      8453
-    )
+    client.fetch("https://api.example.com/test")
   ).rejects.toThrowError(SigningError);
 });
 
@@ -507,36 +445,11 @@ test("throws PaymentError on failed settlement", async () => {
   global.fetch = mock(() => {
     callCount++;
     if (callCount === 1) {
-      const paymentRequired = JSON.stringify({
-        x402Version: 2,
-        resource: "https://api.example.com/expensive",
-        accepts: [{
-          to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          amount: "1.0",
-          network: "eip155:8453",
-          asset: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          nonce: `${Date.now()}`,
-          expiry: 1735718400,
-        }]
-      });
-      const encoded = Buffer.from(paymentRequired).toString("base64");
-
-      return Promise.resolve(
-        new Response("Payment Required", {
-          status: 402,
-          headers: {
-            "PAYMENT-REQUIRED": encoded,
-          },
-        })
-      );
+      const encoded = Buffer.from(createMockPaymentRequired()).toString("base64");
+      return Promise.resolve(new Response("Payment Required", { status: 402, headers: { "PAYMENT-REQUIRED": encoded } }));
     }
     return Promise.resolve(
-      new Response("Payment Failed", {
-        status: 402,
-        headers: {
-          "PAYMENT-RESPONSE": "invalid-json{{{",
-        },
-      })
+      new Response("Payment Failed", { status: 402, headers: { "PAYMENT-RESPONSE": "invalid-json{{{" } })
     );
   });
 
@@ -625,12 +538,12 @@ test("PaymentError includes error details", async () => {
         x402Version: 2,
         resource: "https://api.example.com/invalid-sig",
         accepts: [{
-          to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          amount: "1.0",
+          scheme: "exact",
+          payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          amount: "1000000",
           network: "eip155:8453",
-          asset: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          nonce: `${Date.now()}`,
-          expiry: 1735718400,
+          asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          maxTimeoutSeconds: 300,
         }]
       });
       const encoded = Buffer.from(paymentRequired).toString("base64");

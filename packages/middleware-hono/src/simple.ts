@@ -206,6 +206,44 @@ function resolveFacilitatorUrl(
   return config.facilitatorUrl;
 }
 
+export function resolveFacilitatorUrlFromRequirement(
+  config: PaymentConfig,
+  requirement: PaymentRequirementsV2
+): string | undefined {
+  const chainId = parseInt(requirement.network.split(":")[1] || "0", 10);
+  const assetAddress = requirement.asset.toLowerCase();
+
+  if (config.facilitatorUrlByToken) {
+    for (const [chainKey, tokenMap] of Object.entries(config.facilitatorUrlByToken)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        for (const [, url] of Object.entries(tokenMap)) {
+          const network = resolveNetwork(chainKey);
+          if (!isValidationError(network)) {
+            for (const tokenKey of Object.keys(tokenMap)) {
+              const resolvedToken = resolveToken(tokenKey, network);
+              if (!isValidationError(resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === assetAddress) {
+                return url;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (config.facilitatorUrlByChain) {
+    for (const [chainKey, url] of Object.entries(config.facilitatorUrlByChain)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        return url;
+      }
+    }
+  }
+
+  return config.facilitatorUrl;
+}
+
 export function createPaymentRequirements(
   config: PaymentConfig
 ): ResolvedSimpleConfig {
@@ -250,14 +288,13 @@ export function createPaymentRequirements(
       requirements.push({
         scheme: "exact",
         network: network.caip2,
-        maxAmountRequired: atomicAmount,
+        amount: atomicAmount,
         asset: tokenConfig.contractAddress,
         payTo: resolvedPayTo as `0x${string}`,
         maxTimeoutSeconds,
         extra: {
           name: tokenConfig.name,
           version: tokenConfig.version,
-          ...(resolvedFacilitatorUrl && { facilitatorUrl: resolvedFacilitatorUrl }),
         },
       });
     }
@@ -327,9 +364,7 @@ export function paymentMiddleware(config: PaymentConfig) {
       return c.json({ error: "Invalid payment payload" });
     }
 
-    const requirementFacilitatorUrl = primaryRequirement.extra?.facilitatorUrl;
-    const facilitatorUrl = config.facilitatorUrl
-      ?? (typeof requirementFacilitatorUrl === "string" ? requirementFacilitatorUrl : undefined);
+    const facilitatorUrl = resolveFacilitatorUrlFromRequirement(config, primaryRequirement);
 
     console.log("[payment-middleware] Facilitator URL:", facilitatorUrl);
 

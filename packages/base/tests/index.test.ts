@@ -20,7 +20,7 @@ import {
 const DEFAULT_REQUIREMENTS: PaymentRequirementsV2 = {
   scheme: "exact",
   network: "eip155:84532",
-  maxAmountRequired: "1000000",
+  amount: "1000000",
   asset: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
   payTo: "0x1234567890123456789012345678901234567890",
   maxTimeoutSeconds: 300,
