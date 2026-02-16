@@ -1,6 +1,8 @@
 # @armory-sh/extensions
 
-Protocol extensions for the x402 payment standard.
+Armory x402 SDK — Protocol extensions for x402 payments. Add SIWX, payment ID, and custom extensions.
+
+[Documentation](https://armory.sh) | [License](LICENSE)
 
 ## Installation
 
@@ -8,23 +10,46 @@ Protocol extensions for the x402 payment standard.
 bun add @armory-sh/extensions
 ```
 
-## Available Extensions
+## Why Armory?
 
-| Extension | Purpose |
-|-----------|---------|
-| Sign-In-With-X | Wallet authentication for repeat access |
-| Payment Identifier | Idempotency for payment requests |
-| Bazaar | Resource discovery |
+Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Extensions add powerful functionality like authentication and idempotency.
 
-## Hook Creators
-
-### createSIWxHook
-
-Creates a hook that handles Sign-In-With-X authentication:
+## Key Exports
 
 ```typescript
-import { createSIWxHook } from '@armory-sh/extensions';
-import { createX402Client } from '@armory-sh/client-viem';
+import {
+  // Hook Creators
+  createSIWxHook,
+  createPaymentIdHook,
+  createCustomHook,
+
+  // Server Extensions
+  declareSIWxExtension,
+  declarePaymentIdentifierExtension,
+
+  // Utilities
+  validateSIWxMessage,
+  verifySIWxSignature,
+  generatePaymentId,
+
+  // Types
+  type SIWxHookConfig,
+  type PaymentIdHookConfig,
+  type CustomHookConfig,
+  type SIWxExtension,
+  type PaymentIdentifierExtension,
+} from '@armory-sh/extensions';
+```
+
+## Quick Start
+
+### Sign-In-With-X (SIWX)
+
+Wallet authentication for repeat access.
+
+```typescript
+import { createSIWxHook } from '@armory-sh/extensions'
+import { createX402Client } from '@armory-sh/client-viem'
 
 const client = createX402Client({
   wallet: { type: 'account', account },
@@ -34,25 +59,25 @@ const client = createX402Client({
       statement: 'Sign in to access premium content'
     })
   }
-});
+})
 ```
 
-### createPaymentIdHook
+### Payment Identifier
 
-Creates a hook that adds payment idempotency:
+Idempotency for payment requests.
 
 ```typescript
-import { createPaymentIdHook } from '@armory-sh/extensions';
+import { createPaymentIdHook } from '@armory-sh/extensions'
 
-const hook = createPaymentIdHook({ paymentId: 'my-custom-id' });
+const hook = createPaymentIdHook({ paymentId: 'my-custom-id' })
 ```
 
-### createCustomHook
+### Custom Hooks
 
-Create custom extension hooks:
+Create your own extensions.
 
 ```typescript
-import { createCustomHook } from '@armory-sh/extensions';
+import { createCustomHook } from '@armory-sh/extensions'
 
 const customHook = createCustomHook({
   key: 'my-extension',
@@ -61,41 +86,35 @@ const customHook = createCustomHook({
       context.payload.extensions = {
         ...(context.payload.extensions ?? {}),
         'my-extension': { data: 'value' }
-      };
+      }
     }
   },
   priority: 75
-});
+})
 ```
 
-## Server Extension Declaration
+### Server Extension Declaration
 
 For server-side middleware:
 
 ```typescript
-import { declareSIWxExtension, declarePaymentIdentifierExtension } from '@armory-sh/extensions';
+import { declareSIWxExtension, declarePaymentIdentifierExtension } from '@armory-sh/extensions'
 
 const siwxExt = declareSIWxExtension({
   domain: 'api.example.com',
   statement: 'Sign in to access this API'
-});
+})
 
-const paymentIdExt = declarePaymentIdentifierExtension({ required: true });
+const paymentIdExt = declarePaymentIdentifierExtension({ required: true })
 ```
 
-## Exports
+## Features
 
-| Export | Description |
-|--------|-------------|
-| `createSIWxHook` | Hook for Sign-In-With-X |
-| `createPaymentIdHook` | Hook for payment idempotency |
-| `createCustomHook` | Create custom hooks |
-| `declareSIWxExtension` | Declare SIWX extension for server |
-| `declarePaymentIdentifierExtension` | Declare payment ID extension |
-| `validateSIWxMessage` | Validate SIWX payload |
-| `verifySIWxSignature` | Verify SIWX signature |
-| `generatePaymentId` | Generate random payment ID |
+- **Sign-In-With-X**: Wallet authentication for repeat access
+- **Payment Identifier**: Idempotency for payment requests
+- **Custom Hooks**: Create your own extensions
+- **Server-Side**: Declare extensions for middleware
 
 ## License
 
-MIT
+MIT © [Sawyer Cutler](https://github.com/TheGreatAxios/armory)

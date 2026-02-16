@@ -1,6 +1,8 @@
 # @armory-sh/middleware-next
 
-x402 payment middleware for Next.js App Router.
+Armory x402 SDK — Payment middleware for Next.js App Router. Accept x402 payments from any client in Next.js. 100% compatible with Coinbase x402 SDKs.
+
+[Documentation](https://armory.sh) | [License](LICENSE)
 
 ## Installation
 
@@ -8,77 +10,56 @@ x402 payment middleware for Next.js App Router.
 bun add @armory-sh/middleware-next
 ```
 
-## Usage
+## Why Armory?
 
-### Basic Setup
+Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Accept payments from any x402-compatible client—Coinbase SDK, Armory SDK, or your own implementation.
+
+## Key Exports
+
+```typescript
+import {
+  paymentProxy,
+  x402ResourceServer,
+  type X402RouteConfig,
+} from '@armory-sh/middleware-next';
+```
+
+## Quick Start
 
 ```typescript
 // middleware.ts
-import { paymentProxy, x402ResourceServer } from "@armory-sh/middleware-next";
+import { paymentProxy, x402ResourceServer } from '@armory-sh/middleware-next'
 
-const facilitatorClient = {
-  async verify(headers: Headers) {
-    // Implement verification logic
-    return { success: true, payerAddress: "0x..." };
+const resourceServer = new x402ResourceServer(facilitatorClient)
+
+export const proxy = paymentProxy({
+  '/api/protected': {
+    accepts: {
+      scheme: 'exact',
+      price: '1000000',
+      network: 'eip155:8453',
+      payTo: '0x...'
+    },
+    description: 'Access protected API'
   }
-};
+}, resourceServer)
 
-const resourceServer = new x402ResourceServer(facilitatorClient);
-
-export const proxy = paymentProxy(
-  {
-    "/api/protected": {
-      accepts: {
-        scheme: "exact",
-        price: "1000000",
-        network: "eip155:8453",
-        payTo: "0x...",
-      },
-      description: "Access to protected API",
-    },
-  },
-  resourceServer
-);
-
-export const config = { matcher: ["/api/protected/:path*"] };
+export const config = { matcher: ['/api/protected/:path*'] }
 ```
 
-### Per-Route Configuration
+## Per-Route Configuration
 
 ```typescript
-export const proxy = paymentProxy(
-  {
-    "/api/basic": {
-      accepts: { scheme: "exact", price: "1000000", network: "eip155:8453", payTo: "0x..." },
-      description: "Basic tier",
-    },
-    "/api/premium": {
-      accepts: { scheme: "exact", price: "50000000", network: "eip155:8453", payTo: "0x..." },
-      description: "Premium tier",
-    },
+export const proxy = paymentProxy({
+  '/api/basic': {
+    accepts: { scheme: 'exact', price: '1000000', network: 'eip155:8453', payTo: '0x...' },
+    description: 'Basic tier'
   },
-  resourceServer
-);
-```
-
-### With Facilitator Settlement
-
-```typescript
-const facilitatorClient = {
-  async verify(headers: Headers) {
-    const response = await fetch("https://facilitator.com/verify", {
-      headers: Object.fromEntries(headers.entries()),
-    });
-    return response.json();
-  },
-  async settle(headers: Headers) {
-    const response = await fetch("https://facilitator.com/settle", {
-      method: "POST",
-      headers: Object.fromEntries(headers.entries()),
-    });
-    return response.json();
-  },
-};
+  '/api/premium': {
+    accepts: { scheme: 'exact', price: '50000000', network: 'eip155:8453', payTo: '0x...' },
+    description: 'Premium tier'
+  }
+}, resourceServer)
 ```
 
 ## Route Patterns
@@ -87,24 +68,24 @@ const facilitatorClient = {
 - Wildcard: `/api/*` (matches `/api/users`, `/api/posts/123`)
 - Next.js style: `/protected/:path*` (matches `/protected/foo/bar`)
 
-## API
+## Features
 
-### `paymentProxy(routes, resourceServer)`
+- **x402 Compatible**: Accept payments from any x402 client
+- **Per-Route Config**: Different pricing for different routes
+- **Multi-Network**: Ethereum, Base, SKALE support
+- **Multi-Token**: USDC, EURC, USDT, WBTC, WETH, SKL
+- **Facilitator Integration**: Optional facilitator support
 
-Creates a payment proxy handler for Next.js middleware.
+## Supported Networks
 
-**Parameters:**
-- `routes`: Record mapping route patterns to payment config
-- `resourceServer`: x402ResourceServer instance
+| Network | Chain ID |
+|---------|----------|
+| Ethereum | 1 |
+| Base | 8453 |
+| Base Sepolia | 84532 |
+| SKALE Base | 1187947933 |
+| SKALE Base Sepolia | 324705682 |
 
-**Returns:** Next.js middleware function
+## License
 
-### `x402ResourceServer`
-
-Registers and manages payment schemes.
-
-**Methods:**
-- `register(chainId, scheme)`: Register a payment scheme
-- `getRequirements(chainId)`: Get requirements for a chain
-- `getAllRequirements()`: Get all registered requirements
-- `getFacilitator()`: Get the facilitator client
+MIT © [Sawyer Cutler](https://github.com/TheGreatAxios/armory)

@@ -1,6 +1,8 @@
 # @armory-sh/middleware-hono
 
-x402 payment middleware for Hono applications.
+Armory x402 SDK — Payment middleware for Hono. Accept x402 payments from any client in your Hono app. 100% compatible with Coinbase x402 SDKs.
+
+[Documentation](https://armory.sh) | [License](LICENSE)
 
 ## Installation
 
@@ -8,213 +10,165 @@ x402 payment middleware for Hono applications.
 bun add @armory-sh/middleware-hono
 ```
 
-## Features
+## Why Armory?
 
-- Simple payment middleware for Hono
-- Route-aware payment configuration
-- Multi-network, multi-token support
-- Per-route facilitator configuration
-- Full TypeScript support
+Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Accept payments from any x402-compatible client—Coinbase SDK, Armory SDK, or your own implementation.
 
-## Basic Usage
+## Key Exports
 
 ```typescript
-import { Hono } from "hono";
-import { paymentMiddleware } from "@armory-sh/middleware-hono";
+import {
+  // Middleware
+  paymentMiddleware,
+  routeAwarePaymentMiddleware,
 
-const app = new Hono();
+  // Requirements
+  createPaymentRequirements,
 
-app.use("/*", paymentMiddleware({
-  payTo: "0xYourAddress...",
-  chain: "base",
-  token: "usdc",
-  amount: "1.0",
-}));
-
-app.get("/api/data", (c) => {
-  const payment = c.get("payment");
-  return c.json({
-    data: "protected data",
-    payerAddress: payment?.payload?.authorization?.from,
-  });
-});
+  // Types
+  type PaymentConfig,
+  type RouteAwarePaymentConfig,
+  type HonoPaymentContext,
+} from '@armory-sh/middleware-hono';
 ```
 
-## Route-Aware Middleware
+## Quick Start
 
-Configure different payment requirements for different routes:
+### Basic Middleware
 
 ```typescript
-import { routeAwarePaymentMiddleware } from "@armory-sh/middleware-hono";
+import { Hono } from 'hono'
+import { paymentMiddleware } from '@armory-sh/middleware-hono'
 
-const app = new Hono();
+const app = new Hono()
 
-// Single route with wildcard
-app.use("/api/premium/*", routeAwarePaymentMiddleware({
-  routes: ["/api/premium/*"],
-  payTo: "0xYourAddress...",
-  amount: "$5.00",
-  network: "base"
-}));
+app.use('/*', paymentMiddleware({
+  payTo: '0xYourAddress...',
+  network: 'base',
+  token: 'usdc',
+  amount: '1.0'
+}))
 
-// Multiple routes with per-route configuration
-app.use("/api/*", routeAwarePaymentMiddleware({
-  routes: ["/api/basic", "/api/premium/*"],
-  payTo: "0xYourAddress...",
-  amount: "$1.00",  // Default amount
-  network: "base",
+app.get('/api/data', (c) => {
+  const payment = c.get('payment')
+  return c.json({
+    data: 'protected data',
+    payerAddress: payment?.payload?.authorization?.from
+  })
+})
+
+app.listen(3000)
+```
+
+### Route-Aware Middleware
+
+```typescript
+import { routeAwarePaymentMiddleware } from '@armory-sh/middleware-hono'
+
+const app = new Hono()
+
+// Different pricing for different routes
+app.use('/api/*', routeAwarePaymentMiddleware({
+  routes: ['/api/basic', '/api/premium/*'],
+  payTo: '0xYourAddress...',
+  amount: '$1.00',
+  network: 'base',
   perRoute: {
-    "/api/premium/*": {
-      amount: "$5.00",  // Override for premium routes
-      network: "ethereum",
+    '/api/premium/*': {
+      amount: '$5.00'
     }
   }
-}));
+}))
+```
+
+### Multi-Network Support
+
+```typescript
+app.use('/*', paymentMiddleware({
+  payTo: '0xYourAddress...',
+  chains: ['base', 'ethereum', 'skale-base'],
+  tokens: ['usdc', 'eurc'],
+  amount: '1.0'
+}))
+```
+
+### Per-Chain Configuration
+
+```typescript
+app.use('/*', paymentMiddleware({
+  payTo: '0xDefaultAddress...',
+  payToByChain: {
+    base: '0xBaseAddress...',
+    ethereum: '0xEthAddress...'
+  },
+  chain: 'base',
+  token: 'usdc'
+}))
 ```
 
 ## Configuration Options
 
-### PaymentConfig
-
 ```typescript
 interface PaymentConfig {
-  payTo: string;                    // Payment recipient address
-  chain?: string | number;          // Network (name or chain ID)
-  chains?: Array<string | number>;  // Multiple networks
-  token?: string;                   // Token symbol
-  tokens?: string[];                // Multiple tokens
-  amount?: string;                  // Amount (default: "1.0")
-  maxTimeoutSeconds?: number;       // Payment timeout (default: 300)
+  payTo: string                    // Payment recipient address
+  chain?: string | number          // Network (name or chain ID)
+  chains?: Array<string | number>  // Multiple networks
+  token?: string                   // Token symbol
+  tokens?: string[]                // Multiple tokens
+  amount?: string                  // Amount (default: "1.0")
+  maxTimeoutSeconds?: number       // Payment timeout (default: 300)
 
   // Per-chain configuration
-  payToByChain?: Record<string, string>;
-  facilitatorUrlByChain?: Record<string, string>;
+  payToByChain?: Record<string, string>
+  facilitatorUrlByChain?: Record<string, string>
 
   // Per-token-per-chain configuration
-  payToByToken?: Record<string, Record<string, string>>;
-  facilitatorUrlByToken?: Record<string, Record<string, string>>;
+  payToByToken?: Record<string, Record<string, string>>
+  facilitatorUrlByToken?: Record<string, Record<string, string>>
 }
-```
 
-### RouteAwarePaymentConfig
-
-```typescript
 interface RouteAwarePaymentConfig extends PaymentConfig {
-  route?: string;    // Single exact route (no wildcards)
-  routes?: string[];  // Multiple routes (allows wildcards)
-  perRoute?: Record<string, Partial<PaymentConfig>>;
+  route?: string                    // Single exact route
+  routes?: string[]                 // Multiple routes (allows wildcards)
+  perRoute?: Record<string, Partial<PaymentConfig>>
 }
-```
-
-## Payment Context
-
-The middleware adds payment information to the Hono context:
-
-```typescript
-app.get("/api/data", (c) => {
-  const payment = c.get("payment");
-  // payment.payload: PaymentPayloadV2
-  // payment.verified: boolean
-  // payment.route: string (only for route-aware middleware)
-});
 ```
 
 ## Input Formats
 
-**Networks** - Use any format:
+**Networks** — Use any format:
 ```typescript
 'base'              // name
 8453                // chain ID
 'eip155:8453'       // CAIP-2
 ```
 
-**Tokens** - Use any format:
+**Tokens** — Use any format:
 ```typescript
 'usdc'              // symbol (case-insensitive)
 '0x8335...'         // EVM address
 'eip155:8453/erc20:0x8335...'  // CAIP Asset ID
 ```
 
-## Route Pattern Matching
+## Features
 
-- **Exact**: `/api/users` - matches only `/api/users`
-- **Wildcard**: `/api/*` - matches `/api/users`, `/api/posts/123`
-- **Parameterized**: `/api/users/:id` - matches `/api/users/123`
+- **x402 Compatible**: Accept payments from any x402 client
+- **Route-Aware**: Different pricing for different routes
+- **Multi-Network**: Ethereum, Base, SKALE support
+- **Multi-Token**: USDC, EURC, USDT, WBTC, WETH, SKL
+- **Per-Chain Config**: Different addresses per network
+- **Facilitator Integration**: Optional facilitator support
 
-Priority order: Exact matches > Parameterized routes > Wildcard routes
+## Supported Networks
 
-## Examples
+| Network | Chain ID |
+|---------|----------|
+| Ethereum | 1 |
+| Base | 8453 |
+| Base Sepolia | 84532 |
+| SKALE Base | 1187947933 |
+| SKALE Base Sepolia | 324705682 |
 
-### Multi-Network Support
+## License
 
-```typescript
-app.use("/*", paymentMiddleware({
-  payTo: "0xYourAddress...",
-  chains: ["base", "ethereum", "skale-base"],
-  tokens: ["usdc", "eurc"],
-  amount: "1.0"
-}));
-```
-
-### Per-Chain Configuration
-
-```typescript
-app.use("/*", paymentMiddleware({
-  payTo: "0xDefaultAddress...",
-  payToByChain: {
-    base: "0xBaseAddress...",
-    ethereum: "0xEthAddress...",
-  },
-  chain: "base",
-  token: "usdc"
-}));
-```
-
-### Route-Specific Pricing
-
-```typescript
-app.use("/api/*", routeAwarePaymentMiddleware({
-  routes: ["/api/basic", "/api/pro", "/api/enterprise"],
-  payTo: "0xYourAddress...",
-  amount: "$1.00",
-  network: "base",
-  perRoute: {
-    "/api/pro": {
-      amount: "$5.00",
-    },
-    "/api/enterprise": {
-      amount: "$50.00",
-      network: "ethereum",
-    }
-  }
-}));
-```
-
-## API
-
-### `paymentMiddleware(config)`
-
-Creates a basic payment middleware for Hono.
-
-**Parameters:**
-- `config`: Payment configuration
-
-**Returns:** Hono middleware function
-
-### `createPaymentRequirements(config)`
-
-Creates payment requirements from configuration (for advanced use).
-
-**Parameters:**
-- `config`: Payment configuration
-
-**Returns:** Object with `requirements` array and optional `error`
-
-### `routeAwarePaymentMiddleware(config)`
-
-Creates a route-aware payment middleware for Hono.
-
-**Parameters:**
-- `config`: Route-aware payment configuration
-
-**Returns:** Hono middleware function
+MIT © [Sawyer Cutler](https://github.com/TheGreatAxios/armory)

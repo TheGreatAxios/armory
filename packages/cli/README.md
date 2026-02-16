@@ -1,14 +1,18 @@
 # armory-cli
 
-CLI for the Armory x402 payment protocol. Scaffold apps, query networks/tokens, and verify endpoints.
+Armory x402 SDK — CLI tool to scaffold payment-enabled apps, query networks/tokens, and verify endpoints.
 
-## Install
+[Documentation](https://armory.sh) | [License](LICENSE)
+
+## Installation
 
 ```bash
 bun add -g armory-cli
-# or
-npm install -g armory-cli
 ```
+
+## Why Armory?
+
+Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Scaffold full payment servers and clients in seconds.
 
 ## Commands
 
@@ -17,19 +21,16 @@ npm install -g armory-cli
 Scaffold a new x402 payment-enabled project.
 
 **Server Templates:**
-- `bun-server` - Bun server with payment middleware
-- `express-server` - Express v5 server
-- `hono-server` - Hono server with extension support
-- `elysia-server` - Elysia/Bun server
-- `next-server` - Next.js middleware
+- `bun-server` — Bun server with payment middleware
+- `express-server` — Express v5 server
+- `hono-server` — Hono server with extension support
+- `elysia-server` — Elysia/Bun server
+- `next-server` — Next.js middleware
 
 **Client Templates:**
-- `viem-client` - Viem x402 client
-- `ethers-client` - Ethers.js v6 client
-- `web3-client` - Web3.js client
-
-**Legacy:**
-- `facilitator` - Payment verification server (deprecated)
+- `viem-client` — Viem x402 client
+- `ethers-client` — Ethers.js v6 client
+- `web3-client` — Web3.js client
 
 ```bash
 armory create bun-server my-api
@@ -86,29 +87,6 @@ armory verify https://api.example.com/data
 armory inspect https://api.example.com/data
 ```
 
-## Examples
-
-```bash
-# Create a payment server
-armory create bun-server my-payment-api
-cd my-payment-api
-bun install
-bun run dev
-
-# In another terminal, create a client
-armory create viem-client my-client
-cd my-client
-bun install
-PRIVATE_KEY=0x... bun run dev
-
-# Check available networks and tokens
-armory networks
-armory tokens base
-
-# Verify an endpoint
-armory verify http://localhost:3000/api/data
-```
-
 ## Supported Networks
 
 | Network | Chain ID |
@@ -124,6 +102,6 @@ armory verify http://localhost:3000/api/data
 
 USDC, EURC, USDT, WBTC, WETH, SKL across supported networks.
 
----
+## License
 
-MIT License | Sawyer Cutler 2026 | Provided "AS IS" without warranty
+MIT © [Sawyer Cutler](https://github.com/TheGreatAxios/armory)

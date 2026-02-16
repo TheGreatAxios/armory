@@ -46,3 +46,4 @@ turbo-build.log
 
 packages/cli/.turbo/turbo-test.log
 packages/cli/.turbo/turbo-build.log
+.tmp/
