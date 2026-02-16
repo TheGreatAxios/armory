@@ -2,7 +2,7 @@
 
 import { execSync } from "node:child_process"
 import { readFileSync, existsSync, readdirSync } from "node:fs"
-import { join } from "node:path"
+import { join, resolve } from "node:path"
 
 const PACKAGES_DIR = "packages"
 
@@ -40,9 +40,10 @@ for (const pkg of packagesToPublish) {
   process.stdout.write(`  ${pkg.name}... `)
 
   const tagFlag = tag ? `--tag ${tag}` : ""
+  const localDir = resolve(pkg.dir)
 
   try {
-    execSync(`npm publish --provenance --access public ${tagFlag} "${pkg.dir}"`, {
+    execSync(`npm publish --provenance --access public ${tagFlag} "${localDir}"`, {
       stdio: "pipe",
       shell: true,
     })
