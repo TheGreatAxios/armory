@@ -28,12 +28,12 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./extensions": {
       "types": "./dist/extensions.d.ts",
-      "bun": "./src/extensions.ts",
+      "bun": "./dist/extensions.js",
       "default": "./dist/extensions.js"
     },
     "./dist/*": "./dist/*.js"
