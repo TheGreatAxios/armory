@@ -28,7 +28,7 @@
     "express": "^4"
   },
   "dependencies": {
-    "@armory-sh/base": "0.2.22"
+    "@armory-sh/base": "workspace:*"
   },
   "scripts": {
     "test": "bun test"

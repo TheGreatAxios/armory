@@ -41,7 +41,7 @@
     "directory": "packages/extensions"
   },
   "dependencies": {
-    "@armory-sh/base": "0.2.22",
+    "@armory-sh/base": "workspace:*",
     "ajv": "^8.12.0"
   },
   "devDependencies": {

@@ -24,7 +24,7 @@
     "directory": "packages/middleware-bun"
   },
   "dependencies": {
-    "@armory-sh/base": "0.2.22"
+    "@armory-sh/base": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest",
