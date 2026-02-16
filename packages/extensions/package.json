@@ -28,22 +28,22 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./bazaar": {
       "types": "./dist/bazaar.d.ts",
-      "bun": "./src/bazaar.ts",
+      "bun": "./dist/bazaar.js",
       "default": "./dist/bazaar.js"
     },
     "./sign-in-with-x": {
       "types": "./dist/sign-in-with-x.d.ts",
-      "bun": "./src/sign-in-with-x.ts",
+      "bun": "./dist/sign-in-with-x.js",
       "default": "./dist/sign-in-with-x.js"
     },
     "./payment-identifier": {
       "types": "./dist/payment-identifier.d.ts",
-      "bun": "./src/payment-identifier.ts",
+      "bun": "./dist/payment-identifier.js",
       "default": "./dist/payment-identifier.js"
     }
   },
