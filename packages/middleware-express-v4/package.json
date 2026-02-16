@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-express-v4",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "keywords": [
     "x402",
