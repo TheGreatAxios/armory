@@ -3,6 +3,12 @@ import type {
   SettlementResponseV2,
 } from "./types/v2";
 import { V2_HEADERS } from "./types/v2";
+import {
+  decodeBase64ToUtf8,
+  encodeUtf8ToBase64,
+  normalizeBase64Url,
+  toBase64Url,
+} from "./utils/base64";
 
 export { V2_HEADERS };
 
@@ -13,23 +19,14 @@ export type SettlementResponse = SettlementResponseV2;
  * Safe Base64 decode (handles URL-safe format)
  */
 function safeBase64Decode(str: string): string {
-  const padding = 4 - (str.length % 4);
-  if (padding !== 4) {
-    str += "=".repeat(padding);
-  }
-  str = str.replace(/-/g, "+").replace(/_/g, "/");
-  return Buffer.from(str, "base64").toString("utf-8");
+  return decodeBase64ToUtf8(normalizeBase64Url(str));
 }
 
 /**
  * Safe Base64 encode (URL-safe, no padding)
  */
 function safeBase64Encode(str: string): string {
-  return Buffer.from(str)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
+  return toBase64Url(encodeUtf8ToBase64(str));
 }
 
 /**

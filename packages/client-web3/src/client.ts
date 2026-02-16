@@ -135,9 +135,31 @@ const signPaymentV2 = async (
   }
 ): Promise<PaymentSignatureResult> => {
   const { from, to, amount, nonce, expiry, accepted } = params;
-  const { domainName, domainVersion } = state;
+  const defaultAccepted: PaymentRequirementsV2 = accepted ?? {
+    scheme: "exact",
+    network: networkToCaip2(network.name) as `eip155:${string}`,
+    amount: amount,
+    asset: network.usdcAddress as `0x${string}`,
+    payTo: to as `0x${string}`,
+    maxTimeoutSeconds: expiry - Math.floor(Date.now() / 1000),
+  };
 
-  const domain = createEIP712Domain(network.chainId, network.usdcAddress, domainName, domainVersion);
+  const domainExtra = defaultAccepted.extra;
+  const requirementDomainName =
+    defaultAccepted.name ??
+    (domainExtra && typeof domainExtra === "object" && typeof domainExtra["name"] === "string"
+      ? domainExtra["name"]
+      : undefined);
+  const requirementDomainVersion =
+    defaultAccepted.version ??
+    (domainExtra && typeof domainExtra === "object" && typeof domainExtra["version"] === "string"
+      ? domainExtra["version"]
+      : undefined);
+  const effectiveDomainName = state.domainName ?? requirementDomainName;
+  const effectiveDomainVersion = state.domainVersion ?? requirementDomainVersion;
+
+  const chainId = parseInt(defaultAccepted.network.split(":")[1], 10);
+  const domain = createEIP712Domain(chainId, defaultAccepted.asset, effectiveDomainName, effectiveDomainVersion);
   const message = createTransferWithAuthorization({
     from,
     to,
@@ -149,15 +171,6 @@ const signPaymentV2 = async (
 
   const signature = await signTypedDataWrapper(state.account, domain, message);
   const combinedSig = combineSignatureV2(signature.v, signature.r, signature.s);
-
-  const defaultAccepted: PaymentRequirementsV2 = accepted ?? {
-    scheme: "exact",
-    network: networkToCaip2(network.name) as `eip155:${string}`,
-    amount: amount,
-    asset: network.usdcAddress as `0x${string}`,
-    payTo: to as `0x${string}`,
-    maxTimeoutSeconds: expiry - Math.floor(Date.now() / 1000),
-  };
 
   const x402Payload = createX402V2Payment({
     from,

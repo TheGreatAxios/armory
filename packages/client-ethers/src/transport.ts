@@ -4,12 +4,12 @@ import {
   type SettlementResponseV2,
   V2_HEADERS,
   isSettlementSuccessful,
+  encodePaymentV2,
 } from "@armory-sh/base";
 import type { X402TransportConfig, X402RequestInit } from "./types";
 import {
   parsePaymentRequired,
   createX402Payment,
-  encodeX402Payment,
   getPaymentHeaderName,
   type ParsedPaymentRequirements,
 } from "./protocol";
@@ -60,6 +60,24 @@ const fetchWithTimeout = async (
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+const getRequirementDomainOverrides = (parsed: ParsedPaymentRequirements): { domainName?: string; domainVersion?: string } => {
+  const requirement = parsed.requirements;
+  const extra = requirement.extra;
+  const extraName =
+    extra && typeof extra === "object" && typeof extra["name"] === "string"
+      ? extra["name"]
+      : undefined;
+  const extraVersion =
+    extra && typeof extra === "object" && typeof extra["version"] === "string"
+      ? extra["version"]
+      : undefined;
+
+  return {
+    domainName: requirement.name ?? extraName,
+    domainVersion: requirement.version ?? extraVersion,
+  };
+};
+
 const handlePaymentRequired = async (
   state: TransportState,
   response: Response
@@ -71,9 +89,18 @@ const handlePaymentRequired = async (
   try {
     const parsed = parsePaymentRequired(response);
     const from = await state.signer.getAddress();
+    const requirementDomain = getRequirementDomainOverrides(parsed);
 
-    const payload = await createX402Payment(state.signer, parsed, from as `0x${string}`);
-    const encoded = encodeX402Payment(payload);
+    const payload = await createX402Payment(
+      state.signer,
+      parsed,
+      from as `0x${string}`,
+      undefined,
+      undefined,
+      requirementDomain.domainName,
+      requirementDomain.domainVersion
+    );
+    const encoded = encodePaymentV2(payload);
     const headerName = getPaymentHeaderName(parsed.version);
 
     const paymentResponse = await fetchWithTimeout(

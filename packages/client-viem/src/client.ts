@@ -10,9 +10,9 @@ import type {
 } from "@armory-sh/base";
 import {
   V2_HEADERS,
-  encodePaymentV2,
   decodeSettlementV2,
   getNetworkByChainId,
+  encodePaymentV2,
 } from "@armory-sh/base";
 
 import type {
@@ -29,7 +29,6 @@ import {
   parsePaymentRequired,
   createX402Payment,
   getWalletAddress,
-  encodeX402Payment,
   getPaymentHeaderName,
   type ParsedPaymentRequirements,
   type X402Wallet as ProtocolWallet,
@@ -66,8 +65,27 @@ const extractDomainConfig = (config: X402ClientConfig): { domainName?: string; d
     : { domainName: config.domainName, domainVersion: config.domainVersion };
 
 const addPaymentHeader = (headers: Headers, payment: PaymentPayloadV2): void => {
-  const encoded = encodeX402Payment(payment);
+  const encoded = encodePaymentV2(payment);
   headers.set(V2_HEADERS.PAYMENT_SIGNATURE, encoded);
+};
+
+const getRequirementDomainOverrides = (
+  requirements: PaymentRequirementsV2
+): { domainName?: string; domainVersion?: string } => {
+  const extra = requirements.extra;
+  const extraName =
+    extra && typeof extra === "object" && typeof extra["name"] === "string"
+      ? extra["name"]
+      : undefined;
+  const extraVersion =
+    extra && typeof extra === "object" && typeof extra["version"] === "string"
+      ? extra["version"]
+      : undefined;
+
+  return {
+    domainName: requirements.name ?? extraName,
+    domainVersion: requirements.version ?? extraVersion,
+  };
 };
 
 const checkSettlement = (response: Response): SettlementResponseV2 => {
@@ -78,10 +96,10 @@ const checkSettlement = (response: Response): SettlementResponseV2 => {
   try {
     return decodeSettlementV2(settlementHeader);
   } catch (error) {
-    if (error instanceof SyntaxError) {
+    if (error instanceof Error) {
       throw new PaymentError(`Failed to decode settlement: ${error.message}`);
     }
-    throw error;
+    throw new PaymentError("Failed to decode settlement");
   }
 };
 
@@ -118,6 +136,7 @@ const createFetch = (
       const fromAddress = getAddress();
       const nonce = generateNonce(nonceGenerator);
       const validBefore = Math.floor(Date.now() / 1000) + defaultExpiry;
+      const requirementDomain = getRequirementDomainOverrides(parsed);
 
       const paymentRequiredContext: PaymentRequiredContext = {
         url: input,
@@ -139,8 +158,8 @@ const createFetch = (
         fromAddress,
         nonce,
         validBefore,
-        domainName,
-        domainVersion
+        domainName ?? requirementDomain.domainName,
+        domainVersion ?? requirementDomain.domainVersion
       );
 
       if (debug) {

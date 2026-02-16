@@ -5,6 +5,7 @@ import type {
   SettlementResponse,
 } from "./types/x402";
 import { isPaymentPayload, isExactEvmPayload } from "./types/x402";
+import { decodeBase64ToUtf8 } from "./utils/base64";
 
 export interface FacilitatorClientConfig {
   url: string;
@@ -156,7 +157,7 @@ export function decodePayloadHeader(
     .padEnd(Math.ceil(headerValue.length / 4) * 4, "=");
 
   try {
-    const decoded = JSON.parse(Buffer.from(normalized, "base64").toString("utf-8"));
+    const decoded = JSON.parse(decodeBase64ToUtf8(normalized));
     if (isPaymentPayload(decoded)) return decoded;
     if (isCompactV2Payload(decoded)) {
       const compact = decoded as { payload: PaymentPayload["payload"] };

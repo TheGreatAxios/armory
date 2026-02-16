@@ -50,7 +50,6 @@ export {
   detectX402Version,
   parsePaymentRequired,
   createX402Payment,
-  encodeX402Payment,
   getPaymentHeaderName,
   type ParsedPaymentRequirements,
 } from "./protocol";

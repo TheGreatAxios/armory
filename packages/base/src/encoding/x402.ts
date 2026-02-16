@@ -14,30 +14,25 @@ import type {
 
 import { isPaymentPayload } from "../types/x402";
 import { V2_HEADERS } from "../types/v2";
+import {
+  decodeBase64ToUtf8,
+  encodeUtf8ToBase64,
+  normalizeBase64Url,
+  toBase64Url,
+} from "../utils/base64";
 
 /**
  * Safe Base64 encode (URL-safe, no padding)
  */
 export function safeBase64Encode(str: string): string {
-  return Buffer.from(str)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
+  return toBase64Url(encodeUtf8ToBase64(str));
 }
 
 /**
  * Safe Base64 decode (handles URL-safe format)
  */
 export function safeBase64Decode(str: string): string {
-  // Restore padding
-  const padding = 4 - (str.length % 4);
-  if (padding !== 4) {
-    str += "=".repeat(padding);
-  }
-  // Restore standard Base64 characters
-  str = str.replace(/-/g, "+").replace(/_/g, "/");
-  return Buffer.from(str, "base64").toString("utf-8");
+  return decodeBase64ToUtf8(normalizeBase64Url(str));
 }
 
 /**

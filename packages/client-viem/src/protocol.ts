@@ -20,13 +20,12 @@ import type {
 import {
   V2_HEADERS,
   isX402V2PaymentRequired,
-  encodePaymentV2,
   networkToCaip2,
   EIP712_TYPES,
   getNetworkByChainId,
 } from "@armory-sh/base";
 import { createEIP712Domain, createTransferWithAuthorization } from "@armory-sh/base";
-import { decodeBase64ToUtf8, encodeUtf8ToBase64, normalizeBase64Url } from "./bytes";
+import { decodeBase64ToUtf8, normalizeBase64Url } from "./bytes";
 
 export type X402Wallet =
   | { type: "account"; account: Account }
@@ -87,10 +86,6 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
 
 export function getPaymentHeaderName(_version: X402Version): string {
   return V2_HEADERS.PAYMENT_SIGNATURE;
-}
-
-export function encodeX402Payment(payload: PaymentPayloadV2): string {
-  return encodeUtf8ToBase64(JSON.stringify(payload));
 }
 
 async function signTypedData(

@@ -28,7 +28,7 @@ import {
 import type { TransferWithAuthorizationParams, EIP712Domain } from "./types";
 import { signEIP3009 } from "./eip3009";
 import { PaymentError } from "./errors";
-import { decodeBase64ToUtf8, encodeUtf8ToBase64, normalizeBase64Url } from "./bytes";
+import { decodeBase64ToUtf8, normalizeBase64Url } from "./bytes";
 
 // ============================================================================
 // Version Detection (V2 Only)
@@ -99,13 +99,6 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
 // ============================================================================
 
 /**
- * Convert amount (string like "1.0") to atomic units (string like "1000000")
- */
-function toAtomicUnits(amount: string): string {
-  return Math.floor(parseFloat(amount) * 1e6).toString();
-}
-
-/**
  * Extract chain ID from network identifier
  * Supports CAIP-2 format (eip155:84532) and network names (base-sepolia)
  */
@@ -168,7 +161,7 @@ export async function createX402V2Payment(
   const authorization: EIP3009Authorization = {
     from: fromAddress,
     to: requirements.payTo,
-    value: toAtomicUnits(requirements.amount),
+    value: requirements.amount,
     validAfter: "0",
     validBefore: validBefore.toString(),
     nonce,
@@ -223,15 +216,4 @@ export async function createX402Payment(
     domainName,
     domainVersion
   );
-}
-
-// ============================================================================
-// Encoding Helpers
-// ============================================================================
-
-/**
- * Encode x402 payment payload to Base64 for transport
- */
-export function encodeX402Payment(payload: PaymentPayloadV2): string {
-  return encodeUtf8ToBase64(JSON.stringify(payload));
 }
