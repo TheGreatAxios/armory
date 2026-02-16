@@ -28,6 +28,7 @@ import {
 import type { TransferWithAuthorizationParams, EIP712Domain } from "./types";
 import { signEIP3009 } from "./eip3009";
 import { PaymentError } from "./errors";
+import { decodeBase64ToUtf8, encodeUtf8ToBase64, normalizeBase64Url } from "./bytes";
 
 // ============================================================================
 // Version Detection (V2 Only)
@@ -61,11 +62,8 @@ function parseJsonOrBase64(value: string): unknown {
   } catch {
   }
 
-  const normalized = value
-    .replace(/-/g, "+")
-    .replace(/_/g, "/")
-    .padEnd(Math.ceil(value.length / 4) * 4, "=");
-  return JSON.parse(Buffer.from(normalized, "base64").toString("utf-8"));
+  const normalized = normalizeBase64Url(value);
+  return JSON.parse(decodeBase64ToUtf8(normalized));
 }
 
 /**
@@ -235,5 +233,5 @@ export async function createX402Payment(
  * Encode x402 payment payload to Base64 for transport
  */
 export function encodeX402Payment(payload: PaymentPayloadV2): string {
-  return Buffer.from(JSON.stringify(payload)).toString("base64");
+  return encodeUtf8ToBase64(JSON.stringify(payload));
 }

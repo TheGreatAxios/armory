@@ -64,10 +64,21 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Check for changesets
+        id: check_changesets
+        run: |
+          if [ $(find .changeset -name "*.md" -type f | wc -l) -gt 0 ]; then
+            echo "has_changesets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changesets=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Bump versions
+        if: steps.check_changesets.outputs.has_changesets == 'true'
         run: bun run ci:version
 
       - name: Commit version changes
+        if: steps.check_changesets.outputs.has_changesets == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -82,6 +93,7 @@ jobs:
         run: bun run build
 
       - name: Publish to npm
+        if: steps.check_changesets.outputs.has_changesets == 'true'
         run: bun run ci:publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

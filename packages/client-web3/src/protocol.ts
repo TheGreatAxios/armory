@@ -13,6 +13,7 @@ import {
   type PaymentPayloadV2,
   type EIP3009Authorization,
 } from "@armory-sh/base";
+import { decodeBase64ToUtf8, encodeUtf8ToBase64, normalizeBase64Url } from "./bytes";
 
 // ============================================================================
 // Types
@@ -69,11 +70,8 @@ export const parsePaymentRequired = async (
     try {
       parsed = JSON.parse(v2Header) as PaymentRequiredV2;
     } catch {
-      const normalized = v2Header
-        .replace(/-/g, "+")
-        .replace(/_/g, "/")
-        .padEnd(Math.ceil(v2Header.length / 4) * 4, "=");
-      const decoded = Buffer.from(normalized, "base64").toString("utf-8");
+      const normalized = normalizeBase64Url(v2Header);
+      const decoded = decodeBase64ToUtf8(normalized);
       parsed = JSON.parse(decoded) as PaymentRequiredV2;
     }
 
@@ -146,7 +144,7 @@ export const createPaymentHeader = (
   payload: PaymentPayloadV2,
   _version: X402Version = 2
 ): string => {
-  const encoded = Buffer.from(JSON.stringify(payload)).toString("base64");
+  const encoded = encodeUtf8ToBase64(JSON.stringify(payload));
   return encoded;
 };
 
