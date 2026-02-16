@@ -142,17 +142,17 @@ export interface SchemePayloadV2 {
 /**
  * Payment payload sent by client
  * Matches x402 V2 PaymentPayload spec (Coinbase format)
+ *
+ * The 'accepted' field echoes the server's requirements being accepted.
  */
 export interface PaymentPayloadV2 {
   /** Protocol version identifier */
   x402Version: 2;
-  /** Payment scheme (e.g., "exact") */
-  scheme: string;
-  /** Network identifier in CAIP-2 format */
-  network: string;
+  /** The payment requirements being accepted (echoed from server) */
+  accepted: PaymentRequirementsV2;
   /** Scheme-specific payment data */
   payload: SchemePayloadV2;
-  /** Resource being accessed (optional, echoed from server) */
+  /** Resource being accessed (optional) */
   resource?: ResourceInfo;
   /** Protocol extensions data */
   extensions?: Extensions;
@@ -225,8 +225,7 @@ export function isPaymentPayloadV2(obj: unknown): obj is PaymentPayloadV2 {
     obj !== null &&
     "x402Version" in obj &&
     (obj as PaymentPayloadV2).x402Version === 2 &&
-    "scheme" in obj &&
-    "network" in obj &&
+    "accepted" in obj &&
     "payload" in obj
   );
 }

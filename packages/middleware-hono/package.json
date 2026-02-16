@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-hono",
-  "version": "0.3.20",
+  "version": "0.3.22",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -26,7 +26,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thegreataxios/armory.git",
+    "url": "git+https://github.com/TheGreatAxios/armory.git",
     "directory": "packages/middleware-hono"
   },
   "peerDependencies": {

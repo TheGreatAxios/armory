@@ -180,4 +180,4 @@ export function addExtensionsToPayload(
   };
 }
 
-export type { BazaarExtensionInfo, SIWxExtensionInfo, SIWxPayload };
+export type { BazaarExtensionInfo, SIWxExtensionInfo };

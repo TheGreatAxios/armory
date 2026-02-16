@@ -44,7 +44,7 @@ describe("[unit|cli]: CLI Tests", () => {
 
     // Check facilitator template
     expect(content).toContain("@armory-sh/base");
-    expect(content).toContain("@armory-sh/middleware");
+    expect(content).toContain("@armory-sh/middleware-hono");
 
     // Check server template
     expect(content).toContain("@armory-sh/middleware-bun");

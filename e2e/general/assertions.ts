@@ -55,9 +55,10 @@ export function assertPaymentVerified(
   expect(response.headers[responseHeader]).toBeDefined();
 
   const responseBody = JSON.parse(response.headers[responseHeader]!);
-  expect(responseBody).toHaveProperty("status", "verified");
-  expect(responseBody).toHaveProperty("payerAddress");
-  expect(responseBody.payerAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
+  expect(responseBody).toHaveProperty("isValid");
+  expect(responseBody.isValid).toBe(true);
+  expect(responseBody).toHaveProperty("payer");
+  expect(responseBody.payer).toMatch(/^0x[a-fA-F0-9]{40}$/);
 }
 
 /**
@@ -107,9 +108,12 @@ export function assertPaymentPayload(
 
   const p = payload as Record<string, unknown>;
   expect(p).toHaveProperty("x402Version", version);
-  expect(p).toHaveProperty("scheme", "exact");
-  expect(p).toHaveProperty("network");
+  expect(p).toHaveProperty("accepted");
   expect(p).toHaveProperty("payload");
+
+  const accepted = p.accepted as Record<string, unknown>;
+  expect(accepted).toHaveProperty("scheme", "exact");
+  expect(accepted).toHaveProperty("network");
 
   const innerPayload = p.payload as Record<string, unknown>;
   expect(innerPayload).toHaveProperty("signature");
@@ -143,7 +147,7 @@ export function assertPaymentRequirements(
   expect(r).toHaveProperty("network");
 
   if (version === 1) {
-    expect(r).toHaveProperty("maxAmountRequired");
+    expect(r).toHaveProperty("amount");
     expect(r).toHaveProperty("asset");
     expect(r).toHaveProperty("resource");
     expect(r).toHaveProperty("description");

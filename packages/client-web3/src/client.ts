@@ -153,7 +153,7 @@ const signPaymentV2 = async (
   const defaultAccepted: PaymentRequirementsV2 = accepted ?? {
     scheme: "exact",
     network: networkToCaip2(network.name) as `eip155:${string}`,
-    amount,
+    amount: amount,
     asset: network.usdcAddress as `0x${string}`,
     payTo: to as `0x${string}`,
     maxTimeoutSeconds: expiry - Math.floor(Date.now() / 1000),

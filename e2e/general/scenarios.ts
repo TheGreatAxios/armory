@@ -70,7 +70,7 @@ export const buildV1Scenario = (overrides?: Partial<PaymentScenario>): PaymentSc
   requirements: {
     scheme: "exact",
     network: "base-sepolia",
-    maxAmountRequired: "1000000",
+    amount: "1000000",
     asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
     payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
     resource: "https://api.example.com/protected",
@@ -88,8 +88,14 @@ export const buildV2Scenario = (overrides?: Partial<PaymentScenario>): PaymentSc
   version: 2,
   payload: {
     x402Version: 2,
-    scheme: "exact",
-    network: "eip155:84532",
+    accepted: {
+      scheme: "exact",
+      network: "eip155:84532",
+      amount: "1000000",
+      asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+      payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+      maxTimeoutSeconds: 300,
+    },
     payload: {
       signature: "0x" + "b".repeat(130),
       authorization: {
@@ -130,8 +136,14 @@ export const errorScenarios = {
     name: "Expired Payment",
     payload: {
       x402Version: 2,
-      scheme: "exact",
-      network: "eip155:84532",
+      accepted: {
+        scheme: "exact",
+        network: "eip155:84532",
+        amount: "1000000",
+        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+        payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+        maxTimeoutSeconds: 300,
+      },
       payload: {
         signature: "0x" + "b".repeat(130),
         authorization: {
@@ -152,8 +164,14 @@ export const errorScenarios = {
     name: "Insufficient Amount in Payload",
     payload: {
       x402Version: 2,
-      scheme: "exact",
-      network: "eip155:84532",
+      accepted: {
+        scheme: "exact",
+        network: "eip155:84532",
+        amount: "1000000",
+        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+        payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+        maxTimeoutSeconds: 300,
+      },
       payload: {
         signature: "0x" + "b".repeat(130),
         authorization: {
@@ -174,8 +192,14 @@ export const errorScenarios = {
     name: "Wrong Network",
     payload: {
       x402Version: 2,
-      scheme: "exact",
-      network: "eip155:1",
+      accepted: {
+        scheme: "exact",
+        network: "eip155:1",
+        amount: "1000000",
+        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+        payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+        maxTimeoutSeconds: 300,
+      },
       payload: {
         signature: "0x" + "b".repeat(130),
         authorization: {
@@ -225,7 +249,7 @@ export const faremeterScenarios = {
     requirements: {
       scheme: "exact",
       network: "base",
-      maxAmountRequired: "1000000",
+      amount: "1000000",
       asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
       payTo: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
       resource: "https://api.example.com/protected",

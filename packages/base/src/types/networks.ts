@@ -43,10 +43,10 @@ export const NETWORKS: Record<string, NetworkConfig> = {
   "base-sepolia": {
     name: "Base Sepolia",
     chainId: 84532,
-    usdcAddress: "0x036CbD53842c5426634e7929541eA237834d2D14" as const,
+    usdcAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const,
     rpcUrl: "https://sepolia.base.org",
     caip2Id: "eip155:84532",
-    caipAssetId: "eip155:84532/erc20:0x036CbD53842c5426634e7929541eA237834d2D14",
+    caipAssetId: "eip155:84532/erc20:0x036CbD53842c5426634e7929541eC2318f3dCF7e",
   },
   "skale-base": {
     name: "SKALE Base",

@@ -23,13 +23,8 @@ export interface ServerConfig {
   payTo: string;
   amount: string;
   network: string;
+  facilitatorUrl?: string;
 }
-
-/**
- * Get a random available port for testing
- * Using high port range to avoid conflicts
- */
-const getRandomPort = (): number => 30000 + Math.floor(Math.random() * 10000);
 
 /**
  * Convert decimal amount to atomic units (6 decimals for USDC)
@@ -62,6 +57,8 @@ const createRequirements = (config: ServerConfig) => {
     payTo: config.payTo as `0x${string}`,
     maxTimeoutSeconds: 300,
     asset: network.usdcAddress as `0x${string}`,
+    name: "USD Coin",
+    version: "2",
     extra: {
       name: "USD Coin",
       version: "2",
@@ -73,7 +70,7 @@ export const createHonoServer = async (config: ServerConfig): Promise<TestServer
   const app = new Hono();
 
   const requirements = createRequirements(config);
-  app.use("/*", honoPaymentMiddleware({ requirements }));
+  app.use("/*", honoPaymentMiddleware({ requirements, facilitatorUrl: config.facilitatorUrl ?? "https://facilitator.payai.network" }));
 
   app.get("/api/test", (c) => {
     const payment = c.get("payment");
@@ -113,7 +110,7 @@ export const createExpressServer = async (config: ServerConfig): Promise<TestSer
   const app = express();
 
   const requirements = createRequirements(config);
-  app.use(expressPaymentMiddleware({ requirements }));
+  app.use(expressPaymentMiddleware({ requirements, facilitatorUrl: config.facilitatorUrl ?? "https://facilitator.payai.network" }));
 
   app.get("/api/test", (req: any, res: any) => {
     const payment = (req as any).payment;
@@ -132,7 +129,10 @@ export const createExpressServer = async (config: ServerConfig): Promise<TestSer
 
   await new Promise((resolve) => setTimeout(resolve, 50));
 
-  const address = srv.address() as { port: number };
+  const address = srv.address();
+  if (!address || typeof address === "string") {
+    throw new Error("Failed to resolve test server port");
+  }
   const port = address.port;
   const url = `http://localhost:${port}`;
 

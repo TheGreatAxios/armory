@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-elysia",
-  "version": "0.3.18",
+  "version": "0.3.20",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -21,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thegreataxios/armory.git",
+    "url": "git+https://github.com/TheGreatAxios/armory.git",
     "directory": "packages/middleware-elysia"
   },
   "peerDependencies": {

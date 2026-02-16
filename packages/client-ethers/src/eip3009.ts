@@ -16,7 +16,7 @@ const EIP712_TYPES_ETHERS = {
     { name: "value", type: "uint256" },
     { name: "validAfter", type: "uint256" },
     { name: "validBefore", type: "uint256" },
-    { name: "nonce", type: "uint256" },
+    { name: "nonce", type: "bytes32" },
   ],
 };
 
@@ -32,7 +32,7 @@ export async function signEIP3009(
       value: BigInt(params.value),
       validAfter: BigInt(params.validAfter),
       validBefore: BigInt(params.validBefore),
-      nonce: BigInt(params.nonce),
+      nonce: params.nonce,
     };
 
     const signature = await signer.signTypedData(domain, EIP712_TYPES_ETHERS, message);
@@ -72,9 +72,9 @@ export async function signPayment(
   expirySeconds: number = 3600,
   domainName?: string,
   domainVersion?: string
-): Promise<{ v: number; r: string; s: string; nonce: bigint }> {
+): Promise<{ v: number; r: string; s: string; nonce: `0x${string}` }> {
   const now = Math.floor(Date.now() / 1000);
-  const nonce = BigInt(now * 1000);
+  const nonce = `0x${(now * 1000).toString(16).padStart(64, "0")}` as `0x${string}`;
 
   const signature = await signEIP3009WithDomain(
     signer,
@@ -99,7 +99,7 @@ export async function recoverEIP3009Signer(
     value: BigInt(params.value),
     validAfter: BigInt(params.validAfter),
     validBefore: BigInt(params.validBefore),
-    nonce: BigInt(params.nonce),
+    nonce: params.nonce,
   };
 
   const sig = ethers.Signature.from({

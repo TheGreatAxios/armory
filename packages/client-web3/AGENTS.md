@@ -76,7 +76,7 @@ const response = await transport.fetch("https://api.example.com/data");
 
 ```ts
 // Using token object (recommended)
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const result = await client.signPayment({
   token: TOKENS.USDC_BASE,
@@ -149,7 +149,7 @@ Full TypeScript support with exported types:
 
 ```ts
 import { createX402Client } from "@armory-sh/client-web3";
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const client = createX402Client({
   account,

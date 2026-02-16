@@ -1,29 +1,176 @@
-name: Publish Package
+name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
-
-permissions:
-  id-token: write
-  contents: read
+    branches:
+      - main
+      - staging
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 jobs:
-  publish:
+  check-changeset:
+    if: >-
+      github.event_name == 'pull_request'
+      && github.actor == 'TheGreatAxios'
+      && (github.base_ref == 'main' || github.base_ref == 'staging')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Check for changeset
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          if echo "$CHANGED_FILES" | grep -q "^packages/"; then
+            if ! echo "$CHANGED_FILES" | grep -q "^\.changeset/.*\.md$"; then
+              echo "::error::Packages changed but no changeset found. Run 'bun run changeset' locally."
+              exit 1
+            fi
+          fi
+          echo "✅ Changeset check passed"
+
+  release-prod:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node (OIDC auth)
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://registry.npmjs.org/'
 
-      - run: npm ci
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-      - run: npm run build --if-present
+      - name: Build
+        run: bun run build
 
-      - run: npm test
+      - name: Version packages
+        run: bun run ci:version
 
-      - run: npm publish --provenance
+      - name: Commit version changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: version packages"
+          git push
+
+      - name: Publish to npm
+        run: bun run ci:publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release-beta:
+    if: github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node (OIDC auth)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Version packages
+        run: bun run ci:version
+
+      - name: Commit version changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: version packages [beta]"
+          git push
+
+      - name: Publish to npm (beta)
+        run: bun run ci:publish:beta
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release-alpha:
+    if: github.event_name == 'pull_request' && github.actor == 'TheGreatAxios'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Node (OIDC auth)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Set alpha versions
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          RUN_NUMBER=${{ github.run_number }}
+          PREID="alpha.${PR_NUMBER}.${RUN_NUMBER}"
+
+          for pkg_json in packages/*/package.json; do
+            dir=$(dirname "$pkg_json")
+            name=$(jq -r '.name' "$pkg_json")
+            version=$(jq -r '.version' "$pkg_json")
+            alpha_version="${version}-${PREID}"
+            jq --arg v "$alpha_version" '.version = $v' "$pkg_json" > "$pkg_json.tmp" && mv "$pkg_json.tmp" "$pkg_json"
+            echo "  ${name}@${alpha_version}"
+          done
+
+      - name: Resolve workspace references
+        run: node scripts/resolve-workspaces.mjs
+
+      - name: Publish to npm (alpha)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public --tag alpha --workspaces || true

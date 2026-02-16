@@ -2,8 +2,10 @@ import { describe, test, expect } from "bun:test";
 import {
   V2_HEADERS,
   type PaymentPayloadV2,
+  type PaymentRequirementsV2,
   type CAIP2ChainId,
   isPaymentPayloadV2,
+  isPaymentPayload,
   getNetworkConfig,
   getNetworkByChainId,
   createEIP712Domain,
@@ -15,6 +17,17 @@ import {
   isAddress,
 } from "../src/index";
 
+const DEFAULT_REQUIREMENTS: PaymentRequirementsV2 = {
+  scheme: "exact",
+  network: "eip155:84532",
+  amount: "1000000",
+  asset: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  payTo: "0x1234567890123456789012345678901234567890",
+  maxTimeoutSeconds: 300,
+};
+
+const TEST_NONCE = "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`;
+
 describe("[unit|base]: Base Package Tests", () => {
   describe("[unit|base]: V2 Headers", () => {
     test("[V2_HEADERS|success] - headers are correct", () => {
@@ -24,12 +37,11 @@ describe("[unit|base]: Base Package Tests", () => {
     });
   });
 
-  describe("[unit|base]: Type Guards", () => {
-    test("[isPaymentPayloadV2|success] - identifies V2 payload", () => {
+  describe("[unit|base]: PaymentPayload V2 Format", () => {
+    test("[isPaymentPayloadV2|success] - validates accepted field", () => {
       const v2Payload: PaymentPayloadV2 = {
         x402Version: 2,
-        scheme: "exact",
-        network: "eip155:84532",
+        accepted: DEFAULT_REQUIREMENTS,
         payload: {
           signature: "0x" + "b".repeat(130),
           authorization: {
@@ -48,6 +60,69 @@ describe("[unit|base]: Base Package Tests", () => {
       };
 
       expect(isPaymentPayloadV2(v2Payload)).toBe(true);
+      expect(isPaymentPayload(v2Payload)).toBe(true);
+    });
+
+    test("[isPaymentPayloadV2|failure] - rejects compact V2 format without defaults", () => {
+      const compactPayload = {
+        x402Version: 2,
+        payload: {
+          signature: "0x" + "b".repeat(130),
+          authorization: {
+            from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+            to: "0x1234567890123456789012345678901234567890",
+            value: "1000000",
+            validAfter: "0",
+            validBefore: "9999999999",
+            nonce: "0x" + "0".repeat(64),
+          },
+        },
+      };
+
+      expect(isPaymentPayloadV2(compactPayload)).toBe(false);
+      expect(isPaymentPayload(compactPayload)).toBe(false);
+    });
+
+    test("[isPaymentPayloadV2|failure] - rejects payload without accepted field", () => {
+      const invalidPayload = {
+        x402Version: 2,
+        payload: {
+          signature: "0x" + "b".repeat(130),
+          authorization: {
+            from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+            to: "0x1234567890123456789012345678901234567890",
+            value: "1000000",
+            validAfter: "0",
+            validBefore: "9999999999",
+            nonce: "0x" + "0".repeat(64),
+          },
+        },
+      };
+
+      expect(isPaymentPayloadV2(invalidPayload)).toBe(false);
+    });
+
+    test("[isPaymentPayload|success] - new format has accepted field", () => {
+      const newPayload = {
+        x402Version: 2,
+        accepted: DEFAULT_REQUIREMENTS,
+        payload: {
+          signature: "0x" + "b".repeat(130),
+          authorization: {
+            from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+            to: "0x1234567890123456789012345678901234567890",
+            value: "1000000",
+            validAfter: "0",
+            validBefore: "9999999999",
+            nonce: "0x" + "0".repeat(64),
+          },
+        },
+      };
+
+      expect(isPaymentPayload(newPayload)).toBe(true);
+      expect("accepted" in newPayload).toBe(true);
+      expect("scheme" in newPayload).toBe(false);
+      expect("network" in newPayload).toBe(false);
     });
   });
 
@@ -119,7 +194,7 @@ describe("[unit|base]: Base Package Tests", () => {
         { name: "value", type: "uint256" },
         { name: "validAfter", type: "uint256" },
         { name: "validBefore", type: "uint256" },
-        { name: "nonce", type: "uint256" },
+        { name: "nonce", type: "bytes32" },
       ]);
     });
   });
@@ -132,7 +207,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: 0,
         validBefore: Math.floor(Date.now() / 1000) + 3600,
-        nonce: Date.now(),
+        nonce: TEST_NONCE,
       });
 
       expect(validateTransferWithAuthorization(auth)).toBe(true);
@@ -152,7 +227,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: 0,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => {
@@ -170,7 +245,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: 0,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => {
@@ -188,7 +263,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: -100,
         validAfter: 0,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => validateTransferWithAuthorization(auth)).toThrow('"value" must be non-negative');
@@ -201,7 +276,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: 1000,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => validateTransferWithAuthorization(auth)).toThrow('"validAfter" (1000) must be before "validBefore" (1000)');
@@ -214,7 +289,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: 2000,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => validateTransferWithAuthorization(auth)).toThrow();
@@ -227,7 +302,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 1000000,
         validAfter: -1,
         validBefore: 1000,
-        nonce: 1,
+        nonce: TEST_NONCE,
       });
 
       expect(() => validateTransferWithAuthorization(auth)).toThrow('"validAfter" must be non-negative');
@@ -246,17 +321,17 @@ describe("[unit|base]: Base Package Tests", () => {
       expect(() => validateTransferWithAuthorization(auth)).toThrow('"validBefore" must be non-negative');
     });
 
-    test("[validateTransferWithAuthorization|error] - throws on negative nonce", () => {
-      const auth = createTransferWithAuthorization({
+    test("[validateTransferWithAuthorization|error] - throws on invalid nonce format", () => {
+      const auth = {
         from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
         to: "0x1234567890123456789012345678901234567890",
-        value: 1000000,
-        validAfter: 0,
-        validBefore: 1000,
-        nonce: -1,
-      });
+        value: 1000000n,
+        validAfter: 0n,
+        validBefore: 1000n,
+        nonce: "invalid-nonce",
+      };
 
-      expect(() => validateTransferWithAuthorization(auth)).toThrow('"nonce" must be non-negative');
+      expect(() => validateTransferWithAuthorization(auth as any)).toThrow('"nonce" must be a valid bytes32 hex string');
     });
 
     test("[validateTransferWithAuthorization|success] - handles max safe integer values", () => {
@@ -266,7 +341,7 @@ describe("[unit|base]: Base Package Tests", () => {
         value: Number.MAX_SAFE_INTEGER,
         validAfter: 0,
         validBefore: Number.MAX_SAFE_INTEGER,
-        nonce: Number.MAX_SAFE_INTEGER,
+        nonce: "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" as `0x${string}`,
       });
 
       expect(validateTransferWithAuthorization(auth)).toBe(true);
@@ -279,17 +354,17 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 12345,
         validAfter: 100,
         validBefore: 200,
-        nonce: 999,
+        nonce: TEST_NONCE,
       });
 
       expect(typeof auth.value).toBe("bigint");
       expect(typeof auth.validAfter).toBe("bigint");
       expect(typeof auth.validBefore).toBe("bigint");
-      expect(typeof auth.nonce).toBe("bigint");
+      expect(typeof auth.nonce).toBe("string");
       expect(auth.value).toBe(12345n);
       expect(auth.validAfter).toBe(100n);
       expect(auth.validBefore).toBe(200n);
-      expect(auth.nonce).toBe(999n);
+      expect(auth.nonce).toBe(TEST_NONCE);
     });
 
     test("[createTransferWithAuthorization|success] - accepts bigint params", () => {
@@ -299,13 +374,13 @@ describe("[unit|base]: Base Package Tests", () => {
         value: 12345n,
         validAfter: 100n,
         validBefore: 200n,
-        nonce: 999n,
+        nonce: TEST_NONCE,
       });
 
       expect(auth.value).toBe(12345n);
       expect(auth.validAfter).toBe(100n);
       expect(auth.validBefore).toBe(200n);
-      expect(auth.nonce).toBe(999n);
+      expect(auth.nonce).toBe(TEST_NONCE);
     });
   });
 

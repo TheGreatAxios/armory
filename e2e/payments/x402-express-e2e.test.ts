@@ -1,48 +1,127 @@
 /**
  * x402 Express E2E Tests
  *
- * Tests x402 SDK compatibility with Express middleware
+ * Tests x402 SDK compatibility with Express middleware.
+ * Uses mock facilitator - no HTTP server required.
  */
 
-import { describe, test, expect, beforeAll } from "bun:test";
-import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
-import { ExactEvmScheme } from "@x402/evm";
-import { privateKeyToAccount } from "viem/accounts";
-import { createExpressServer } from "../general/servers";
+import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { paymentMiddleware } from "@armory-sh/middleware-express";
+import { encodePayment } from "@armory-sh/base";
+import { createX402V2Payload } from "../general/fixtures/payloads";
 import {
-  TEST_PRIVATE_KEY,
-  TEST_PAY_TO_ADDRESS,
-  TEST_AMOUNT,
-  TEST_NETWORK,
-  TEST_CHAIN_ID,
-} from "../general/config";
+  mockFacilitator,
+  createMockExpressRequest,
+  createMockExpressResponse,
+  TEST_REQUIREMENTS,
+  MOCK_FACILITATOR_URL,
+} from "../general/mocks";
 
-describe("[e2e-express]: x402 SDK Compatibility", () => {
-  let server: Awaited<ReturnType<typeof createExpressServer>> | null = null;
+describe("[e2e|express]: x402 SDK Compatibility", () => {
+  let mockFetch: ReturnType<typeof mockFacilitator>;
 
-  test("creates and starts Express server", async () => {
-    server = await createExpressServer({
-      payTo: TEST_PAY_TO_ADDRESS,
-      amount: TEST_AMOUNT,
-      network: TEST_NETWORK,
-    });
-
-    expect(server.url).toBeTruthy();
+  beforeEach(() => {
+    mockFetch = mockFacilitator();
   });
 
-  test("accepts x402 V2 payment", async () => {
-    if (!server) throw new Error("Server not started");
+  afterEach(() => {
+    mockFetch.restore();
+  });
 
-    const account = privateKeyToAccount(TEST_PRIVATE_KEY);
-    const client = new x402Client()
-      .register(`eip155:${TEST_CHAIN_ID}`, new ExactEvmScheme(account), 2);
-    const fetchWithPayment = wrapFetchWithPayment(fetch, client);
+  test("[middleware|success] - returns 402 when no payment header", async () => {
+    const middleware = paymentMiddleware({
+      requirements: TEST_REQUIREMENTS,
+      facilitatorUrl: MOCK_FACILITATOR_URL,
+    });
 
-    const response = await fetchWithPayment(`${server.url}/api/test`);
-    expect(response.status).toBe(200);
+    const req = createMockExpressRequest();
+    const res = createMockExpressResponse();
+    let nextCalled = false;
+    const next = () => {
+      nextCalled = true;
+    };
 
-    const body = await response.json();
-    expect(body.success).toBe(true);
-    expect(body.middleware).toBe("express");
+    await middleware(req as any, res as any, next);
+
+    expect(res.statusCode).toBe(402);
+    expect(nextCalled).toBe(false);
+    expect(res.headers["PAYMENT-REQUIRED"]).toBeDefined();
+  });
+
+  test("[middleware|success] - accepts valid x402 V2 payment", async () => {
+    const middleware = paymentMiddleware({
+      requirements: TEST_REQUIREMENTS,
+      facilitatorUrl: MOCK_FACILITATOR_URL,
+    });
+
+    const payload = createX402V2Payload();
+    const paymentHeader = encodePayment(payload);
+
+    const req = createMockExpressRequest({
+      "payment-signature": paymentHeader,
+    });
+    const res = createMockExpressResponse();
+    let nextCalled = false;
+    const next = () => {
+      nextCalled = true;
+    };
+
+    await middleware(req as any, res as any, next);
+
+    expect(nextCalled).toBe(true);
+    expect(req.payment).toBeDefined();
+    expect(req.payment?.verified).toBe(true);
+    expect(mockFetch.verifyCalls).toBe(1);
+  });
+
+  test("[middleware|error] - returns 400 for invalid payment payload", async () => {
+    const middleware = paymentMiddleware({
+      requirements: TEST_REQUIREMENTS,
+      facilitatorUrl: MOCK_FACILITATOR_URL,
+    });
+
+    const req = createMockExpressRequest({
+      "payment-signature": "not-valid-base64!!!",
+    });
+    const res = createMockExpressResponse();
+    let nextCalled = false;
+    const next = () => {
+      nextCalled = true;
+    };
+
+    await middleware(req as any, res as any, next);
+
+    expect(res.statusCode).toBe(400);
+    expect(nextCalled).toBe(false);
+  });
+
+  test("[middleware|error] - returns 402 when verification fails", async () => {
+    mockFetch.restore();
+    mockFetch = mockFacilitator({
+      verifyResult: { isValid: false, invalidReason: "Invalid signature" },
+    });
+
+    const middleware = paymentMiddleware({
+      requirements: TEST_REQUIREMENTS,
+      facilitatorUrl: MOCK_FACILITATOR_URL,
+    });
+
+    const payload = createX402V2Payload();
+    const paymentHeader = encodePayment(payload);
+
+    const req = createMockExpressRequest({
+      "payment-signature": paymentHeader,
+    });
+    const res = createMockExpressResponse();
+    let nextCalled = false;
+    const next = () => {
+      nextCalled = true;
+    };
+
+    await middleware(req as any, res as any, next);
+
+    expect(res.statusCode).toBe(402);
+    expect(nextCalled).toBe(false);
+    expect(res.body).toHaveProperty("error", "Payment verification failed");
   });
 });

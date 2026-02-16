@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/client-ethers",
-  "version": "0.2.19",
+  "version": "0.2.21",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
@@ -23,11 +23,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thegreataxios/armory.git",
+    "url": "git+https://github.com/TheGreatAxios/armory.git",
     "directory": "packages/client-ethers"
   },
   "dependencies": {
-    "@armory-sh/base": "^0.2.20",
+    "@armory-sh/base": "workspace:*",
     "ethers": "6.16.0"
   },
   "devDependencies": {

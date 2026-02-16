@@ -1,5 +1,21 @@
 # @armory-sh/middleware-express
 
+## 0.4.9
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
+## 0.4.8
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
 ## 0.4.7
 
 ### Patch Changes

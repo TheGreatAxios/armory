@@ -86,31 +86,8 @@ export function isX402V2Payload(obj: unknown): obj is PaymentPayloadV2 {
     obj !== null &&
     "x402Version" in obj &&
     (obj as PaymentPayloadV2).x402Version === 2 &&
-    "signature" in obj &&
-    "chainId" in obj &&
-    "assetId" in obj
-  );
-}
-
-/**
- * Check if payload is legacy Armory V2 format
- */
-export function isLegacyV2Payload(obj: unknown): boolean {
-  if (typeof obj !== "object" || obj === null) return false;
-
-  const record = obj as Record<string, unknown>;
-  const signature = record.signature;
-
-  return (
-    "signature" in record &&
-    typeof signature === "object" &&
-    signature !== null &&
-    "v" in signature &&
-    "chainId" in record &&
-    typeof record.chainId === "string" &&
-    record.chainId.startsWith("eip155:") &&
-    "assetId" in record &&
-    !("x402Version" in record)
+    "accepted" in obj &&
+    "payload" in obj
   );
 }
 

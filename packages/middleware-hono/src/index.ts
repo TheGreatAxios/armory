@@ -1,32 +1,35 @@
 import type { Context, Next } from "hono";
 import type {
-  PaymentPayloadV2,
+  X402PaymentPayload,
   PaymentRequirements,
-  SettlementResponse,
+  VerifyResponse,
+  X402SettlementResponse,
 } from "@armory-sh/base";
 import {
   createPaymentRequiredHeaders,
   createSettlementHeaders,
   PAYMENT_SIGNATURE_HEADER,
-  decodePaymentV2,
+  decodePayloadHeader,
+  verifyPayment,
+  settlePayment,
 } from "@armory-sh/base";
 
 export interface AdvancedPaymentConfig {
   requirements: PaymentRequirements;
-  facilitatorUrl?: string;
+  facilitatorUrl: string;
   network?: string;
 }
 
 export interface AugmentedRequest extends Request {
   payment?: {
-    payload: PaymentPayloadV2;
+    payload: X402PaymentPayload;
     payerAddress: string;
     verified: boolean;
   };
 }
 
 export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
-  const { requirements, facilitatorUrl, network = "base" } = config;
+  const { requirements, facilitatorUrl } = config;
 
   return async (c: Context, next: Next): Promise<Response | void> => {
     const paymentHeader = c.req.header(PAYMENT_SIGNATURE_HEADER);
@@ -43,20 +46,36 @@ export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
       });
     }
 
-    let paymentPayload: PaymentPayloadV2 | null = null;
+    let paymentPayload: X402PaymentPayload;
     try {
-      paymentPayload = decodePaymentV2(paymentHeader);
+      paymentPayload = decodePayloadHeader(paymentHeader, {
+        accepted: requirements,
+      });
     } catch (e) {
       c.status(400);
       return c.json({ error: "Invalid payment payload", details: String(e) });
     }
 
-    if (!paymentPayload) {
-      c.status(400);
-      return c.json({ error: "Invalid payment payload" });
+    if (!facilitatorUrl) {
+      c.status(500);
+      return c.json({ error: "Payment middleware configuration error", message: "Facilitator URL is required for verification" });
     }
 
-    const payerAddress = paymentPayload.payload.authorization.from;
+    const verifyResult: VerifyResponse = await verifyPayment(paymentPayload, requirements, { url: facilitatorUrl });
+
+    if (!verifyResult.isValid) {
+      const requiredHeaders = createPaymentRequiredHeaders(requirements);
+      c.status(402);
+      for (const [key, value] of Object.entries(requiredHeaders)) {
+        c.header(key, value);
+      }
+      return c.json({
+        error: "Payment verification failed",
+        message: verifyResult.invalidReason,
+      });
+    }
+
+    const payerAddress = verifyResult.payer ?? paymentPayload.payload.authorization.from;
 
     c.set("payment", {
       payload: paymentPayload,
@@ -64,7 +83,24 @@ export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
       verified: true,
     });
 
-    return next();
+    await next();
+
+    if (c.res.status >= 400) {
+      return;
+    }
+
+    const settleResult: X402SettlementResponse = await settlePayment(paymentPayload, requirements, { url: facilitatorUrl });
+
+    if (!settleResult.success) {
+      c.status(502);
+      c.res = c.json({ error: "Settlement failed", details: settleResult.errorReason }, 502);
+      return;
+    }
+
+    const settlementHeaders = createSettlementHeaders(settleResult);
+    for (const [key, value] of Object.entries(settlementHeaders)) {
+      c.header(key, value);
+    }
   };
 };
 

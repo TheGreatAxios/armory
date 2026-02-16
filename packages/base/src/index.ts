@@ -15,8 +15,6 @@ export type {
   SettlementResponse as X402SettlementResponse,
   VerifyResponse,
   X402Response,
-  PaymentPayloadV2 as X402PayloadV2,
-  LegacyPaymentPayload as X402LegacyPayload,
 } from "./types/x402";
 
 export {
@@ -24,7 +22,6 @@ export {
   SCHEMES,
   isPaymentPayload,
   isExactEvmPayload,
-  legacyToPaymentPayload,
 } from "./types/x402";
 
 // ============================================
@@ -43,8 +40,9 @@ export {
   extractPaymentFromHeaders,
   createPaymentRequiredHeaders,
   createSettlementHeaders,
-  isLegacyV2,
 } from "./encoding/x402";
+
+export type { PaymentRequiredOptions } from "./encoding/x402";
 
 // ============================================
 // Utilities from x402
@@ -107,7 +105,6 @@ export {
   isX402V2Requirements,
   isX402V2Settlement,
   isX402V2PaymentRequired,
-  isLegacyV2Payload,
   isSettlementSuccessful,
   getTxHash,
   PAYMENT_SIGNATURE_HEADER,
@@ -282,16 +279,19 @@ export type {
 } from "./types/hooks";
 
 // ============================================
-// Fixtures for testing
+// Facilitator client
 // ============================================
-export {
-  createX402V2Payload,
-  createLegacyV2Payload,
-  INVALID_PAYLOADS,
-  TEST_PAYER_ADDRESS,
-  TEST_PAY_TO_ADDRESS,
-  TEST_CONTRACT_ADDRESS,
-  TEST_PRIVATE_KEY,
-} from "./fixtures/payloads";
+export type {
+  FacilitatorClientConfig,
+  SupportedKind,
+  SupportedResponse,
+} from "./payment-client";
 
-export { DEFAULT_PAYMENT_CONFIG, type TestPaymentConfig } from "./fixtures/config";
+export {
+  verifyPayment,
+  settlePayment,
+  getSupported,
+  decodePayloadHeader,
+  extractPayerAddress,
+} from "./payment-client";
+

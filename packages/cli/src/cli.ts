@@ -135,7 +135,7 @@ const FACILITATOR_PACKAGE = (name: string) => `{
   },
   "dependencies": {
     "@armory-sh/base": "latest",
-    "@armory-sh/middleware": "latest"
+    "@armory-sh/middleware-hono": "latest"
   }
 }`;
 
@@ -246,7 +246,7 @@ app.use(
     requirements: {
       scheme: "exact",
       network: "base",
-      maxAmountRequired: "2000000",
+      amount: "2000000",
       resource: "https://example.com/api",
       description: "API access",
       mimeType: "application/json",
@@ -513,8 +513,8 @@ function printHelp() {
 ║    ethers-client       Ethers.js v6 client                       ║
 ║    web3-client         Web3.js client                            ║
 ║                                                                  ║
-║  Legacy:                                                         ║
-║    facilitator         Payment verification server (deprecated)  ║
+║  Facilitators:                                                   ║
+║    facilitator         Payment verification server               ║
 ║                                                                  ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║  EXAMPLES                                                        ║

@@ -3,15 +3,23 @@ import type {
   PaymentRequirementsV2,
   PaymentRequiredV2,
   ResourceInfo,
+  X402PaymentPayload,
+  VerifyResponse,
+  X402SettlementResponse,
 } from "@armory-sh/base";
 import {
   safeBase64Encode,
   V2_HEADERS,
   matchRoute,
   validateRouteConfig,
+  createPaymentRequiredHeaders,
+  createSettlementHeaders,
+  decodePayloadHeader,
+  verifyPayment,
+  settlePayment,
 } from "@armory-sh/base";
 import type { PaymentConfig } from "./simple";
-import { createPaymentRequirements } from "./simple";
+import { createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "./simple";
 
 interface LocalValidationError {
   code: string;
@@ -120,25 +128,62 @@ export const routeAwarePaymentMiddleware = (
       });
     }
 
-    let parsedPayload: unknown;
+    const primaryRequirement = requirements[0];
+    if (!primaryRequirement) {
+      c.status(500);
+      return c.json({ error: "Payment middleware configuration error", details: "No payment requirements configured" });
+    }
+
+    let parsedPayload: X402PaymentPayload;
     try {
-      const decoded = atob(paymentHeader);
-      parsedPayload = JSON.parse(decoded);
+      parsedPayload = decodePayloadHeader(paymentHeader, {
+        accepted: primaryRequirement,
+      });
     } catch {
-      try {
-        parsedPayload = JSON.parse(paymentHeader);
-      } catch {
-        c.status(400);
-        return c.json({ error: "Invalid payment payload" });
-      }
+      c.status(400);
+      return c.json({ error: "Invalid payment payload" });
+    }
+
+    const facilitatorUrl = matchedRoute.config.facilitatorUrl
+      ?? resolveFacilitatorUrlFromRequirement(matchedRoute.config, primaryRequirement);
+
+    if (!facilitatorUrl) {
+      c.status(500);
+      return c.json({ error: "Payment middleware configuration error", message: "Facilitator URL is required for verification" });
+    }
+
+    const verifyResult: VerifyResponse = await verifyPayment(parsedPayload, primaryRequirement, { url: facilitatorUrl });
+
+    if (!verifyResult.isValid) {
+      c.status(402);
+      c.header(V2_HEADERS.PAYMENT_REQUIRED, createPaymentRequiredHeaders(requirements)[V2_HEADERS.PAYMENT_REQUIRED]);
+      return c.json({ error: "Payment verification failed", message: verifyResult.invalidReason });
     }
 
     c.set("payment", {
       payload: parsedPayload,
-      verified: false,
+      payerAddress: verifyResult.payer,
+      verified: true,
       route: matchedRoute.pattern,
     });
 
-    return next();
+    await next();
+
+    if (c.res.status >= 400) {
+      return;
+    }
+
+    const settleResult: X402SettlementResponse = await settlePayment(parsedPayload, primaryRequirement, { url: facilitatorUrl });
+
+    if (!settleResult.success) {
+      c.status(502);
+      c.res = c.json({ error: "Settlement failed", details: settleResult.errorReason }, 502);
+      return;
+    }
+
+    const headers = createSettlementHeaders(settleResult);
+    for (const [key, value] of Object.entries(headers)) {
+      c.header(key, value);
+    }
   };
 };

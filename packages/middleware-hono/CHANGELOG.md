@@ -1,5 +1,23 @@
 # @armory-sh/middleware-hono
 
+## 0.3.22
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/extensions@0.1.3
+  - @armory-sh/base@0.2.22
+
+## 0.3.21
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/extensions@0.1.2
+  - @armory-sh/base@0.2.21
+
 ## 0.3.20
 
 ### Patch Changes

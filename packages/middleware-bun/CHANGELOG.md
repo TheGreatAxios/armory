@@ -1,5 +1,21 @@
 # @armory-sh/middleware-bun
 
+## 0.3.20
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
+## 0.3.19
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
 ## 0.3.18
 
 ### Patch Changes

@@ -2,7 +2,7 @@ import { createX402Client } from "@armory-sh/client-viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { createWalletClient, custom } from "viem";
 import { base } from "viem/chains";
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const API_URL = "https://api.example.com/protected-endpoint";
 

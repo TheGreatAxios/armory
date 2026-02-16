@@ -4,7 +4,7 @@
 
 import { createX402Client } from "@armory-sh/client-ethers";
 import { ethers } from "ethers";
-import { TOKENS } from "@armory-sh/tokens";
+import { TOKENS } from "@armory-sh/base";
 
 const API_URL = "https://api.example.com/protected-endpoint";
 const CHAIN_ID = 8453;

@@ -168,4 +168,82 @@ describe("[unit|middleware-next]: paymentProxy", () => {
 
     expect(response.status).toBe(402);
   });
+
+  test("[paymentProxy|success] - settles after successful upstream response", async () => {
+    const facilitatorClient: HTTPFacilitatorClient = {
+      async verify() {
+        return { success: true, payerAddress: "0x123" };
+      },
+      async settle() {
+        return { success: true, txHash: "0xabc" };
+      },
+    };
+
+    const server = new x402ResourceServer(facilitatorClient);
+
+    const proxy = paymentProxy(
+      {
+        "/api/protected": {
+          accepts: {
+            scheme: "exact",
+            price: "1000000",
+            network: "eip155:8453",
+            payTo: "0x1234567890123456789012345678901234567890",
+          },
+        },
+      },
+      server,
+      async () => new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } })
+    );
+
+    const request = new Request("http://localhost/api/protected", {
+      headers: {
+        "PAYMENT-SIGNATURE": "eyJ4NDAyVmVyc2lvbiI6Miwic2NoZW1lIjoiZXhhY3QiLCJuZXR3b3JrIjoiZWlwMTU1Ojg0NTMyIiwicGF5bG9hZCI6eyJzaWduYXR1cmUiOiIweDRjMmQ4Zjg3MjI1NjllNmQ1MTkwYjczNmI5Njk4NzRkMzliNDRlOTFkMTJhMzJiYzY2YjRmNzkxM2Q2MmY4YTZhNWIwMGViZTFlN2ExNmQ0NzQxOWFhM2FjYTQ3OWQzZDVlZjA4MWRiYWI0ZjY3Y2Q4N2M0YWQ0NmYxYzNjMjUxYjEiLCJhdXRob3JpemF0aW9uIjp7ImZyb20iOiIweDcxNDQxRjg2QjUzQkUyNjQ0N0Q1QjI4Q0QxMzQ5NkUyRjUzRjFjRzYiLCJ0byI6IjB4QzUxQTY2NEE5NTY3YmM5ODNjYzRhOWQ2YzY0NEI4ZWQxODBBZTk2YiIsInZhbHVlIjoiMTAwMDAwMCIsInZhbGlkQWZ0ZXIiOiIxNzU4MTE4MzQ2IiwidmFsaWRCZWZvcmUiOiIxNzU4MTE5NDAwIiwibm9uY2UiOiIweDEyMzQ1Njc4OTBhYmNkZWYxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTBhYmNkZWYifX0sInJlcXVlc3QiOnsibWV0aG9kIjoiR0VUIiwidXJsIjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20iLCJoZWFkZXJzIjp7fX19",
+      },
+    });
+
+    const response = await proxy(request as never);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("PAYMENT-RESPONSE")).toBeDefined();
+  });
+
+  test("[paymentProxy|success] - skips settlement when upstream response is error", async () => {
+    const facilitatorClient: HTTPFacilitatorClient = {
+      async verify() {
+        return { success: true, payerAddress: "0x123" };
+      },
+      async settle() {
+        return { success: false, error: "should-not-run" };
+      },
+    };
+
+    const server = new x402ResourceServer(facilitatorClient);
+
+    const proxy = paymentProxy(
+      {
+        "/api/protected": {
+          accepts: {
+            scheme: "exact",
+            price: "1000000",
+            network: "eip155:8453",
+            payTo: "0x1234567890123456789012345678901234567890",
+          },
+        },
+      },
+      server,
+      async () => new Response(JSON.stringify({ ok: false }), { status: 500, headers: { "Content-Type": "application/json" } })
+    );
+
+    const request = new Request("http://localhost/api/protected", {
+      headers: {
+        "PAYMENT-SIGNATURE": "eyJ4NDAyVmVyc2lvbiI6Miwic2NoZW1lIjoiZXhhY3QiLCJuZXR3b3JrIjoiZWlwMTU1Ojg0NTMyIiwicGF5bG9hZCI6eyJzaWduYXR1cmUiOiIweDRjMmQ4Zjg3MjI1NjllNmQ1MTkwYjczNmI5Njk4NzRkMzliNDRlOTFkMTJhMzJiYzY2YjRmNzkxM2Q2MmY4YTZhNWIwMGViZTFlN2ExNmQ0NzQxOWFhM2FjYTQ3OWQzZDVlZjA4MWRiYWI0ZjY3Y2Q4N2M0YWQ0NmYxYzNjMjUxYjEiLCJhdXRob3JpemF0aW9uIjp7ImZyb20iOiIweDcxNDQxRjg2QjUzQkUyNjQ0N0Q1QjI4Q0QxMzQ5NkUyRjUzRjFjRzYiLCJ0byI6IjB4QzUxQTY2NEE5NTY3YmM5ODNjYzRhOWQ2YzY0NEI4ZWQxODBBZTk2YiIsInZhbHVlIjoiMTAwMDAwMCIsInZhbGlkQWZ0ZXIiOiIxNzU4MTE4MzQ2IiwidmFsaWRCZWZvcmUiOiIxNzU4MTE5NDAwIiwibm9uY2UiOiIweDEyMzQ1Njc4OTBhYmNkZWYxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTBhYmNkZWYifX0sInJlcXVlc3QiOnsibWV0aG9kIjoiR0VUIiwidXJsIjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20iLCJoZWFkZXJzIjp7fX19",
+      },
+    });
+
+    const response = await proxy(request as never);
+
+    expect(response.status).toBe(500);
+    expect(response.headers.get("PAYMENT-RESPONSE")).toBeNull();
+  });
 });
