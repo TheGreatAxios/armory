@@ -1,6 +1,8 @@
 # @armory-sh/middleware-bun
 
-x402 payment middleware for Bun runtime applications.
+Armory x402 SDK — Payment middleware for Bun servers. Accept x402 payments from any client in your Bun app. 100% compatible with Coinbase x402 SDKs.
+
+[Documentation](https://armory.sh) | [License](LICENSE)
 
 ## Installation
 
@@ -8,89 +10,112 @@ x402 payment middleware for Bun runtime applications.
 bun add @armory-sh/middleware-bun
 ```
 
-## Features
+## Why Armory?
 
-- Simple payment middleware for Bun
-- Route-aware payment configuration
-- Multi-network, multi-token support
-- Facilitator integration
-- Full TypeScript support
+Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Accept payments from any x402-compatible client—Coinbase SDK, Armory SDK, or your own implementation.
 
-## Basic Usage
+## Key Exports
 
 ```typescript
-import { createBunMiddleware } from "@armory-sh/middleware-bun";
+import {
+  // Middleware
+  createBunMiddleware,
+  createRouteAwareBunMiddleware,
+
+  // Types
+  type BunMiddlewareConfig,
+  type RouteAwareBunMiddlewareConfig,
+  type BunPaymentContext,
+} from '@armory-sh/middleware-bun';
+```
+
+## Quick Start
+
+### Basic Middleware
+
+```typescript
+import { createBunMiddleware } from '@armory-sh/middleware-bun'
 
 const middleware = createBunMiddleware({
-  payTo: "0xYourAddress...",
-  network: "base",
-  amount: "1.0",
-});
+  payTo: '0xYourAddress...',
+  network: 'base',
+  token: 'usdc',
+  amount: '1.0'
+})
 
-const server = Bun.serve({
+Bun.serve({
   port: 3000,
   async fetch(req) {
-    const response = await middleware(req);
-    if (response) return response;
+    const response = await middleware(req)
+    if (response) return response
 
-    return new Response("Hello!");
-  },
-});
+    return new Response('Hello!')
+  }
+})
 ```
 
-## Route-Aware Middleware
+### Route-Aware Middleware
 
 ```typescript
-import { createRouteAwareBunMiddleware } from "@armory-sh/middleware-bun";
+import { createRouteAwareBunMiddleware } from '@armory-sh/middleware-bun'
 
 const middleware = createRouteAwareBunMiddleware({
-  routes: ["/api/premium", "/api/vip/*"],
-  payTo: "0xYourAddress...",
-  amount: "$5.00",
-  network: "base",
+  routes: ['/api/premium', '/api/vip/*'],
+  payTo: '0xYourAddress...',
+  amount: '$5.00',
+  network: 'base',
   perRoute: {
-    "/api/vip/*": {
-      amount: "$10.00",
+    '/api/vip/*': {
+      amount: '$10.00'
     }
   }
-});
+})
 
-const server = Bun.serve({
+Bun.serve({
   port: 3000,
-  async fetch(req) {
-    return middleware(req);
-  },
-});
+  fetch: (req) => middleware(req)
+})
 ```
 
-## Configuration
-
-### BunMiddlewareConfig
+## Configuration Options
 
 ```typescript
 interface BunMiddlewareConfig {
-  payTo: string | number;        // Payment recipient
-  network: string | number;       // Network (name or chain ID)
-  amount: string;                // Amount to charge
-  facilitator?: FacilitatorConfig;
-  settlementMode?: "verify" | "settle" | "async";
-  defaultVersion?: 1 | 2;
-  waitForSettlement?: boolean;
+  payTo: string | number           // Payment recipient
+  network: string | number         // Network (name or chain ID)
+  amount: string                   // Amount to charge
+  facilitator?: FacilitatorConfig
+  settlementMode?: 'verify' | 'settle' | 'async'
+  defaultVersion?: 1 | 2
+  waitForSettlement?: boolean
 }
 
 interface RouteAwareBunMiddlewareConfig extends BunMiddlewareConfig {
-  route?: string;
-  routes?: string[];
-  perRoute?: Record<string, Partial<BunMiddlewareConfig>>;
+  route?: string
+  routes?: string[]
+  perRoute?: Record<string, Partial<BunMiddlewareConfig>>
 }
 ```
 
-## API
+## Features
 
-### `createBunMiddleware(config)`
+- **x402 Compatible**: Accept payments from any x402 client
+- **Route-Aware**: Different pricing for different routes
+- **Multi-Network**: Ethereum, Base, SKALE support
+- **Multi-Token**: USDC, EURC, USDT, WBTC, WETH, SKL
+- **Facilitator Integration**: Optional facilitator support
+- **Settlement Modes**: Verify, settle, or async settlement
 
-Creates a payment middleware for Bun.
+## Supported Networks
 
-### `createRouteAwareBunMiddleware(config)`
+| Network | Chain ID |
+|---------|----------|
+| Ethereum | 1 |
+| Base | 8453 |
+| Base Sepolia | 84532 |
+| SKALE Base | 1187947933 |
+| SKALE Base Sepolia | 324705682 |
 
-Creates a route-aware payment middleware for Bun.
+## License
+
+MIT © [Sawyer Cutler](https://github.com/TheGreatAxios/armory)

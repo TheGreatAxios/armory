@@ -16,14 +16,22 @@
   },
   "keywords": [
     "x402",
-    "402",
+    "ai",
+    "agentic commerce",
+    "ai agent",
+    "stablecoins",
+    "eip-3009",
+    "skale",
+    "base",
+    "machine economy",
     "payment",
     "crypto",
     "web3",
+    "ethereum",
+    "usdc",
     "cli",
     "scaffold",
-    "base",
-    "usdc"
+    "generator"
   ],
   "bin": {
     "armory-cli": "./dist/cli.js"

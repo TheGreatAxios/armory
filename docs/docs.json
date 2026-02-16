@@ -15,11 +15,18 @@
     "name": "GitHub",
     "url": "https://github.com/thegreataxios/armory"
   },
+  "errors": {
+    "404": {
+      "redirect": false,
+      "title": "Page not found",
+      "description": "Couldn't find that page. Check the [navigation](/packages/base) or [search](/) for what you're looking for."
+    }
+  },
   "navigation": {
     "groups": [
       {
         "group": "Overview",
-        "pages": ["index", "cli"]
+        "pages": ["index", "cli", "changelog"]
       },
       {
         "group": "Accept Payments",
@@ -52,7 +59,6 @@
         "group": "Packages",
         "pages": [
           "packages/base",
-          "packages/middleware",
           "packages/middleware-bun",
           "packages/middleware-express",
           "packages/middleware-express-v4",
