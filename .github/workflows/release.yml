@@ -33,8 +33,7 @@ jobs:
 
           if echo "$CHANGED_FILES" | grep -q "^packages/"; then
             if ! echo "$CHANGED_FILES" | grep -q "^\.changeset/.*\.md$"; then
-              echo "::error::Packages changed but no changeset found. Run 'bun run changeset' locally."
-              exit 1
+              echo "ℹ️ No changeset found for package changes. A patch release will be auto-generated on main."
             fi
           fi
           echo "✅ Changeset check passed"
@@ -67,18 +66,45 @@ jobs:
       - name: Check for changesets
         id: check_changesets
         run: |
-          if [ $(find .changeset -name "*.md" -type f | wc -l) -gt 0 ]; then
+          if [ $(find .changeset -name "*.md" -type f ! -name "README.md" ! -name "auto-main-release.md" | wc -l) -gt 0 ]; then
             echo "has_changesets=true" >> $GITHUB_OUTPUT
           else
             echo "has_changesets=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Create automatic patch changeset for all packages
+        if: steps.check_changesets.outputs.has_changesets == 'false'
+        run: |
+          PKGS=$(find packages -mindepth 1 -maxdepth 1 -type d | xargs -n1 basename | sort)
+
+          {
+            echo "---"
+            for dir in $PKGS; do
+              pkg_json="packages/${dir}/package.json"
+              if [ -f "$pkg_json" ]; then
+                name=$(jq -r '.name' "$pkg_json")
+                private=$(jq -r '.private // false' "$pkg_json")
+                if [ "$name" != "null" ] && [ "$private" != "true" ]; then
+                  echo "\"$name\": patch"
+                fi
+              fi
+            done
+            echo "---"
+            echo
+            echo "Automatic patch release on main."
+          } > .changeset/auto-main-release.md
+
+      - name: Determine release requirement
+        id: release_gate
+        run: |
+          echo "should_release=true" >> $GITHUB_OUTPUT
+
       - name: Bump versions
-        if: steps.check_changesets.outputs.has_changesets == 'true'
+        if: steps.release_gate.outputs.should_release == 'true'
         run: bun run ci:version
 
       - name: Commit version changes
-        if: steps.check_changesets.outputs.has_changesets == 'true'
+        if: steps.release_gate.outputs.should_release == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -93,7 +119,7 @@ jobs:
         run: bun run build
 
       - name: Publish to npm
-        if: steps.check_changesets.outputs.has_changesets == 'true'
+        if: steps.release_gate.outputs.should_release == 'true'
         run: bun run ci:publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

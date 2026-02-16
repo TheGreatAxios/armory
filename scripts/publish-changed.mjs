@@ -7,18 +7,18 @@ import { join } from "node:path"
 const PACKAGES_DIR = "packages"
 
 function getAllPackages() {
-  const packageNames = []
+  const packages = []
 
   for (const dir of readdirSync(PACKAGES_DIR)) {
     const pkgPath = join(PACKAGES_DIR, dir, "package.json")
     if (!existsSync(pkgPath)) continue
     const pkg = JSON.parse(readFileSync(pkgPath, "utf8"))
     if (pkg.name && !pkg.private) {
-      packageNames.push(pkg.name)
+      packages.push({ name: pkg.name, dir: join(PACKAGES_DIR, dir) })
     }
   }
 
-  return packageNames
+  return packages
 }
 
 const tag = process.argv[2]
@@ -37,12 +37,12 @@ let skipped = 0
 let failed = []
 
 for (const pkg of packagesToPublish) {
-  process.stdout.write(`  ${pkg}... `)
+  process.stdout.write(`  ${pkg.name}... `)
 
   const tagFlag = tag ? `--tag ${tag}` : ""
 
   try {
-    execSync(`npm publish --provenance --access public ${tagFlag} "${pkg}"`, {
+    execSync(`npm publish --provenance --access public ${tagFlag} "${pkg.dir}"`, {
       stdio: "pipe",
       shell: true,
     })
@@ -62,7 +62,7 @@ for (const pkg of packagesToPublish) {
       console.log("✗ FAILED")
       console.error(`    stderr: ${stderr.slice(0, 300)}`)
       console.error(`    stdout: ${stdout.slice(0, 300)}`)
-      failed.push({ name: pkg, error: stderr + stdout })
+      failed.push({ name: pkg.name, error: stderr + stdout })
     }
   }
 }
