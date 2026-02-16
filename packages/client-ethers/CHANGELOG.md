@@ -1,5 +1,13 @@
 # @armory-sh/client-ethers
 
+## 0.2.23
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
 ## 0.2.22
 
 ### Patch Changes

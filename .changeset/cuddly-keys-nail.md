@@ -13,4 +13,4 @@
 "armory-cli": patch
 ---
 
-Package Cleanup, Minor Docs
+Fix Versions

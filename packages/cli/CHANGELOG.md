@@ -1,5 +1,14 @@
 # armory-cli
 
+## 0.3.4
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/extensions@0.1.5
+  - @armory-sh/base@0.2.24
+
 ## 0.3.3
 
 ### Patch Changes

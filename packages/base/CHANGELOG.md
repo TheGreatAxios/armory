@@ -1,5 +1,11 @@
 # @armory-sh/base
 
+## 0.2.24
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+
 ## 0.2.23
 
 ### Patch Changes
