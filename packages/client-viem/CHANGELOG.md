@@ -1,5 +1,14 @@
 # @armory-sh/client-viem
 
+## 0.2.24
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/extensions@0.1.6
+  - @armory-sh/base@0.2.25
+
 ## 0.2.23
 
 ### Patch Changes

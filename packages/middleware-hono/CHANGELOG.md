@@ -1,5 +1,14 @@
 # @armory-sh/middleware-hono
 
+## 0.3.25
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/extensions@0.1.6
+  - @armory-sh/base@0.2.25
+
 ## 0.3.24
 
 ### Patch Changes
