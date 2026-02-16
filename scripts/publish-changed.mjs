@@ -50,17 +50,19 @@ for (const pkg of packagesToPublish) {
     published++
   } catch (err) {
     const stderr = err.stderr?.toString() || err.stdout?.toString() || err.message || ""
+    const stdout = err.stdout?.toString() || ""
 
     if (
-      stderr.includes("You cannot publish over the previously published versions") ||
-      stderr.includes("cannot publish over the previously published versions")
+      (stderr + stdout).includes("You cannot publish over the previously published versions") ||
+      (stderr + stdout).includes("cannot publish over the previously published versions")
     ) {
       console.log("⊘ already published, skipping")
       skipped++
     } else {
       console.log("✗ FAILED")
-      console.error(`    Error: ${stderr.slice(0, 200)}`)
-      failed.push({ name: pkg, error: stderr })
+      console.error(`    stderr: ${stderr.slice(0, 300)}`)
+      console.error(`    stdout: ${stdout.slice(0, 300)}`)
+      failed.push({ name: pkg, error: stderr + stdout })
     }
   }
 }
