@@ -37,7 +37,7 @@ function resolveAmountForNetwork(
   config: PaymentConfig,
   network: ResolvedNetwork,
 ): string {
-  const defaultAmount = config.amount ?? "1.0";
+  const defaultAmount = config.amount ?? "0.01";
   if (!config.amounts) {
     return defaultAmount;
   }

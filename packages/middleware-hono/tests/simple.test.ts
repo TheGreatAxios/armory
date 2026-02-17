@@ -316,7 +316,7 @@ describe("[unit|middleware-hono]: Simple Middleware API", () => {
     });
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].amount).toBe("1000000");
+    expect(BigInt(result.requirements[0].amount)).toBe(10000n);
   });
 
   test("enriches explicit requirements with top-level eip712 metadata", () => {
