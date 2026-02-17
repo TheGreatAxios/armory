@@ -2,15 +2,14 @@
  * JSON Schema validators for x402 extensions
  */
 
-import type Ajv from "ajv";
+import Ajv from "ajv";
 import type { JSONSchema, Extension } from "./types.js";
 
 let ajvInstance: Ajv | null = null;
 
-async function getAjv(): Promise<Ajv> {
+function getAjv(): Ajv {
   if (!ajvInstance) {
-    const ajvModule = await import("ajv");
-    ajvInstance = new ajvModule.default({
+    ajvInstance = new Ajv({
       allErrors: true,
       strict: false,
     });
@@ -18,11 +17,11 @@ async function getAjv(): Promise<Ajv> {
   return ajvInstance;
 }
 
-export async function validateExtension<T>(
+export function validateExtension<T>(
   extension: Extension<T>,
   data: unknown
-): Promise<{ valid: boolean; errors?: string[] }> {
-  const ajv = await getAjv();
+): { valid: boolean; errors?: string[] } {
+  const ajv = getAjv();
   const validate = ajv.compile(extension.schema);
 
   if (validate(data)) {
@@ -78,11 +77,11 @@ export type ValidationResult = {
   errors?: ValidationError[];
 };
 
-export async function validateWithSchema(
+export function validateWithSchema(
   schema: JSONSchema,
   data: unknown
-): Promise<ValidationResult> {
-  const ajv = await getAjv();
+): ValidationResult {
+  const ajv = getAjv();
   const validate = ajv.compile(schema);
 
   if (validate(data)) {

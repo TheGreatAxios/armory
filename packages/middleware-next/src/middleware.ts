@@ -5,6 +5,7 @@ import type {
   VerifyResponse,
   X402SettlementResponse,
 } from "@armory-sh/base";
+import type { x402ResourceServer } from "./resource-server";
 import {
   resolveNetwork,
   resolveToken,
@@ -191,7 +192,7 @@ export function paymentMiddleware(config: PaymentConfig) {
 export type { RoutePaymentConfig, HTTPFacilitatorClient, PaymentScheme, MiddlewareConfig } from "./types";
 export function createMiddleware(
   routes: Record<string, RoutePaymentConfig>,
-  resourceServer: import("./resource-server").x402ResourceServer
+  resourceServer: x402ResourceServer
 ): (request: NextRequest) => Promise<NextResponse> {
   const { paymentProxy } = require("./proxy");
   const proxy = paymentProxy(routes, resourceServer);
