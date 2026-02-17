@@ -68,6 +68,7 @@
           "packages/client-viem",
           "packages/client-ethers",
           "packages/client-web3",
+          "packages/client-hooks",
           "packages/extensions"
         ]
       }
