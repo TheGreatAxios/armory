@@ -4,13 +4,10 @@
  * Tests various error scenarios in payment flows
  */
 
-import { describe, test, expect, beforeAll } from "bun:test";
-import { errorScenarios, describeErrorScenarios } from "./scenarios";
-import {
-  assertPaymentError,
-  assertPaymentPayload,
-} from "./assertions";
+import { describe, expect, test } from "bun:test";
 import { decodePayment, isExactEvmPayload } from "@armory-sh/base";
+import { assertPaymentPayload } from "./assertions";
+import { describeErrorScenarios } from "./scenarios";
 
 // Local helper to decode payment payload and return version info
 function decodePayload(headerValue: string): { payload: any; version: 1 | 2 } {
@@ -31,21 +28,25 @@ function createX402V2Payload(nonce?: string): any {
     scheme: "exact",
     network: "eip155:84532",
     payload: {
-      signature: "0x" + "b".repeat(130),
+      signature: `0x${"b".repeat(130)}`,
       authorization: {
         from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
         to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         value: "1000000",
         validAfter: Math.floor(Date.now() / 1000).toString(),
         validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
-        nonce: "0x" + Buffer.from(nonce ?? "test_v2").toString().padStart(64, "0").toString("hex"),
+        nonce:
+          "0x" +
+          Buffer.from(nonce ?? "test_v2")
+            .toString()
+            .padStart(64, "0")
+            .toString("hex"),
       },
     },
   };
 }
 
 describe("Error Scenario E2E", () => {
-
   // ============================================================================
   // Invalid Signature Errors
   // ============================================================================
@@ -55,14 +56,14 @@ describe("Error Scenario E2E", () => {
       const payload = createX402V2Payload("test_invalid_sig");
 
       // Corrupt the signature
-      (payload.payload.signature as string) = "0x" + "a".repeat(10);
+      (payload.payload.signature as string) = `0x${"a".repeat(10)}`;
 
       expect(payload.payload.signature).not.toMatch(/^0x[a-fA-F0-9]{130}$/);
     });
 
     test("rejects payment with wrong signature length", () => {
       const payload = createX402V2Payload("test_short_sig");
-      (payload.payload.signature as string) = "0x" + "a".repeat(64);
+      (payload.payload.signature as string) = `0x${"a".repeat(64)}`;
 
       expect(payload.payload.signature.length).not.toBe(132);
     });
@@ -88,7 +89,9 @@ describe("Error Scenario E2E", () => {
       payload.payload.authorization.validBefore = (now - 3600).toString();
       payload.payload.authorization.validAfter = (now - 7200).toString();
 
-      expect(parseInt(payload.payload.authorization.validBefore)).toBeLessThan(now);
+      expect(
+        parseInt(payload.payload.authorization.validBefore, 10),
+      ).toBeLessThan(now);
     });
 
     test("rejects payment with not-yet-valid validAfter", () => {
@@ -99,7 +102,9 @@ describe("Error Scenario E2E", () => {
       payload.payload.authorization.validAfter = (now + 3600).toString();
       payload.payload.authorization.validBefore = (now + 7200).toString();
 
-      expect(parseInt(payload.payload.authorization.validAfter)).toBeGreaterThan(now);
+      expect(
+        parseInt(payload.payload.authorization.validAfter, 10),
+      ).toBeGreaterThan(now);
     });
 
     test("rejects payment with validAfter > validBefore", () => {
@@ -109,8 +114,10 @@ describe("Error Scenario E2E", () => {
       payload.payload.authorization.validAfter = (now + 3600).toString();
       payload.payload.authorization.validBefore = (now + 1800).toString();
 
-      expect(parseInt(payload.payload.authorization.validAfter)).toBeGreaterThan(
-        parseInt(payload.payload.authorization.validBefore)
+      expect(
+        parseInt(payload.payload.authorization.validAfter, 10),
+      ).toBeGreaterThan(
+        parseInt(payload.payload.authorization.validBefore, 10),
       );
     });
   });
@@ -134,8 +141,8 @@ describe("Error Scenario E2E", () => {
       // Payment amount is less than required
       payload.payload.authorization.value = "500000";
 
-      expect(parseInt(payload.payload.authorization.value)).toBeLessThan(
-        parseInt(requirements.amount)
+      expect(parseInt(payload.payload.authorization.value, 10)).toBeLessThan(
+        parseInt(requirements.amount, 10),
       );
     });
 
@@ -197,9 +204,9 @@ describe("Error Scenario E2E", () => {
 
     test("rejects payment with zero address", () => {
       const payload = createX402V2Payload("test_zero_address");
-      (payload as any).asset = "0x" + "0".repeat(40);
+      (payload as any).asset = `0x${"0".repeat(40)}`;
 
-      expect((payload as any).asset).toBe("0x" + "0".repeat(40));
+      expect((payload as any).asset).toBe(`0x${"0".repeat(40)}`);
     });
 
     test("rejects payment with mismatched token address", () => {
@@ -213,7 +220,7 @@ describe("Error Scenario E2E", () => {
       };
 
       const payload = createX402V2Payload("test_wrong_token");
-      (payload as any).asset = "0x" + "1".repeat(40);
+      (payload as any).asset = `0x${"1".repeat(40)}`;
 
       expect((payload as any).asset).not.toBe(requirements.asset);
     });
@@ -228,14 +235,17 @@ describe("Error Scenario E2E", () => {
       const payload = createX402V2Payload("test_invalid_payto");
       payload.payload.authorization.to = "invalid" as `0x${string}`;
 
-      expect(payload.payload.authorization.to).not.toMatch(/^0x[a-fA-F0-9]{40}$/);
+      expect(payload.payload.authorization.to).not.toMatch(
+        /^0x[a-fA-F0-9]{40}$/,
+      );
     });
 
     test("rejects payment with zero payTo address", () => {
       const payload = createX402V2Payload("test_zero_payto");
-      payload.payload.authorization.to = "0x" + "0".repeat(40) as `0x${string}`;
+      payload.payload.authorization.to = ("0x" +
+        "0".repeat(40)) as `0x${string}`;
 
-      expect(payload.payload.authorization.to).toBe("0x" + "0".repeat(40));
+      expect(payload.payload.authorization.to).toBe(`0x${"0".repeat(40)}`);
     });
   });
 
@@ -249,9 +259,12 @@ describe("Error Scenario E2E", () => {
       const payload2 = createX402V2Payload("test_nonce_2");
 
       // Use same nonce
-      payload2.payload.authorization.nonce = payload1.payload.authorization.nonce;
+      payload2.payload.authorization.nonce =
+        payload1.payload.authorization.nonce;
 
-      expect(payload2.payload.authorization.nonce).toBe(payload1.payload.authorization.nonce);
+      expect(payload2.payload.authorization.nonce).toBe(
+        payload1.payload.authorization.nonce,
+      );
     });
   });
 
@@ -292,7 +305,7 @@ describe("Error Scenario E2E", () => {
   // Error Scenario Tests
   // ============================================================================
 
-  describeErrorScenarios("All Error Scenarios", (scenario, errorType) => {
+  describeErrorScenarios("All Error Scenarios", (scenario, _errorType) => {
     assertPaymentPayload(scenario.payload, scenario.version);
 
     if (!scenario.expectedSuccess) {

@@ -5,15 +5,15 @@
  * Uses mock facilitator - no HTTP server required.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { advancedPaymentMiddleware } from "@armory-sh/middleware-hono";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { encodePayment } from "@armory-sh/base";
+import { paymentMiddleware } from "@armory-sh/middleware-hono";
 import { createX402V2Payload } from "../general/fixtures/payloads";
 import {
-  mockFacilitator,
   createMockHonoContext,
-  TEST_REQUIREMENTS,
   MOCK_FACILITATOR_URL,
+  mockFacilitator,
+  TEST_REQUIREMENTS,
 } from "../general/mocks";
 
 describe("[e2e|hono]: x402 SDK Compatibility", () => {
@@ -28,7 +28,7 @@ describe("[e2e|hono]: x402 SDK Compatibility", () => {
   });
 
   test("[middleware|success] - returns 402 when no payment header", async () => {
-    const middleware = advancedPaymentMiddleware({
+    const middleware = paymentMiddleware({
       requirements: TEST_REQUIREMENTS,
       facilitatorUrl: MOCK_FACILITATOR_URL,
     });
@@ -47,7 +47,7 @@ describe("[e2e|hono]: x402 SDK Compatibility", () => {
   });
 
   test("[middleware|success] - accepts valid x402 V2 payment", async () => {
-    const middleware = advancedPaymentMiddleware({
+    const middleware = paymentMiddleware({
       requirements: TEST_REQUIREMENTS,
       facilitatorUrl: MOCK_FACILITATOR_URL,
     });
@@ -72,7 +72,7 @@ describe("[e2e|hono]: x402 SDK Compatibility", () => {
   });
 
   test("[middleware|error] - returns 400 for invalid payment payload", async () => {
-    const middleware = advancedPaymentMiddleware({
+    const middleware = paymentMiddleware({
       requirements: TEST_REQUIREMENTS,
       facilitatorUrl: MOCK_FACILITATOR_URL,
     });
@@ -97,7 +97,7 @@ describe("[e2e|hono]: x402 SDK Compatibility", () => {
       verifyResult: { isValid: false, invalidReason: "Invalid signature" },
     });
 
-    const middleware = advancedPaymentMiddleware({
+    const middleware = paymentMiddleware({
       requirements: TEST_REQUIREMENTS,
       facilitatorUrl: MOCK_FACILITATOR_URL,
     });

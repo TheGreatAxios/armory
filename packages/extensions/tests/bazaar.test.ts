@@ -1,12 +1,12 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import type { PaymentPayloadV2, PaymentRequirementsV2 } from "@armory-sh/base";
 import {
+  BAZAAR,
   declareDiscoveryExtension,
   extractDiscoveryInfo,
-  validateDiscoveryExtension,
   isDiscoveryExtension,
-  BAZAAR,
+  validateDiscoveryExtension,
 } from "../src/bazaar";
-import type { PaymentPayloadV2, PaymentRequirementsV2 } from "@armory-sh/base";
 
 describe("[unit|extensions]: Bazaar Discovery Extension", () => {
   describe("[unit|extensions]: declareDiscoveryExtension", () => {
@@ -15,9 +15,7 @@ describe("[unit|extensions]: Bazaar Discovery Extension", () => {
 
       expect(extension).toBeDefined();
       expect(extension.info).toBeDefined();
-      expect(extension.schema).toBeDefined();
       expect(typeof extension.info).toBe("object");
-      expect(typeof extension.schema).toBe("object");
     });
 
     test("[declareDiscoveryExtension|success] - creates extension with input schema", () => {
@@ -101,17 +99,10 @@ describe("[unit|extensions]: Bazaar Discovery Extension", () => {
     });
 
     test("[validateDiscoveryExtension|error] - rejects object without info", () => {
-      const result = validateDiscoveryExtension({ schema: {} });
+      const result = validateDiscoveryExtension({});
 
       expect(result.valid).toBe(false);
       expect(result.errors).toContain("Extension must have an 'info' field");
-    });
-
-    test("[validateDiscoveryExtension|error] - rejects object without schema", () => {
-      const result = validateDiscoveryExtension({ info: {} });
-
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContain("Extension must have a 'schema' field");
     });
   });
 
@@ -129,10 +120,8 @@ describe("[unit|extensions]: Bazaar Discovery Extension", () => {
       expect(isDiscoveryExtension(123)).toBe(false);
     });
 
-    test("[isDiscoveryExtension|error] - rejects objects without required fields", () => {
+    test("[isDiscoveryExtension|error] - rejects objects without info", () => {
       expect(isDiscoveryExtension({})).toBe(false);
-      expect(isDiscoveryExtension({ info: {} })).toBe(false);
-      expect(isDiscoveryExtension({ schema: {} })).toBe(false);
     });
   });
 
@@ -147,14 +136,14 @@ describe("[unit|extensions]: Bazaar Discovery Extension", () => {
         scheme: "exact",
         network: "eip155:8453",
         payload: {
-          signature: "0x" + "a".repeat(130),
+          signature: `0x${"a".repeat(130)}`,
           authorization: {
             from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
             to: "0x1234567890123456789012345678901234567890" as `0x${string}`,
             value: "1000000",
             validAfter: "0",
             validBefore: "9999999999",
-            nonce: "0x" + "0".repeat(64) as `0x${string}`,
+            nonce: `0x${"0".repeat(64)}` as `0x${string}`,
           },
         },
         extensions: {
@@ -183,14 +172,14 @@ describe("[unit|extensions]: Bazaar Discovery Extension", () => {
         scheme: "exact",
         network: "eip155:8453",
         payload: {
-          signature: "0x" + "a".repeat(130),
+          signature: `0x${"a".repeat(130)}`,
           authorization: {
             from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
             to: "0x1234567890123456789012345678901234567890" as `0x${string}`,
             value: "1000000",
             validAfter: "0",
             validBefore: "9999999999",
-            nonce: "0x" + "0".repeat(64) as `0x${string}`,
+            nonce: `0x${"0".repeat(64)}` as `0x${string}`,
           },
         },
       };

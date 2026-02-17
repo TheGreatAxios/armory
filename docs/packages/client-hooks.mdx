@@ -1,0 +1,50 @@
+---
+description: Optional hook presets for x402 clients
+title: "@armory-sh/client-hooks"
+---
+
+Optional preset hooks for Armory clients.
+
+## Installation
+
+```bash
+bun add @armory-sh/client-hooks
+```
+
+## Included Hooks
+
+| Hook | Purpose |
+|------|---------|
+| `PaymentPreference.chain(...)` | Prefer matching chains/networks |
+| `PaymentPreference.token(...)` | Prefer matching tokens/assets |
+| `PaymentPreference.cheapest()` | Choose lowest amount within selected chain+asset |
+| `Logger.console()` | Log payment challenge/response events |
+
+## Usage
+
+```typescript
+import { createX402Client } from '@armory-sh/client-viem';
+import { PaymentPreference, Logger } from '@armory-sh/client-hooks';
+
+const client = createX402Client({
+  wallet: { type: 'account', account },
+  hooks: [
+    PaymentPreference.chain(['base', 'polygon', 'skale']),
+    PaymentPreference.token(['USDT', 'USDC', 'WBTC']),
+    PaymentPreference.cheapest(),
+    Logger.console(),
+  ],
+});
+```
+
+## Selection Behavior
+
+- Hook selection narrows progressively in array order.
+- Chain preference runs first, then token preference can narrow within selected chain.
+- Cheapest refines within the selected network and asset.
+- If no hook selects, clients fall back to the first compatible `accepts[]` option from `PAYMENT-REQUIRED`.
+
+## Notes
+
+- This package is optional. Core clients work without it.
+- Hooks are fail-closed by default: if a hook throws, payment flow throws.

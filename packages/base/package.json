@@ -28,10 +28,21 @@
       "bun": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./types/hooks": {
+      "types": "./src/types/hooks.ts",
+      "bun": "./src/types/hooks.ts",
+      "default": "./src/types/hooks.ts"
+    },
+    "./client-hooks-runtime": {
+      "types": "./src/client-hooks-runtime.ts",
+      "bun": "./src/client-hooks-runtime.ts",
+      "default": "./src/client-hooks-runtime.ts"
+    },
     "./dist/*": "./dist/*.js"
   },
   "files": [
     "dist",
+    "src",
     "README.md"
   ],
   "publishConfig": {
@@ -50,6 +61,8 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsup && tsc --emitDeclarationOnly",
+    "lint": "bun run build",
+    "format": "bun run lint",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   }

@@ -1,10 +1,15 @@
 ---
+title: Make Payments with Ethers.js
 description: Make payments with Ethers.js
 ---
 
 # Make Payments with Ethers.js
 
 Make payments to Armory-protected APIs using Ethers.js wallets.
+
+`hooks` are lifecycle callbacks. `extensions` are protocol fields on x402 payloads/challenges. They work together but are separate.
+
+When payment verification fails on retry (`402`), Armory surfaces server detail (for example `insufficient_funds`) in the error path.
 
 ## Basic Payment
 
@@ -45,7 +50,7 @@ const info = await armory.call('https://api.example.com/data');
 console.log(premium.data, info.data);
 ```
 
-`createArmory` exposes `.get`, `.post`, `.put`, `.delete`, `.patch`, `.pay`, and `.call`. When a 402 response arrives the object automatically picks the best entry from the server's `accepts[]` array, favoring Base (`8453`), the Base USDC contract (`0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913`), and lower amounts. Leaving `chains`/`tokens` unset lets Armory evaluate any compatible option while still preferring Base/USDC.
+`createArmory` exposes `.get`, `.post`, `.put`, `.delete`, `.patch`, `.pay`, and `.call`. When a 402 response arrives, it selects from `accepts[]`. Without hooks it uses the first compatible option; add `@armory-sh/client-hooks` to apply chain/token/cheapest preferences.
 
 Use `.pay(url, { method: 'PATCH', body })` when you need to override the method and `.call(url)` if you just want the default GET request with payment.
 

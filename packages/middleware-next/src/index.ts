@@ -1,10 +1,15 @@
+export type { PaymentConfig, ResolvedRequirementsConfig } from "./middleware";
+export {
+  createMiddleware,
+  createPaymentRequirements,
+  paymentMiddleware,
+  resolveFacilitatorUrlFromRequirement,
+} from "./middleware";
+export { paymentProxy } from "./proxy";
+export { x402ResourceServer } from "./resource-server";
 export type {
   HTTPFacilitatorClient,
+  MiddlewareConfig,
   PaymentScheme,
   RoutePaymentConfig,
-  MiddlewareConfig,
 } from "./types";
-
-export { x402ResourceServer } from "./resource-server";
-export { paymentProxy } from "./proxy";
-export { createMiddleware } from "./middleware";

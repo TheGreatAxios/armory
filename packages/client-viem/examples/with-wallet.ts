@@ -1,8 +1,8 @@
-import { createX402Client } from "@armory-sh/client-viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { createWalletClient, custom } from "viem";
-import { base } from "viem/chains";
 import { TOKENS } from "@armory-sh/base";
+import { createX402Client } from "@armory-sh/client-viem";
+import { createWalletClient, custom } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { base } from "viem/chains";
 
 const API_URL = "https://api.example.com/protected-endpoint";
 
@@ -31,7 +31,9 @@ async function main() {
   } else {
     console.log("No browser wallet detected, using private key");
 
-    const PRIVATE_KEY = process.env.PRIVATE_KEY ?? "0x0000000000000000000000000000000000000000000000000000000000000001";
+    const PRIVATE_KEY =
+      process.env.PRIVATE_KEY ??
+      "0x0000000000000000000000000000000000000000000000000000000000000001";
     const account = privateKeyToAccount(PRIVATE_KEY);
     console.log("Account address:", account.address);
 
@@ -70,9 +72,15 @@ main().catch(console.error);
 declare global {
   interface Window {
     ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+      request: (args: {
+        method: string;
+        params?: unknown[];
+      }) => Promise<unknown>;
       on: (event: string, handler: (...args: unknown[]) => void) => void;
-      removeListener: (event: string, handler: (...args: unknown[]) => void) => void;
+      removeListener: (
+        event: string,
+        handler: (...args: unknown[]) => void,
+      ) => void;
     };
   }
 }

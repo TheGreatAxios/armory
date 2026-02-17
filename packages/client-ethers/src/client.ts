@@ -4,16 +4,16 @@
  * Creates a configured client instance for making X-402 payments
  */
 
-import type { Signer, Provider } from "ethers";
+import type { Provider, Signer } from "ethers";
+import { SignerRequiredError } from "./errors";
+import { createX402Transport } from "./transport";
 import type {
-  X402ClientConfig,
-  SignerClientConfig,
-  ProviderClientConfig,
   ClientConfig,
+  ProviderClientConfig,
+  SignerClientConfig,
+  X402ClientConfig,
   X402RequestInit,
 } from "./types";
-import { createX402Transport, type X402Transport } from "./transport";
-import { SignerRequiredError } from "./errors";
 
 /**
  * X402 Client instance
@@ -65,17 +65,17 @@ export type { X402RequestInit } from "./types";
  * @returns Configured X402 client
  */
 export function createX402Client(
-  config: X402ClientConfig & SignerClientConfig & { signer: Signer }
+  config: X402ClientConfig & SignerClientConfig & { signer: Signer },
 ): X402Client;
 
 export function createX402Client(
-  config: X402ClientConfig & ProviderClientConfig
+  config: X402ClientConfig & ProviderClientConfig,
 ): X402Client;
 
-export function createX402Client(
-  config: ClientConfig
-): X402Client {
-  const transport = createX402Transport(undefined);
+export function createX402Client(config: ClientConfig): X402Client {
+  const transport = createX402Transport({
+    hooks: config.hooks,
+  });
 
   if ("signer" in config && config.signer) {
     transport.setSigner(config.signer);
@@ -95,7 +95,7 @@ export function createX402Client(
     }
   } else {
     throw new SignerRequiredError(
-      "Either 'signer' or 'provider' with getSigner() must be provided"
+      "Either 'signer' or 'provider' with getSigner() must be provided",
     );
   }
 

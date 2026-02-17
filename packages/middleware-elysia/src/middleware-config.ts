@@ -4,31 +4,27 @@
  */
 
 import type {
-  Address,
-  PaymentRequirements,
-} from "@armory-sh/base";
-import type {
-  NetworkId,
-  TokenId,
-  FacilitatorConfig,
   AcceptPaymentOptions,
-  ResolvedPaymentConfig,
-  ValidationError,
+  Address,
+  NetworkId,
+  PaymentRequirements,
   PricingConfig,
+  ResolvedPaymentConfig,
+  TokenId,
+  ValidationError,
 } from "@armory-sh/base";
 import {
+  isValidationError,
+  normalizeNetworkName,
   resolveNetwork,
   resolveToken,
   validateAcceptConfig,
-  isValidationError,
-  getNetworkConfig,
-  getNetworkByChainId,
-  normalizeNetworkName,
 } from "@armory-sh/base";
-import {
-  createPaymentRequirements,
-} from "./core";
-import type { MiddlewareConfig, FacilitatorConfig as CoreFacilitatorConfig } from "./types";
+import { createPaymentRequirements } from "./core";
+import type {
+  FacilitatorConfig as CoreFacilitatorConfig,
+  MiddlewareConfig,
+} from "./types";
 
 // ═══════════════════════════════════════════════════════════════
 // Simple Middleware Configuration
@@ -55,12 +51,13 @@ export interface SimpleMiddlewareConfig {
  */
 export interface ResolvedMiddlewareConfig {
   /** All valid payment configurations (network/token combinations) */
-  configs: ResolvedPaymentConfigWithPricing[];  /** Facilitator configs */
+  configs: ResolvedPaymentConfigWithPricing[] /** Facilitator configs */;
   facilitators: CoreFacilitatorConfig[];
 }
 
 /** Extended config with pricing info */
-export interface ResolvedPaymentConfigWithPricing extends ResolvedPaymentConfig {
+export interface ResolvedPaymentConfigWithPricing
+  extends ResolvedPaymentConfig {
   /** Facilitator URL (for per-facilitator pricing) */
   facilitatorUrl?: string;
   /** Pricing config entry (if any) */
@@ -78,31 +75,28 @@ const findPricingConfig = (
   pricing: PricingConfig[] | undefined,
   network: string,
   token: string,
-  facilitatorUrl: string
+  facilitatorUrl: string,
 ): PricingConfig | undefined => {
   if (!pricing) return undefined;
 
   // First try exact match with facilitator
   const withFacilitator = pricing.find(
-    p =>
+    (p) =>
       p.network === network &&
       p.token === token &&
-      p.facilitator === facilitatorUrl
+      p.facilitator === facilitatorUrl,
   );
   if (withFacilitator) return withFacilitator;
 
   // Then try network/token match (any facilitator)
   const withNetworkToken = pricing.find(
-    p =>
-      p.network === network &&
-      p.token === token &&
-      !p.facilitator
+    (p) => p.network === network && p.token === token && !p.facilitator,
   );
   if (withNetworkToken) return withNetworkToken;
 
   // Then try network-only match
   const networkOnly = pricing.find(
-    p => p.network === network && !p.token && !p.facilitator
+    (p) => p.network === network && !p.token && !p.facilitator,
   );
   if (networkOnly) return networkOnly;
 
@@ -113,16 +107,27 @@ const findPricingConfig = (
  * Resolve simple middleware config to full config
  */
 export const resolveMiddlewareConfig = (
-  config: SimpleMiddlewareConfig
+  config: SimpleMiddlewareConfig,
 ): ResolvedMiddlewareConfig | ValidationError => {
-  const { payTo, amount = "1.0", accept = {}, facilitatorUrl, pricing } = config;
+  const {
+    payTo,
+    amount = "1.0",
+    accept = {},
+    facilitatorUrl,
+    pricing,
+  } = config;
 
   // If using facilitatorUrl, convert to AcceptPaymentOptions
   const acceptOptions: AcceptPaymentOptions = facilitatorUrl
     ? {
         ...accept,
         facilitators: accept.facilitators
-          ? [...(Array.isArray(accept.facilitators) ? accept.facilitators : [accept.facilitators]), { url: facilitatorUrl }]
+          ? [
+              ...(Array.isArray(accept.facilitators)
+                ? accept.facilitators
+                : [accept.facilitators]),
+              { url: facilitatorUrl },
+            ]
           : { url: facilitatorUrl },
       }
     : accept;
@@ -132,29 +137,43 @@ export const resolveMiddlewareConfig = (
     return result.error;
   }
 
-  const facilitatorConfigs: CoreFacilitatorConfig[] = result.config[0]?.facilitators.map((f) => ({
-    url: f.url,
-    headers: f.input.headers,
-  })) ?? [];
+  const facilitatorConfigs: CoreFacilitatorConfig[] =
+    result.config[0]?.facilitators.map((f) => ({
+      url: f.url,
+      headers: f.input.headers,
+    })) ?? [];
 
-  const enrichedConfigs: ResolvedPaymentConfigWithPricing[] = result.config.map((c) => {
-    const networkName = normalizeNetworkName(c.network.config.name);
-    const tokenSymbol = c.token.config.symbol;
+  const enrichedConfigs: ResolvedPaymentConfigWithPricing[] = result.config.map(
+    (c) => {
+      const networkName = normalizeNetworkName(c.network.config.name);
+      const tokenSymbol = c.token.config.symbol;
 
-    const facilitatorPricing: { url: string; pricing?: PricingConfig }[] = c.facilitators.map((f) => {
-      const pricingConfig = findPricingConfig(pricing, networkName, tokenSymbol, f.url);
-      return { url: f.url, pricing: pricingConfig };
-    });
+      const facilitatorPricing: { url: string; pricing?: PricingConfig }[] =
+        c.facilitators.map((f) => {
+          const pricingConfig = findPricingConfig(
+            pricing,
+            networkName,
+            tokenSymbol,
+            f.url,
+          );
+          return { url: f.url, pricing: pricingConfig };
+        });
 
-    const defaultPricing = findPricingConfig(pricing, networkName, tokenSymbol, "");
+      const defaultPricing = findPricingConfig(
+        pricing,
+        networkName,
+        tokenSymbol,
+        "",
+      );
 
-    return {
-      ...c,
-      amount: defaultPricing?.amount ?? c.amount,
-      facilitatorUrl: facilitatorPricing[0]?.url,
-      pricing: defaultPricing,
-    };
-  });
+      return {
+        ...c,
+        amount: defaultPricing?.amount ?? c.amount,
+        facilitatorUrl: facilitatorPricing[0]?.url,
+        pricing: defaultPricing,
+      };
+    },
+  );
 
   return {
     configs: enrichedConfigs,
@@ -168,7 +187,7 @@ export const resolveMiddlewareConfig = (
 export const getRequirements = (
   config: ResolvedMiddlewareConfig,
   network: NetworkId,
-  token: TokenId
+  token: TokenId,
 ): PaymentRequirements | ValidationError => {
   // Find matching config
   const resolvedNetwork = resolveNetwork(network);
@@ -184,7 +203,8 @@ export const getRequirements = (
   const matchingConfig = config.configs.find(
     (c) =>
       c.network.config.chainId === resolvedNetwork.config.chainId &&
-      c.token.config.contractAddress.toLowerCase() === resolvedToken.config.contractAddress.toLowerCase()
+      c.token.config.contractAddress.toLowerCase() ===
+        resolvedToken.config.contractAddress.toLowerCase(),
   );
 
   if (!matchingConfig) {
@@ -193,14 +213,12 @@ export const getRequirements = (
       message: `No configuration found for network "${network}" with token "${token}"`,
     } as ValidationError;
   }
-  return createPaymentRequirements(
-    {
-      payTo: matchingConfig.payTo,
-      network: normalizeNetworkName(matchingConfig.network.config.name),
-      amount: matchingConfig.amount,
-      facilitator: config.facilitators[0],
-    }
-    );
+  return createPaymentRequirements({
+    payTo: matchingConfig.payTo,
+    network: normalizeNetworkName(matchingConfig.network.config.name),
+    amount: matchingConfig.amount,
+    facilitator: config.facilitators[0],
+  });
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -210,7 +228,9 @@ export const getRequirements = (
 /**
  * Get primary/default middleware config for middlewares
  */
-export const getPrimaryConfig = (resolved: ResolvedMiddlewareConfig): MiddlewareConfig => {
+export const getPrimaryConfig = (
+  resolved: ResolvedMiddlewareConfig,
+): MiddlewareConfig => {
   const primary = resolved.configs[0];
   if (!primary) {
     throw new Error("No valid payment configurations found");
@@ -228,15 +248,21 @@ export const getPrimaryConfig = (resolved: ResolvedMiddlewareConfig): Middleware
 /**
  * Get all supported networks from config
  */
-export const getSupportedNetworks = (config: ResolvedMiddlewareConfig): string[] => {
-  const networks = new Set(config.configs.map((c) => normalizeNetworkName(c.network.config.name)));
+export const getSupportedNetworks = (
+  config: ResolvedMiddlewareConfig,
+): string[] => {
+  const networks = new Set(
+    config.configs.map((c) => normalizeNetworkName(c.network.config.name)),
+  );
   return Array.from(networks);
 };
 
 /**
  * Get all supported tokens from config
  */
-export const getSupportedTokens = (config: ResolvedMiddlewareConfig): string[] => {
+export const getSupportedTokens = (
+  config: ResolvedMiddlewareConfig,
+): string[] => {
   const tokens = new Set(config.configs.map((c) => c.token.config.symbol));
   return Array.from(tokens);
 };
@@ -247,7 +273,7 @@ export const getSupportedTokens = (config: ResolvedMiddlewareConfig): string[] =
 export const isSupported = (
   config: ResolvedMiddlewareConfig,
   network: NetworkId,
-  token: TokenId
+  token: TokenId,
 ): boolean => {
   const resolvedNetwork = resolveNetwork(network);
   if (isValidationError(resolvedNetwork)) {
@@ -262,6 +288,7 @@ export const isSupported = (
   return config.configs.some(
     (c) =>
       c.network.config.chainId === resolvedNetwork.config.chainId &&
-      c.token.config.contractAddress.toLowerCase() === resolvedToken.config.contractAddress.toLowerCase()
+      c.token.config.contractAddress.toLowerCase() ===
+        resolvedToken.config.contractAddress.toLowerCase(),
   );
 };

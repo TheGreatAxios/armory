@@ -1,0 +1,45 @@
+{
+  "name": "@armory-sh/client-hooks",
+  "version": "0.1.1",
+  "license": "MIT",
+  "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheGreatAxios/armory.git",
+    "directory": "packages/client-hooks"
+  },
+  "dependencies": {
+    "@armory-sh/base": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.1",
+    "bun-types": "latest",
+    "tsup": "^8.0.0",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsup",
+    "build:dts": "rm -rf dist && bunx tsc --declaration --skipLibCheck",
+    "lint": "bun run build",
+    "format": "bun run lint",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit"
+  }
+}

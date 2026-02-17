@@ -53,12 +53,12 @@ import { createX402Client } from '@armory-sh/client-viem'
 
 const client = createX402Client({
   wallet: { type: 'account', account },
-  hooks: {
-    siwx: createSIWxHook({
+  hooks: [
+    createSIWxHook({
       domain: 'example.com',
       statement: 'Sign in to access premium content'
     })
-  }
+  ]
 })
 ```
 

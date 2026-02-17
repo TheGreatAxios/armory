@@ -2,12 +2,18 @@
  * Ethers Client - With Axios Example
  */
 
-import { createX402Client } from "@armory-sh/client-ethers";
-import { ethers } from "ethers";
-import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse } from "axios";
 import { TOKENS } from "@armory-sh/base";
+import { createX402Client } from "@armory-sh/client-ethers";
+import axios, {
+  type AxiosInstance,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from "axios";
+import { ethers } from "ethers";
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY ?? "0x0000000000000000000000000000000000000000000000000000000000000001";
+const PRIVATE_KEY =
+  process.env.PRIVATE_KEY ??
+  "0x0000000000000000000000000000000000000000000000000000000000000001";
 const API_BASE_URL = "https://api.example.com";
 
 async function main() {
@@ -28,19 +34,22 @@ async function main() {
   });
 
   axiosInstance.interceptors.request.use(
-    async (config: InternalAxiosRequestConfig) => config
+    async (config: InternalAxiosRequestConfig) => config,
   );
 
   axiosInstance.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error) => {
-      const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: number };
+      const originalRequest = error.config as InternalAxiosRequestConfig & {
+        _retry?: number;
+      };
 
       if (error.response?.status === 402 && !originalRequest._retry) {
         originalRequest._retry = 1;
 
-        const paymentRequired = error.response.headers["payment-required"] ||
-                               error.response.headers["x-payment-required"];
+        const paymentRequired =
+          error.response.headers["payment-required"] ||
+          error.response.headers["x-payment-required"];
 
         if (paymentRequired) {
           console.log("Payment required, signing...");
@@ -56,7 +65,7 @@ async function main() {
       }
 
       return Promise.reject(error);
-    }
+    },
   );
 
   console.log("\nMaking GET request to:", API_BASE_URL);

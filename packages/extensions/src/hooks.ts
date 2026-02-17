@@ -8,22 +8,24 @@
  * extension requirements from servers.
  */
 
-import type { SIWxExtensionInfo, SIWxPayload, PaymentIdentifierExtensionInfo } from "./types";
-import {
-  createSIWxPayload,
-  encodeSIWxHeader,
-  createSIWxMessage,
-} from "./sign-in-with-x";
-import {
-  generatePaymentId,
-  appendPaymentIdentifierToExtensions,
-} from "./payment-identifier";
 import type {
   HookConfig,
   PaymentPayloadContext,
   PaymentRequiredContext,
-  ExtensionHook,
 } from "@armory-sh/base";
+import {
+  appendPaymentIdentifierToExtensions,
+  generatePaymentId,
+} from "./payment-identifier";
+import {
+  createSIWxMessage,
+  createSIWxPayload,
+  encodeSIWxHeader,
+} from "./sign-in-with-x";
+import type {
+  PaymentIdentifierExtensionInfo,
+  SIWxExtensionInfo,
+} from "./types";
 
 export interface SIWxHookConfig {
   domain?: string;
@@ -35,77 +37,118 @@ export interface PaymentIdHookConfig {
   paymentId?: string;
 }
 
-type HookContext = PaymentRequiredContext | PaymentPayloadContext<unknown>;
+function isPayloadContext(
+  context: PaymentRequiredContext | PaymentPayloadContext<unknown>,
+): context is PaymentPayloadContext<unknown> {
+  return "paymentContext" in context && "payload" in context;
+}
 
-export function createSIWxHook(
-  config?: SIWxHookConfig
-): HookConfig {
+function hasInfo(value: unknown): value is { info: SIWxExtensionInfo } {
+  return typeof value === "object" && value !== null && "info" in value;
+}
+
+export function createSIWxHook(_config?: SIWxHookConfig): HookConfig {
   return {
-    hook: async (context: HookContext) => {
-      if (!context.payload) return;
+    hook: async (
+      context: PaymentRequiredContext | PaymentPayloadContext<unknown>,
+    ) => {
+      if (isPayloadContext(context)) {
+        const ctx = context;
+        const serverExtensions = ctx.paymentContext.serverExtensions;
+        const siwxInfo = serverExtensions?.["sign-in-with-x"];
+        if (!hasInfo(siwxInfo)) return;
 
-      const serverExtensions = context.paymentContext?.serverExtensions;
-      const siwxInfo = serverExtensions?.["sign-in-with-x"];
-      if (!siwxInfo?.info) return;
+        const info = siwxInfo.info;
+        const address = ctx.paymentContext.fromAddress;
+        const nonce = ctx.paymentContext.nonce;
 
-      const info = siwxInfo.info as SIWxExtensionInfo;
-      const address = context.paymentContext?.fromAddress;
-      const nonce = context.paymentContext?.nonce;
+        if (!address || !nonce) return;
 
-      if (!address || !nonce) return;
+        const payload = createSIWxPayload(info, address, {
+          nonce: nonce.slice(2),
+          issuedAt: new Date().toISOString(),
+        });
 
-      const payload = createSIWxPayload(info, address, {
-        nonce: nonce.slice(2),
-        issuedAt: new Date().toISOString(),
-      });
+        const message = createSIWxMessage(payload);
 
-      const message = createSIWxMessage(payload);
+        const wallet = ctx.wallet;
+        let signature: string;
+        if (typeof wallet === "object" && wallet !== null) {
+          if (
+            "type" in wallet &&
+            wallet.type === "account" &&
+            "account" in wallet &&
+            typeof wallet.account === "object" &&
+            wallet.account !== null &&
+            "signMessage" in wallet.account &&
+            typeof wallet.account.signMessage === "function"
+          ) {
+            signature = await wallet.account.signMessage({ message });
+          } else if (
+            "type" in wallet &&
+            wallet.type === "walletClient" &&
+            "walletClient" in wallet &&
+            typeof wallet.walletClient === "object" &&
+            wallet.walletClient !== null &&
+            "account" in wallet.walletClient &&
+            typeof wallet.walletClient.account === "object" &&
+            wallet.walletClient.account !== null &&
+            "signMessage" in wallet.walletClient.account &&
+            typeof wallet.walletClient.account.signMessage === "function"
+          ) {
+            signature = await wallet.walletClient.account.signMessage({
+              message,
+            });
+          } else {
+            return;
+          }
+        } else {
+          return;
+        }
 
-      const wallet = context.wallet;
-      let signature: string;
-      if (wallet.type === "account") {
-        signature = await wallet.account.signMessage({ message });
-      } else if (wallet.type === "walletClient") {
-        signature = await wallet.walletClient.account.signMessage({ message });
-      } else {
-        return;
+        payload.signature = signature;
+        const header = encodeSIWxHeader(payload);
+
+        ctx.payload.extensions = {
+          ...(ctx.payload.extensions ?? {}),
+          "sign-in-with-x": header,
+        };
       }
-
-      payload.signature = signature;
-      const header = encodeSIWxHeader(payload);
-
-      context.payload.extensions = {
-        ...(context.payload.extensions ?? {}),
-        "sign-in-with-x": header,
-      };
     },
     priority: 100,
     name: "sign-in-with-x",
   };
 }
 
-export function createPaymentIdHook(
-  config?: PaymentIdHookConfig
-): HookConfig {
+export function createPaymentIdHook(config?: PaymentIdHookConfig): HookConfig {
   const state = { paymentId: config?.paymentId };
 
   return {
-    hook: async (context: HookContext) => {
-      if (context.serverExtensions) {
-        const paymentIdExt = context.serverExtensions["payment-identifier"];
-        if (paymentIdExt && typeof paymentIdExt === "object") {
-          const info = (paymentIdExt as { info?: PaymentIdentifierExtensionInfo }).info;
-          if (info?.required && !state.paymentId) {
-            state.paymentId = generatePaymentId();
+    hook: async (
+      context: PaymentRequiredContext | PaymentPayloadContext<unknown>,
+    ) => {
+      if (isPayloadContext(context)) {
+        const ctx = context;
+        const serverExtensions = ctx.paymentContext.serverExtensions;
+
+        if (serverExtensions) {
+          const paymentIdExt = serverExtensions["payment-identifier"];
+          if (paymentIdExt && typeof paymentIdExt === "object") {
+            const info = (
+              paymentIdExt as { info?: PaymentIdentifierExtensionInfo }
+            ).info;
+            if (info?.required && !state.paymentId) {
+              state.paymentId = generatePaymentId();
+            }
           }
         }
-      }
 
-      if (context.payload && state.paymentId) {
-        context.payload.extensions = appendPaymentIdentifierToExtensions(
-          context.payload.extensions,
-          state.paymentId
-        );
+        if (state.paymentId) {
+          ctx.payload.extensions = appendPaymentIdentifierToExtensions(
+            ctx.payload.extensions,
+            state.paymentId,
+          );
+        }
       }
     },
     priority: 50,
@@ -115,7 +158,7 @@ export function createPaymentIdHook(
 
 export function createCustomHook(config: {
   key: string;
-  handler: (context: any) => void | Promise<void>;
+  handler: (context: unknown) => void | Promise<void>;
   priority?: number;
 }): HookConfig {
   return {

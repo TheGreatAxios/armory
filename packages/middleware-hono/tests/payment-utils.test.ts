@@ -7,11 +7,11 @@
  * - createResponseHeaders
  */
 
-import { test, expect, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
+  createResponseHeaders,
   decodePayload,
   extractPayerAddress,
-  createResponseHeaders,
 } from "../src/payment-utils";
 
 const TEST_PAYER_ADDRESS = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1";
@@ -38,7 +38,9 @@ const createX402V2Payload = (nonce?: string) => ({
       value: "1000000",
       validAfter: Math.floor(Date.now() / 1000).toString(),
       validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
-      nonce: `0x${Buffer.from(nonce ?? "test_nonce").toString("hex").padStart(64, "0")}` as `0x${string}`,
+      nonce: `0x${Buffer.from(nonce ?? "test_nonce")
+        .toString("hex")
+        .padStart(64, "0")}` as `0x${string}`,
     },
   },
 });
@@ -70,10 +72,14 @@ describe("[middleware-hono]: extractPayerAddress", () => {
 
 describe("[middleware-hono]: createResponseHeaders", () => {
   test("creates V2 response headers", () => {
-    const headers = createResponseHeaders("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1");
+    const headers = createResponseHeaders(
+      "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+    );
     expect(headers["PAYMENT-RESPONSE"]).toBeDefined();
     const parsed = JSON.parse(headers["PAYMENT-RESPONSE"]!);
     expect(parsed.status).toBe("verified");
-    expect(parsed.payerAddress).toBe("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1");
+    expect(parsed.payerAddress).toBe(
+      "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+    );
   });
 });

@@ -1,5 +1,23 @@
 # @armory-sh/base
 
+## 0.2.28
+
+### Patch Changes
+
+- 993834f: Fix v2 Headers
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
+
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+
 ## 0.2.25
 
 ### Patch Changes

@@ -64,6 +64,8 @@
   "scripts": {
     "build": "rm -rf dist && tsup",
     "build:dts": "rm -rf dist && tsc --declaration --skipLibCheck",
+    "lint": "bun run build",
+    "format": "bun run lint",
     "test": "bun test"
   }
 }

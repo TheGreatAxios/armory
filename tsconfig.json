@@ -20,7 +20,9 @@
       "@armory-sh/middleware-bun": ["./packages/middleware-bun/src"],
       "@armory-sh/middleware-elysia": ["./packages/middleware-elysia/src"],
       "@armory-sh/middleware-express": ["./packages/middleware-express/src"],
-      "@armory-sh/middleware-express-v4": ["./packages/middleware-express-v4/src"],
+      "@armory-sh/middleware-express-v4": [
+        "./packages/middleware-express-v4/src"
+      ],
       "@armory-sh/middleware-hono": ["./packages/middleware-hono/src"]
     },
     "allowImportingTsExtensions": true,

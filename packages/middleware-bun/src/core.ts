@@ -1,9 +1,12 @@
 import type {
   PaymentRequirements,
   PaymentRequirementsV2,
-  PayToV2,
 } from "@armory-sh/base";
-import { getNetworkConfig, getNetworkByChainId, normalizeNetworkName } from "@armory-sh/base";
+import {
+  getNetworkByChainId,
+  getNetworkConfig,
+  normalizeNetworkName,
+} from "@armory-sh/base";
 import type { MiddlewareConfig } from "./types";
 
 const toSlug = (network: string | number): string => {
@@ -14,7 +17,9 @@ const toSlug = (network: string | number): string => {
   }
 
   if (network.startsWith("eip155:")) {
-    const chainId = parseInt(network.split(":")[1], 10);
+    const chainPart = network.split(":")[1];
+    if (!chainPart) throw new Error(`Invalid network format: ${network}`);
+    const chainId = parseInt(chainPart, 10);
     const net = getNetworkByChainId(chainId);
     if (!net) throw new Error(`No network found for chainId: ${chainId}`);
     return normalizeNetworkName(net.name);
@@ -48,24 +53,28 @@ const getChainId = (network: string | number): string => toEip155(network);
 
 const createV2Requirements = (
   config: MiddlewareConfig,
-  expiry: number
+  expiry: number,
 ): PaymentRequirementsV2 => {
   const networkName = getNetworkName(config.network);
   const network = getNetworkConfig(networkName);
   if (!network) throw new Error(`Unsupported network: ${networkName}`);
 
   return {
+    scheme: "exact",
     amount: config.amount,
-    to: config.payTo as PayToV2,
-    chainId: getChainId(config.network) as `eip155:${string}`,
-    assetId: network.caipAssetId as `eip155:${string}/erc20:${string}`,
-    nonce: `${Date.now()}-${crypto.randomUUID()}`,
-    expiry,
+    network: getChainId(config.network) as `eip155:${string}`,
+    asset: network.usdcAddress,
+    payTo: config.payTo,
+    maxTimeoutSeconds: Math.max(1, expiry - Math.floor(Date.now() / 1000)),
+    extra: {
+      name: "USDC",
+      version: "2",
+    },
   };
 };
 
 export const createPaymentRequirements = (
-  config: MiddlewareConfig
+  config: MiddlewareConfig,
 ): PaymentRequirements => {
   const networkName = getNetworkName(config.network);
   const network = getNetworkConfig(networkName);

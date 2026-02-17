@@ -11,18 +11,15 @@
  * - V2 protocol (PAYMENT-SIGNATURE header)
  */
 
-import { Hono } from "hono";
-import { hc } from "hono/client";
+import type { PaymentRequirementsV2 } from "@armory/base";
 import {
-  honoPaymentMiddleware,
-  type PaymentInfo,
-} from "@armory/middleware";
-import {
+  createFacilitatorServer,
   createMemoryNonceTracker,
   createMemoryQueue,
-  createFacilitatorServer,
 } from "@armory/facilitator";
-import type { PaymentRequirementsV2 } from "@armory/base";
+import { honoPaymentMiddleware, type PaymentInfo } from "@armory/middleware";
+import { Hono } from "hono";
+import { hc } from "hono/client";
 
 // ============================================================================
 // Configuration
@@ -229,29 +226,33 @@ app.post("/api/protected", requirePayment, async (c) => {
  * GET /api/premium - Premium endpoint (higher payment)
  * Requires larger payment amount
  */
-app.get("/api/premium", honoPaymentMiddleware({
-  requirements: {
-    ...PAYMENT_REQUIREMENTS,
-    amount: "5000000", // 5 USDC
-  },
-  facilitatorUrl: facilitatorEnabled
-    ? `http://localhost:${FACILITATOR_PORT}`
-    : undefined,
-}), (c) => {
-  const payment = c.get("payment");
-
-  return c.json({
-    message: "Premium payment verified",
-    payment: {
-      payerAddress: payment.payerAddress,
+app.get(
+  "/api/premium",
+  honoPaymentMiddleware({
+    requirements: {
+      ...PAYMENT_REQUIREMENTS,
       amount: "5000000", // 5 USDC
     },
-    data: {
-      info: "This is premium content with higher payment requirement",
-      features: ["feature1", "feature2", "feature3"],
-    },
-  });
-});
+    facilitatorUrl: facilitatorEnabled
+      ? `http://localhost:${FACILITATOR_PORT}`
+      : undefined,
+  }),
+  (c) => {
+    const payment = c.get("payment");
+
+    return c.json({
+      message: "Premium payment verified",
+      payment: {
+        payerAddress: payment.payerAddress,
+        amount: "5000000", // 5 USDC
+      },
+      data: {
+        info: "This is premium content with higher payment requirement",
+        features: ["feature1", "feature2", "feature3"],
+      },
+    });
+  },
+);
 
 // ============================================================================
 // Server Start

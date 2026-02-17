@@ -1,20 +1,19 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
-  V2_HEADERS,
-  type PaymentPayloadV2,
-  type PaymentRequirementsV2,
-  type CAIP2ChainId,
-  isPaymentPayloadV2,
-  isPaymentPayload,
-  getNetworkConfig,
-  getNetworkByChainId,
   createEIP712Domain,
-  EIP712_TYPES,
   createTransferWithAuthorization,
-  validateTransferWithAuthorization,
+  EIP712_TYPES,
+  getNetworkByChainId,
+  getNetworkConfig,
+  isAddress,
   isCAIP2ChainId,
   isCAIPAssetId,
-  isAddress,
+  isPaymentPayload,
+  isPaymentPayloadV2,
+  type PaymentPayloadV2,
+  type PaymentRequirementsV2,
+  V2_HEADERS,
+  validateTransferWithAuthorization,
 } from "../src/index";
 
 const DEFAULT_REQUIREMENTS: PaymentRequirementsV2 = {
@@ -26,7 +25,8 @@ const DEFAULT_REQUIREMENTS: PaymentRequirementsV2 = {
   maxTimeoutSeconds: 300,
 };
 
-const TEST_NONCE = "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`;
+const TEST_NONCE =
+  "0x0000000000000000000000000000000000000000000000000000000000000001" as `0x${string}`;
 
 describe("[unit|base]: Base Package Tests", () => {
   describe("[unit|base]: V2 Headers", () => {
@@ -43,14 +43,14 @@ describe("[unit|base]: Base Package Tests", () => {
         x402Version: 2,
         accepted: DEFAULT_REQUIREMENTS,
         payload: {
-          signature: "0x" + "b".repeat(130),
+          signature: `0x${"b".repeat(130)}`,
           authorization: {
             from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
             to: "0x1234567890123456789012345678901234567890",
             value: "1000000",
             validAfter: "0",
             validBefore: "9999999999",
-            nonce: "0x" + "0".repeat(64),
+            nonce: `0x${"0".repeat(64)}`,
           },
         },
         resource: {
@@ -67,14 +67,14 @@ describe("[unit|base]: Base Package Tests", () => {
       const compactPayload = {
         x402Version: 2,
         payload: {
-          signature: "0x" + "b".repeat(130),
+          signature: `0x${"b".repeat(130)}`,
           authorization: {
             from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
             to: "0x1234567890123456789012345678901234567890",
             value: "1000000",
             validAfter: "0",
             validBefore: "9999999999",
-            nonce: "0x" + "0".repeat(64),
+            nonce: `0x${"0".repeat(64)}`,
           },
         },
       };
@@ -87,14 +87,14 @@ describe("[unit|base]: Base Package Tests", () => {
       const invalidPayload = {
         x402Version: 2,
         payload: {
-          signature: "0x" + "b".repeat(130),
+          signature: `0x${"b".repeat(130)}`,
           authorization: {
             from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
             to: "0x1234567890123456789012345678901234567890",
             value: "1000000",
             validAfter: "0",
             validBefore: "9999999999",
-            nonce: "0x" + "0".repeat(64),
+            nonce: `0x${"0".repeat(64)}`,
           },
         },
       };
@@ -107,14 +107,14 @@ describe("[unit|base]: Base Package Tests", () => {
         x402Version: 2,
         accepted: DEFAULT_REQUIREMENTS,
         payload: {
-          signature: "0x" + "b".repeat(130),
+          signature: `0x${"b".repeat(130)}`,
           authorization: {
             from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
             to: "0x1234567890123456789012345678901234567890",
             value: "1000000",
             validAfter: "0",
             validBefore: "9999999999",
-            nonce: "0x" + "0".repeat(64),
+            nonce: `0x${"0".repeat(64)}`,
           },
         },
       };
@@ -178,13 +178,15 @@ describe("[unit|base]: Base Package Tests", () => {
     test("[createEIP712Domain|success] - creates valid domain", () => {
       const domain = createEIP712Domain(
         1,
-        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       );
 
       expect(domain.name).toBe("USD Coin");
       expect(domain.version).toBe("2");
       expect(domain.chainId).toBe(1);
-      expect(domain.verifyingContract).toBe("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+      expect(domain.verifyingContract).toBe(
+        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      );
     });
 
     test("[EIP712_TYPES|success] - types constant is correct", () => {
@@ -266,7 +268,9 @@ describe("[unit|base]: Base Package Tests", () => {
         nonce: TEST_NONCE,
       });
 
-      expect(() => validateTransferWithAuthorization(auth)).toThrow('"value" must be non-negative');
+      expect(() => validateTransferWithAuthorization(auth)).toThrow(
+        '"value" must be non-negative',
+      );
     });
 
     test("[validateTransferWithAuthorization|error] - throws when validAfter >= validBefore", () => {
@@ -279,7 +283,9 @@ describe("[unit|base]: Base Package Tests", () => {
         nonce: TEST_NONCE,
       });
 
-      expect(() => validateTransferWithAuthorization(auth)).toThrow('"validAfter" (1000) must be before "validBefore" (1000)');
+      expect(() => validateTransferWithAuthorization(auth)).toThrow(
+        '"validAfter" (1000) must be before "validBefore" (1000)',
+      );
     });
 
     test("[validateTransferWithAuthorization|error] - throws when validAfter > validBefore", () => {
@@ -305,7 +311,9 @@ describe("[unit|base]: Base Package Tests", () => {
         nonce: TEST_NONCE,
       });
 
-      expect(() => validateTransferWithAuthorization(auth)).toThrow('"validAfter" must be non-negative');
+      expect(() => validateTransferWithAuthorization(auth)).toThrow(
+        '"validAfter" must be non-negative',
+      );
     });
 
     test("[validateTransferWithAuthorization|error] - throws on negative validBefore", () => {
@@ -318,7 +326,9 @@ describe("[unit|base]: Base Package Tests", () => {
         nonce: 1,
       });
 
-      expect(() => validateTransferWithAuthorization(auth)).toThrow('"validBefore" must be non-negative');
+      expect(() => validateTransferWithAuthorization(auth)).toThrow(
+        '"validBefore" must be non-negative',
+      );
     });
 
     test("[validateTransferWithAuthorization|error] - throws on invalid nonce format", () => {
@@ -331,7 +341,9 @@ describe("[unit|base]: Base Package Tests", () => {
         nonce: "invalid-nonce",
       };
 
-      expect(() => validateTransferWithAuthorization(auth as any)).toThrow('"nonce" must be a valid bytes32 hex string');
+      expect(() => validateTransferWithAuthorization(auth as any)).toThrow(
+        '"nonce" must be a valid bytes32 hex string',
+      );
     });
 
     test("[validateTransferWithAuthorization|success] - handles max safe integer values", () => {
@@ -341,7 +353,8 @@ describe("[unit|base]: Base Package Tests", () => {
         value: Number.MAX_SAFE_INTEGER,
         validAfter: 0,
         validBefore: Number.MAX_SAFE_INTEGER,
-        nonce: "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" as `0x${string}`,
+        nonce:
+          "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" as `0x${string}`,
       });
 
       expect(validateTransferWithAuthorization(auth)).toBe(true);
@@ -404,10 +417,22 @@ describe("[unit|base]: Base Package Tests", () => {
     });
 
     test("[isCAIPAssetId|success] - validates CAIP asset IDs", () => {
-      expect(isCAIPAssetId("eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")).toBe(true);
-      expect(isCAIPAssetId("eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913")).toBe(true);
+      expect(
+        isCAIPAssetId(
+          "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        ),
+      ).toBe(true);
+      expect(
+        isCAIPAssetId(
+          "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        ),
+      ).toBe(true);
       expect(isCAIPAssetId("eip155:1/erc20:0xabc")).toBe(true);
-      expect(isCAIPAssetId("eip155:0/erc20:0x0000000000000000000000000000000000000000")).toBe(true);
+      expect(
+        isCAIPAssetId(
+          "eip155:0/erc20:0x0000000000000000000000000000000000000000",
+        ),
+      ).toBe(true);
     });
 
     test("[isCAIPAssetId|error] - rejects invalid formats", () => {
@@ -422,20 +447,36 @@ describe("[unit|base]: Base Package Tests", () => {
     });
 
     test("[isAddress|success] - validates Ethereum addresses", () => {
-      expect(isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0")).toBe(true);
-      expect(isAddress("0x0000000000000000000000000000000000000000")).toBe(true);
-      expect(isAddress("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")).toBe(true);
-      expect(isAddress("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")).toBe(true);
+      expect(isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0")).toBe(
+        true,
+      );
+      expect(isAddress("0x0000000000000000000000000000000000000000")).toBe(
+        true,
+      );
+      expect(isAddress("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")).toBe(
+        true,
+      );
+      expect(isAddress("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")).toBe(
+        true,
+      );
     });
 
     test("[isAddress|error] - rejects invalid addresses", () => {
-      expect(isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb")).toBe(false);
-      expect(isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb00")).toBe(false);
+      expect(isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb")).toBe(
+        false,
+      );
+      expect(isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb00")).toBe(
+        false,
+      );
       expect(isAddress("742d35Cc6634C0532925a3b844Bc9e7595f0bEb0")).toBe(false);
-      expect(isAddress("0xGHIJK35Cc6634C0532925a3b844Bc9e7595f0bEb0")).toBe(false);
+      expect(isAddress("0xGHIJK35Cc6634C0532925a3b844Bc9e7595f0bEb0")).toBe(
+        false,
+      );
       expect(isAddress("")).toBe(false);
       expect(isAddress("0x")).toBe(false);
-      expect(isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0 ")).toBe(false);
+      expect(isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0 ")).toBe(
+        false,
+      );
     });
   });
 });

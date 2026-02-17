@@ -13,6 +13,12 @@ Armory is a payment protocol for APIs, built on EIP-3009. Let your users pay wit
 
 Your client signs a payment authorization (off-chain, no gas) and sends it with their API request. You verify the signature, respond with the data they paid for, and settle the payment on-chain. Simple as that.
 
+### HTTP Headers (x402 v2)
+
+- `PAYMENT-REQUIRED`: 402 challenge with `accepts[]`
+- `PAYMENT-SIGNATURE`: client payment payload
+- `PAYMENT-RESPONSE`: settlement result
+
 ## Packages
 
 **Core**
@@ -31,6 +37,7 @@ Your client signs a payment authorization (off-chain, no gas) and sends it with 
 - `@armory-sh/client-viem` — Viem integration
 - `@armory-sh/client-ethers` — Ethers.js v6 integration
 - `@armory-sh/client-web3` — Web3.js integration
+- `@armory-sh/client-hooks` — Optional chain/token/cheapest/logger hook presets
 
 **Utilities**
 - `@armory-sh/tokens` — Pre-configured token objects

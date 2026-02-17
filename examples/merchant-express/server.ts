@@ -5,11 +5,11 @@
  * Demonstrates protected routes that require payment for access.
  */
 
+import type { PaymentRequirementsV2 } from "@armory/base";
+import { paymentMiddleware } from "@armory/middleware";
+import { USDC_BASE } from "@armory/tokens";
 import express from "express";
 import type { Address } from "viem";
-import { paymentMiddleware } from "@armory/middleware";
-import type { PaymentRequirementsV2 } from "@armory/base";
-import { USDC_BASE } from "@armory/tokens";
 
 // ============================================================================
 // Configuration
@@ -19,10 +19,14 @@ const PORT = Number.parseInt(process.env.PORT ?? "3001", 10);
 const HOST = process.env.HOST ?? "0.0.0.0";
 
 // Payment configuration
-const PAYMENT_TO: Address = (process.env.PAYMENT_TO_ADDRESS ?? "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb") as Address;
+const PAYMENT_TO: Address = (process.env.PAYMENT_TO_ADDRESS ??
+  "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb") as Address;
 const PAYMENT_AMOUNT = process.env.PAYMENT_AMOUNT ?? "1000000"; // 1 USDC
 const PAYMENT_NETWORK = process.env.PAYMENT_NETWORK ?? "base";
-const PAYMENT_EXPIRY = Number.parseInt(process.env.PAYMENT_EXPIRY ?? "3600", 10);
+const PAYMENT_EXPIRY = Number.parseInt(
+  process.env.PAYMENT_EXPIRY ?? "3600",
+  10,
+);
 
 // ============================================================================
 // Token Configuration (Recommended Approach)
@@ -101,8 +105,18 @@ app.get("/products", (_req, res) => {
   res.json({
     products: [
       { id: 1, name: "Basic Plan", price: "0", description: "Free tier" },
-      { id: 2, name: "Premium Plan", price: "1000000", description: "1 USDC - Premium features" },
-      { id: 3, name: "Enterprise Plan", price: "10000000", description: "10 USDC - Full access" },
+      {
+        id: 2,
+        name: "Premium Plan",
+        price: "1000000",
+        description: "1 USDC - Premium features",
+      },
+      {
+        id: 3,
+        name: "Enterprise Plan",
+        price: "10000000",
+        description: "10 USDC - Full access",
+      },
     ],
   });
 });
@@ -116,7 +130,9 @@ app.get("/products", (_req, res) => {
  *
  * New approach (recommended): Use token object
  */
-function createPaymentRequirements(customAmount?: string): PaymentRequirementsV2 {
+function createPaymentRequirements(
+  customAmount?: string,
+): PaymentRequirementsV2 {
   return {
     to: PAYMENT_TO,
     amount: customAmount ?? PAYMENT_AMOUNT,
@@ -151,7 +167,11 @@ app.get(
   }),
   (req, res) => {
     // Payment info is attached to req.payment by middleware
-    const payment = (req as unknown as { payment?: { payerAddress: string; verified: boolean } }).payment;
+    const payment = (
+      req as unknown as {
+        payment?: { payerAddress: string; verified: boolean };
+      }
+    ).payment;
 
     res.json({
       message: "Welcome to the premium content!",
@@ -163,7 +183,7 @@ app.get(
         features: ["Ad-free experience", "Exclusive content", "Early access"],
       },
     });
-  }
+  },
 );
 
 /**
@@ -177,7 +197,8 @@ app.post(
     facilitatorUrl: FACILITATOR_URL,
   }),
   (req, res) => {
-    const payment = (req as unknown as { payment?: { payerAddress: string } }).payment;
+    const payment = (req as unknown as { payment?: { payerAddress: string } })
+      .payment;
     const { itemId } = req.body;
 
     res.json({
@@ -187,7 +208,7 @@ app.post(
       item: itemId ?? "premium_access",
       timestamp: new Date().toISOString(),
     });
-  }
+  },
 );
 
 /**
@@ -201,7 +222,8 @@ app.get(
     facilitatorUrl: FACILITATOR_URL,
   }),
   (req, res) => {
-    const payment = (req as unknown as { payment?: { payerAddress: string } }).payment;
+    const payment = (req as unknown as { payment?: { payerAddress: string } })
+      .payment;
 
     res.json({
       profile: {
@@ -211,7 +233,7 @@ app.get(
         features: ["api_access", "premium_content", "priority_support"],
       },
     });
-  }
+  },
 );
 
 // ============================================================================
@@ -231,13 +253,20 @@ app.use((req, res) => {
 /**
  * Global error handler
  */
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error("Error:", err);
-  res.status(500).json({
-    error: "Internal server error",
-    message: err.message,
-  });
-});
+app.use(
+  (
+    err: Error,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    console.error("Error:", err);
+    res.status(500).json({
+      error: "Internal server error",
+      message: err.message,
+    });
+  },
+);
 
 // ============================================================================
 // Start Server
@@ -250,7 +279,7 @@ app.listen(PORT, HOST as string, () => {
 ╠════════════════════════════════════════════════════════════╣
 ║  URL:         http://${HOST}:${String(PORT).padEnd(44)}║
 ║  Network:     ${PAYMENT_NETWORK.padEnd(47)}║
-║  Amount:      ${PAYMENT_AMOUNT} USDC (${(Number.parseInt(PAYMENT_AMOUNT) / 1_000_000).toFixed(2)} USDC)${String("").padEnd(15)}║
+║  Amount:      ${PAYMENT_AMOUNT} USDC (${(Number.parseInt(PAYMENT_AMOUNT, 10) / 1_000_000).toFixed(2)} USDC)${String("").padEnd(15)}║
 ╠════════════════════════════════════════════════════════════╣
 ║  Public Routes:                                           ║
 ║    GET  /               - Welcome & info                  ║

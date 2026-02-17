@@ -1,10 +1,15 @@
 ---
+title: Make Payments with Viem
 description: Make payments with Viem
 ---
 
 # Make Payments with Viem
 
 Make payments to Armory-protected APIs using Viem wallets.
+
+`hooks` are lifecycle callbacks. `extensions` are protocol fields on x402 payloads/challenges. They work together but are separate.
+
+When payment verification fails on retry (`402`), Armory surfaces server detail (for example `insufficient_funds`) in the thrown error.
 
 ## Basic Payment
 
@@ -48,7 +53,7 @@ const info = await armory.call('https://api.example.com/data');
 console.log(premium.data, info.data);
 ```
 
-`createArmory` continually selects the best matching payment requirement from the server's `accepts[]` array, scoring options that run on Base (chainId `8453`), list the Base USDC contract (`0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913`), or specify the lowest amount. Leaving `chains`/`tokens` empty lets Armory serve any compatible option while still favoring Base/USDC. The object exposes `.get`, `.post`, `.put`, `.delete`, `.patch`, `.pay`, and a `.call` shorthand for GET requests.
+`createArmory` handles 402 responses from `PAYMENT-REQUIRED` and selects from `accepts[]`. Without hooks it uses the first compatible option. Add `@armory-sh/client-hooks` to apply chain/token/cheapest preference logic. The object exposes `.get`, `.post`, `.put`, `.delete`, `.patch`, `.pay`, and a `.call` shorthand for GET requests.
 
 Use `armory.pay(url, { method: 'PATCH', body })` when you need to override the HTTP method; call `.call` for a simple GET.
 
@@ -91,21 +96,27 @@ For servers that require protocol extensions (like Sign-In-With-X):
 ```typescript
 import { createX402Client } from '@armory-sh/client-viem';
 import { createSIWxHook, createPaymentIdHook } from '@armory-sh/extensions';
+import { PaymentPreference, Logger } from '@armory-sh/client-hooks';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const account = privateKeyToAccount('0x...');
 
 const client = createX402Client({
   wallet: { type: 'account', account },
-  hooks: {
-    // Automatically handle SIWX authentication
-    siwx: createSIWxHook({
+  hooks: [
+    // Extension hooks
+    createSIWxHook({
       domain: 'example.com',
       statement: 'Sign in to access premium content'
     }),
-    // Add payment idempotency
-    paymentId: createPaymentIdHook()
-  }
+    createPaymentIdHook(),
+
+    // Optional preference hooks
+    PaymentPreference.chain(['base', 'polygon', 'skale']),
+    PaymentPreference.token(['USDT', 'USDC', 'WBTC']),
+    PaymentPreference.cheapest(),
+    Logger.console(),
+  ]
 });
 
 // Hooks automatically add extensions when server requests them
@@ -120,9 +131,7 @@ Reuse the client for multiple requests:
 ```typescript
 const client = createX402Client({
   wallet: { type: 'account', account },
-  hooks: {
-    siwx: createSIWxHook()
-  }
+  hooks: [createSIWxHook()]
 });
 
 // First request - may trigger SIWX signing
@@ -154,8 +163,6 @@ const myExtensionHook = createCustomHook({
 
 const client = createX402Client({
   wallet: { type: 'account', account },
-  hooks: {
-    custom: myExtensionHook
-  }
+  hooks: [myExtensionHook]
 });
 ```

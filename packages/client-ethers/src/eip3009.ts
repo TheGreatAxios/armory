@@ -1,13 +1,13 @@
-import { ethers, type Signer } from "ethers";
 import {
   createEIP712Domain,
   type TransferWithAuthorization,
 } from "@armory-sh/base";
-import type {
-  TransferWithAuthorizationParams,
-  EIP712Domain as EIP712DomainType,
-} from "./types";
+import { ethers, type Signer } from "ethers";
 import { AuthorizationError } from "./errors";
+import type {
+  EIP712Domain as EIP712DomainType,
+  TransferWithAuthorizationParams,
+} from "./types";
 
 const EIP712_TYPES_ETHERS = {
   TransferWithAuthorization: [
@@ -23,7 +23,7 @@ const EIP712_TYPES_ETHERS = {
 export async function signEIP3009(
   signer: Signer,
   params: TransferWithAuthorizationParams,
-  domain: EIP712DomainType
+  domain: EIP712DomainType,
 ): Promise<{ v: number; r: string; s: string }> {
   try {
     const message: TransferWithAuthorization = {
@@ -35,14 +35,18 @@ export async function signEIP3009(
       nonce: params.nonce,
     };
 
-    const signature = await signer.signTypedData(domain, EIP712_TYPES_ETHERS, message);
+    const signature = await signer.signTypedData(
+      domain,
+      EIP712_TYPES_ETHERS,
+      message,
+    );
     const { v, r, s } = ethers.Signature.from(signature);
 
     return { v: Number(v), r: r as string, s: s as string };
   } catch (error) {
     throw new AuthorizationError(
       `Failed to sign EIP-3009 authorization: ${error instanceof Error ? error.message : "Unknown error"}`,
-      error
+      error,
     );
   }
 }
@@ -53,12 +57,17 @@ export async function signEIP3009WithDomain(
   chainId: number,
   verifyingContract: `0x${string}`,
   domainName?: string,
-  domainVersion?: string
+  domainVersion?: string,
 ): Promise<{ v: number; r: string; s: string }> {
   const domain = createEIP712Domain(chainId, verifyingContract);
-  const customDomain = domainName || domainVersion
-    ? { ...domain, name: domainName ?? domain.name, version: domainVersion ?? domain.version }
-    : domain;
+  const customDomain =
+    domainName || domainVersion
+      ? {
+          ...domain,
+          name: domainName ?? domain.name,
+          version: domainVersion ?? domain.version,
+        }
+      : domain;
   return signEIP3009(signer, params, customDomain as EIP712DomainType);
 }
 
@@ -71,18 +80,26 @@ export async function signPayment(
   verifyingContract: `0x${string}`,
   expirySeconds: number = 3600,
   domainName?: string,
-  domainVersion?: string
+  domainVersion?: string,
 ): Promise<{ v: number; r: string; s: string; nonce: `0x${string}` }> {
   const now = Math.floor(Date.now() / 1000);
-  const nonce = `0x${(now * 1000).toString(16).padStart(64, "0")}` as `0x${string}`;
+  const nonce =
+    `0x${(now * 1000).toString(16).padStart(64, "0")}` as `0x${string}`;
 
   const signature = await signEIP3009WithDomain(
     signer,
-    { from, to, value, validAfter: 0n, validBefore: BigInt(now + expirySeconds), nonce },
+    {
+      from,
+      to,
+      value,
+      validAfter: 0n,
+      validBefore: BigInt(now + expirySeconds),
+      nonce,
+    },
     chainId,
     verifyingContract,
     domainName,
-    domainVersion
+    domainVersion,
   );
 
   return { ...signature, nonce };
@@ -91,7 +108,7 @@ export async function signPayment(
 export async function recoverEIP3009Signer(
   params: TransferWithAuthorizationParams,
   signature: { v: number; r: string; s: string },
-  domain: EIP712DomainType
+  domain: EIP712DomainType,
 ): Promise<`0x${string}`> {
   const message: TransferWithAuthorization = {
     from: params.from,
@@ -108,7 +125,12 @@ export async function recoverEIP3009Signer(
     s: signature.s,
   });
 
-  const address = ethers.verifyTypedData(domain, EIP712_TYPES_ETHERS, message, sig);
+  const address = ethers.verifyTypedData(
+    domain,
+    EIP712_TYPES_ETHERS,
+    message,
+    sig,
+  );
   return address as `0x${string}`;
 }
 

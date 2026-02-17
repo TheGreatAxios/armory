@@ -90,7 +90,7 @@ function matchSegment(patternSegment: string, pathSegment: string): boolean {
 
   if (patternSegment.includes("*")) {
     const regex = new RegExp(
-      "^" + patternSegment.replace(/\*/g, ".*").replace(/:/g, "") + "$"
+      `^${patternSegment.replace(/\*/g, ".*").replace(/:/g, "")}$`,
     );
     return regex.test(pathSegment);
   }
@@ -100,7 +100,7 @@ function matchSegment(patternSegment: string, pathSegment: string): boolean {
 
 function matchWildcardPattern(
   patternSegments: string[],
-  pathSegments: string[]
+  pathSegments: string[],
 ): boolean {
   const requiredSegments = patternSegments.filter((s) => s !== "*");
 
@@ -110,7 +110,7 @@ function matchWildcardPattern(
 
   for (let i = 0; i < requiredSegments.length; i++) {
     const patternIndex = patternSegments.indexOf(requiredSegments[i]);
-    if (pathSegments[patternIndex] !== requiredSegments[i].replace(/^\:/, "")) {
+    if (pathSegments[patternIndex] !== requiredSegments[i].replace(/^:/, "")) {
       if (!requiredSegments[i].startsWith(":") && requiredSegments[i] !== "*") {
         return false;
       }
@@ -155,9 +155,12 @@ export function matchRoute(pattern: string, path: string): boolean {
 
 export function findMatchingRoute<T>(
   routes: RouteConfig<T>[],
-  path: string
+  path: string,
 ): RouteConfig<T> | null {
-  const matchingRoutes: Array<{ route: RouteConfig<T>; parsed: ParsedPattern }> = [];
+  const matchingRoutes: Array<{
+    route: RouteConfig<T>;
+    parsed: ParsedPattern;
+  }> = [];
 
   for (const route of routes) {
     if (matchRoute(route.pattern, path)) {
@@ -201,7 +204,7 @@ function containsWildcard(pattern: string): boolean {
 }
 
 export function validateRouteConfig(
-  config: RouteInputConfig
+  config: RouteInputConfig,
 ): RouteValidationError | null {
   const { route, routes } = config;
 
@@ -212,21 +215,25 @@ export function validateRouteConfig(
   if (route && routes) {
     return {
       code: "INVALID_ROUTE_CONFIG",
-      message: "Cannot specify both 'route' and 'routes'. Use 'route' for a single exact path or 'routes' for multiple paths.",
+      message:
+        "Cannot specify both 'route' and 'routes'. Use 'route' for a single exact path or 'routes' for multiple paths.",
       path: "route",
       value: { route, routes },
     };
   }
 
   if (route && containsWildcard(route)) {
-      return {
-        code: "INVALID_ROUTE_PATTERN",
-        message:
-          "Wildcard routes must use the routes array, not 'route'. Use 'routes: [\"/api/*\"]' instead of 'route: \"/api/*\"'.",
-        path: "route",
-        value: route,
-        validOptions: ['routes: ["/api/*"]', 'routes: ["/api/users", "/api/posts"]'],
-      };
+    return {
+      code: "INVALID_ROUTE_PATTERN",
+      message:
+        "Wildcard routes must use the routes array, not 'route'. Use 'routes: [\"/api/*\"]' instead of 'route: \"/api/*\"'.",
+      path: "route",
+      value: route,
+      validOptions: [
+        'routes: ["/api/*"]',
+        'routes: ["/api/users", "/api/posts"]',
+      ],
+    };
   }
 
   return null;

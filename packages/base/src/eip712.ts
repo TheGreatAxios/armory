@@ -22,7 +22,8 @@ export interface TransferWithAuthorization {
   nonce: `0x${string}`;
 }
 
-export type TransferWithAuthorizationRecord = TransferWithAuthorization & Record<string, unknown>;
+export type TransferWithAuthorizationRecord = TransferWithAuthorization &
+  Record<string, unknown>;
 
 export type TypedDataField = { name: string; type: string };
 
@@ -48,7 +49,7 @@ export const USDC_DOMAIN = {
 
 export const createEIP712Domain = (
   chainId: number,
-  contractAddress: `0x${string}`
+  contractAddress: `0x${string}`,
 ): EIP712Domain => ({
   name: USDC_DOMAIN.NAME,
   version: USDC_DOMAIN.VERSION,
@@ -57,12 +58,15 @@ export const createEIP712Domain = (
 });
 
 export const createTransferWithAuthorization = (
-  params: Omit<TransferWithAuthorization, "value" | "validAfter" | "validBefore" | "nonce"> & {
+  params: Omit<
+    TransferWithAuthorization,
+    "value" | "validAfter" | "validBefore" | "nonce"
+  > & {
     value: bigint | number;
     validAfter: bigint | number;
     validBefore: bigint | number;
     nonce: `0x${string}`;
-  }
+  },
 ): TransferWithAuthorizationRecord => ({
   from: params.from,
   to: params.to,
@@ -76,15 +80,29 @@ const isAddress = (value: string): boolean => /^0x[a-fA-F0-9]{40}$/.test(value);
 
 const isBytes32 = (value: string): boolean => /^0x[a-fA-F0-9]{64}$/.test(value);
 
-export const validateTransferWithAuthorization = (message: TransferWithAuthorization): boolean => {
-  if (!isAddress(message.from)) throw new Error(`Invalid "from" address: ${message.from}`);
-  if (!isAddress(message.to)) throw new Error(`Invalid "to" address: ${message.to}`);
-  if (message.value < 0n) throw new Error(`"value" must be non-negative: ${message.value}`);
-  if (message.validAfter < 0n) throw new Error(`"validAfter" must be non-negative: ${message.validAfter}`);
-  if (message.validBefore < 0n) throw new Error(`"validBefore" must be non-negative: ${message.validBefore}`);
+export const validateTransferWithAuthorization = (
+  message: TransferWithAuthorization,
+): boolean => {
+  if (!isAddress(message.from))
+    throw new Error(`Invalid "from" address: ${message.from}`);
+  if (!isAddress(message.to))
+    throw new Error(`Invalid "to" address: ${message.to}`);
+  if (message.value < 0n)
+    throw new Error(`"value" must be non-negative: ${message.value}`);
+  if (message.validAfter < 0n)
+    throw new Error(`"validAfter" must be non-negative: ${message.validAfter}`);
+  if (message.validBefore < 0n)
+    throw new Error(
+      `"validBefore" must be non-negative: ${message.validBefore}`,
+    );
   if (message.validAfter >= message.validBefore) {
-    throw new Error(`"validAfter" (${message.validAfter}) must be before "validBefore" (${message.validBefore})`);
+    throw new Error(
+      `"validAfter" (${message.validAfter}) must be before "validBefore" (${message.validBefore})`,
+    );
   }
-  if (!isBytes32(message.nonce)) throw new Error(`"nonce" must be a valid bytes32 hex string: ${message.nonce}`);
+  if (!isBytes32(message.nonce))
+    throw new Error(
+      `"nonce" must be a valid bytes32 hex string: ${message.nonce}`,
+    );
   return true;
 };

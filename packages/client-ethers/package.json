@@ -56,6 +56,8 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsup",
+    "lint": "bun run build",
+    "format": "bun run lint",
     "test": "bun test",
     "example": "bun run examples/"
   }

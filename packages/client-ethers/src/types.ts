@@ -1,17 +1,18 @@
-import type { Signer, Provider } from "ethers";
 import type { CustomToken } from "@armory-sh/base";
+import type { ClientHook } from "@armory-sh/base/types/hooks";
+import type { Provider, Signer } from "ethers";
 
 // Re-export ethers types
 export type { Signer, Provider };
 
 // Re-export errors from errors.ts
 export {
-  X402ClientError,
-  SigningError,
-  PaymentError,
-  SignerRequiredError,
   AuthorizationError,
+  PaymentError,
   ProviderRequiredError,
+  SignerRequiredError,
+  SigningError,
+  X402ClientError,
 } from "./errors";
 
 /** Token configuration - can use pre-configured tokens from @armory-sh/tokens */
@@ -30,6 +31,7 @@ export interface X402ClientConfig {
   domainName?: string;
   /** Override EIP-712 domain version for custom tokens */
   domainVersion?: string;
+  hooks?: ClientHook<Signer>[];
 }
 
 export interface SignerClientConfig extends X402ClientConfig {
@@ -53,6 +55,7 @@ export interface X402TransportConfig {
   onPaymentRequired?: (requirements: unknown) => boolean | Promise<boolean>;
   onPaymentSuccess?: (settlement: unknown) => void;
   onPaymentError?: (error: Error) => void;
+  hooks?: ClientHook<Signer>[];
 }
 
 export interface X402RequestInit extends Omit<RequestInit, "headers"> {

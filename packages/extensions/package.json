@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@armory-sh/base": "workspace:*",
-    "ajv": "^8.12.0"
+    "arktype": "^2.1.0"
   },
   "devDependencies": {
     "@types/node": "^25.2.1",
@@ -72,6 +72,8 @@
   "scripts": {
     "build": "rm -rf dist && tsup",
     "build:dts": "rm -rf dist && tsc --declaration --skipLibCheck",
+    "lint": "bun run build",
+    "format": "bun run lint",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   }

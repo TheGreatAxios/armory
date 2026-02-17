@@ -1,9 +1,6 @@
 import type {
-  X402PaymentRequirements,
-  PayToAddress,
   FacilitatorConfig,
-  FacilitatorVerifyResult,
-  FacilitatorSettleResult,
+  PayToAddress,
   SettlementMode,
 } from "@armory-sh/base";
 

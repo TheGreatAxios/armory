@@ -41,36 +41,54 @@ const defaultSettleResult = {
 
 function validateV2PayloadFormat(
   paymentPayload: unknown,
-  paymentRequirements: unknown
+  _paymentRequirements: unknown,
 ): { isValid: boolean; invalidReason?: string } {
   if (!paymentPayload || typeof paymentPayload !== "object") {
-    return { isValid: false, invalidReason: "invalid_payload_missing_accepted_field" };
+    return {
+      isValid: false,
+      invalidReason: "invalid_payload_missing_accepted_field",
+    };
   }
 
   const payload = paymentPayload as Record<string, unknown>;
 
   if (!("accepted" in payload)) {
-    return { isValid: false, invalidReason: "invalid_payload_missing_accepted_field" };
+    return {
+      isValid: false,
+      invalidReason: "invalid_payload_missing_accepted_field",
+    };
   }
 
   if (!("payload" in payload)) {
-    return { isValid: false, invalidReason: "invalid_payload_missing_payload_field" };
+    return {
+      isValid: false,
+      invalidReason: "invalid_payload_missing_payload_field",
+    };
   }
 
   if ("scheme" in payload && "network" in payload && !("accepted" in payload)) {
-    return { isValid: false, invalidReason: "invalid_payload_legacy_format_not_accepted_field" };
+    return {
+      isValid: false,
+      invalidReason: "invalid_payload_legacy_format_not_accepted_field",
+    };
   }
 
   return { isValid: true };
 }
 
-export function mockFacilitator(config: MockFacilitatorConfig = {}): MockFetchHandle {
+export function mockFacilitator(
+  config: MockFacilitatorConfig = {},
+): MockFetchHandle {
   const originalFetch = globalThis.fetch;
   const state = {
     verifyCalls: 0,
     settleCalls: 0,
-    lastVerifyBody: undefined as { paymentPayload: unknown; paymentRequirements: unknown } | undefined,
-    lastSettleBody: undefined as { paymentPayload: unknown; paymentRequirements: unknown } | undefined,
+    lastVerifyBody: undefined as
+      | { paymentPayload: unknown; paymentRequirements: unknown }
+      | undefined,
+    lastSettleBody: undefined as
+      | { paymentPayload: unknown; paymentRequirements: unknown }
+      | undefined,
   };
 
   const verifyResult = config.verifyResult ?? defaultVerifyResult;
@@ -83,7 +101,9 @@ export function mockFacilitator(config: MockFacilitatorConfig = {}): MockFetchHa
     if (url.endsWith("/verify")) {
       state.verifyCalls++;
 
-      let body: { paymentPayload: unknown; paymentRequirements: unknown } | undefined;
+      let body:
+        | { paymentPayload: unknown; paymentRequirements: unknown }
+        | undefined;
       try {
         body = JSON.parse(init?.body as string);
         state.lastVerifyBody = body;
@@ -92,15 +112,21 @@ export function mockFacilitator(config: MockFacilitatorConfig = {}): MockFetchHa
       }
 
       if (validateV2 && body) {
-        const formatCheck = validateV2PayloadFormat(body.paymentPayload, body.paymentRequirements);
+        const formatCheck = validateV2PayloadFormat(
+          body.paymentPayload,
+          body.paymentRequirements,
+        );
         if (!formatCheck.isValid) {
-          return new Response(JSON.stringify({
-            isValid: false,
-            invalidReason: formatCheck.invalidReason,
-          }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({
+              isValid: false,
+              invalidReason: formatCheck.invalidReason,
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
       }
 
@@ -162,14 +188,15 @@ export interface MockExpressResponse {
   statusCode: number;
   headers: Record<string, string>;
   body: unknown;
-  json: (data: unknown) => void;
+  status: (code: number) => MockExpressResponse;
+  json: (data: unknown) => MockExpressResponse;
   setHeader: (key: string, value: string) => void;
   getHeader: (key: string) => string | undefined;
   end: (data?: unknown) => void;
 }
 
 export function createMockExpressRequest(
-  headers: Record<string, string> = {}
+  headers: Record<string, string> = {},
 ): MockExpressRequest {
   return {
     headers,
@@ -199,8 +226,13 @@ export function createMockExpressResponse(): MockExpressResponse {
     get body() {
       return state.body;
     },
+    status(code: number) {
+      state.statusCode = code;
+      return this;
+    },
     json(data: unknown) {
       state.body = data;
+      return this;
     },
     setHeader(key: string, value: string) {
       state.headers[key] = value;
@@ -238,7 +270,7 @@ export interface MockHonoContext {
 }
 
 export function createMockHonoContext(
-  headers: Record<string, string> = {}
+  headers: Record<string, string> = {},
 ): MockHonoContext {
   const normalizedHeaders: Record<string, string> = {};
   for (const [key, value] of Object.entries(headers)) {

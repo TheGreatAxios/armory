@@ -5,64 +5,55 @@
  * Provides Bazaar Discovery and Sign-In-With-X extensions
  */
 
-export type {
-  Extension,
-  JSONSchema,
-  BazaarExtensionInfo,
-  SIWxExtensionInfo,
-  SIWxPayload,
-  DiscoveredResource,
-  BazaarDiscoveryConfig,
-  SIWxExtensionConfig,
-  PaymentIdentifierExtensionInfo,
-  PaymentIdentifierConfig,
-} from "./types.js";
-
 export {
-  BAZAAR,
-  SIGN_IN_WITH_X,
-  PAYMENT_IDENTIFIER,
-} from "./types.js";
-
-export {
+  createDiscoveryConfig,
   declareDiscoveryExtension,
   extractDiscoveryInfo,
-  validateDiscoveryExtension,
-  createDiscoveryConfig,
   isDiscoveryExtension,
+  validateDiscoveryExtension,
 } from "./bazaar.js";
-
 export {
-  declareSIWxExtension,
-  parseSIWxHeader,
-  validateSIWxMessage,
-  verifySIWxSignature,
-  createSIWxMessage,
-  encodeSIWxHeader,
-  createSIWxPayload,
-  isSIWxExtension,
-} from "./sign-in-with-x.js";
-
-export {
-  validateExtension,
-  extractExtension,
-  createExtension,
-  validateWithSchema,
-} from "./validators.js";
-
+  createCustomHook,
+  createPaymentIdHook,
+  createSIWxHook,
+  type PaymentIdHookConfig,
+  type SIWxHookConfig,
+} from "./hooks.js";
 export {
   declarePaymentIdentifierExtension,
   extractPaymentIdentifierInfo,
-  validatePaymentIdentifierExtension,
   isPaymentIdentifierExtension,
+  validatePaymentIdentifierExtension,
 } from "./payment-identifier.js";
 
 export {
-  createSIWxHook,
-  createPaymentIdHook,
-  createCustomHook,
-  type SIWxHookConfig,
-  type PaymentIdHookConfig,
-} from "./hooks.js";
-
-export type { ValidationError, ValidationResult } from "./validators.js";
+  createSIWxMessage,
+  createSIWxPayload,
+  declareSIWxExtension,
+  encodeSIWxHeader,
+  isSIWxExtension,
+  parseSIWxHeader,
+  validateSIWxMessage,
+  verifySIWxSignature,
+} from "./sign-in-with-x.js";
+export type {
+  BazaarDiscoveryConfig,
+  BazaarExtensionInfo,
+  DiscoveredResource,
+  Extension,
+  PaymentIdentifierConfig,
+  PaymentIdentifierExtensionInfo,
+  SIWxExtensionConfig,
+  SIWxExtensionInfo,
+  SIWxPayload,
+} from "./types.js";
+export {
+  BAZAAR,
+  PAYMENT_IDENTIFIER,
+  SIGN_IN_WITH_X,
+} from "./types.js";
+export {
+  createExtension,
+  extractExtension,
+  validateExtension,
+} from "./validators.js";

@@ -43,6 +43,8 @@
   "scripts": {
     "build": "rm -rf dist && tsup",
     "dev": "bun run src/cli.ts",
+    "lint": "bun run build",
+    "format": "bun run lint",
     "prepublishOnly": "bun run build",
     "test": "bun test"
   },

@@ -2,8 +2,8 @@
  * Middleware Next Tests
  * Tests the Next.js payment proxy and resource server
  */
-import { test, expect, describe } from "bun:test";
-import { x402ResourceServer, paymentProxy } from "../src";
+import { describe, expect, test } from "bun:test";
+import { paymentProxy, x402ResourceServer } from "../src";
 import type { HTTPFacilitatorClient, PaymentScheme } from "../src/types";
 
 describe("[unit|middleware-next]: x402ResourceServer", () => {
@@ -44,7 +44,9 @@ describe("[unit|middleware-next]: x402ResourceServer", () => {
 
     const server = new x402ResourceServer(facilitatorClient);
 
-    expect(() => server.getRequirements("eip155:8453")).toThrow("No scheme registered");
+    expect(() => server.getRequirements("eip155:8453")).toThrow(
+      "No scheme registered",
+    );
   });
 
   test("[getAllRequirements|success] - returns all registered schemes", () => {
@@ -98,7 +100,7 @@ describe("[unit|middleware-next]: paymentProxy", () => {
           description: "Protected resource",
         },
       },
-      server
+      server,
     );
 
     const request = new Request("http://localhost/api/protected");
@@ -129,7 +131,7 @@ describe("[unit|middleware-next]: paymentProxy", () => {
           },
         },
       },
-      server
+      server,
     );
 
     const request = new Request("http://localhost/other/path");
@@ -160,7 +162,7 @@ describe("[unit|middleware-next]: paymentProxy", () => {
           },
         },
       },
-      server
+      server,
     );
 
     const request = new Request("http://localhost/api/users");
@@ -193,12 +195,17 @@ describe("[unit|middleware-next]: paymentProxy", () => {
         },
       },
       server,
-      async () => new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } })
+      async () =>
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
     );
 
     const request = new Request("http://localhost/api/protected", {
       headers: {
-        "PAYMENT-SIGNATURE": "eyJ4NDAyVmVyc2lvbiI6Miwic2NoZW1lIjoiZXhhY3QiLCJuZXR3b3JrIjoiZWlwMTU1Ojg0NTMyIiwicGF5bG9hZCI6eyJzaWduYXR1cmUiOiIweDRjMmQ4Zjg3MjI1NjllNmQ1MTkwYjczNmI5Njk4NzRkMzliNDRlOTFkMTJhMzJiYzY2YjRmNzkxM2Q2MmY4YTZhNWIwMGViZTFlN2ExNmQ0NzQxOWFhM2FjYTQ3OWQzZDVlZjA4MWRiYWI0ZjY3Y2Q4N2M0YWQ0NmYxYzNjMjUxYjEiLCJhdXRob3JpemF0aW9uIjp7ImZyb20iOiIweDcxNDQxRjg2QjUzQkUyNjQ0N0Q1QjI4Q0QxMzQ5NkUyRjUzRjFjRzYiLCJ0byI6IjB4QzUxQTY2NEE5NTY3YmM5ODNjYzRhOWQ2YzY0NEI4ZWQxODBBZTk2YiIsInZhbHVlIjoiMTAwMDAwMCIsInZhbGlkQWZ0ZXIiOiIxNzU4MTE4MzQ2IiwidmFsaWRCZWZvcmUiOiIxNzU4MTE5NDAwIiwibm9uY2UiOiIweDEyMzQ1Njc4OTBhYmNkZWYxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTBhYmNkZWYifX0sInJlcXVlc3QiOnsibWV0aG9kIjoiR0VUIiwidXJsIjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20iLCJoZWFkZXJzIjp7fX19",
+        "PAYMENT-SIGNATURE":
+          "eyJ4NDAyVmVyc2lvbiI6Miwic2NoZW1lIjoiZXhhY3QiLCJuZXR3b3JrIjoiZWlwMTU1Ojg0NTMyIiwicGF5bG9hZCI6eyJzaWduYXR1cmUiOiIweDRjMmQ4Zjg3MjI1NjllNmQ1MTkwYjczNmI5Njk4NzRkMzliNDRlOTFkMTJhMzJiYzY2YjRmNzkxM2Q2MmY4YTZhNWIwMGViZTFlN2ExNmQ0NzQxOWFhM2FjYTQ3OWQzZDVlZjA4MWRiYWI0ZjY3Y2Q4N2M0YWQ0NmYxYzNjMjUxYjEiLCJhdXRob3JpemF0aW9uIjp7ImZyb20iOiIweDcxNDQxRjg2QjUzQkUyNjQ0N0Q1QjI4Q0QxMzQ5NkUyRjUzRjFjRzYiLCJ0byI6IjB4QzUxQTY2NEE5NTY3YmM5ODNjYzRhOWQ2YzY0NEI4ZWQxODBBZTk2YiIsInZhbHVlIjoiMTAwMDAwMCIsInZhbGlkQWZ0ZXIiOiIxNzU4MTE4MzQ2IiwidmFsaWRCZWZvcmUiOiIxNzU4MTE5NDAwIiwibm9uY2UiOiIweDEyMzQ1Njc4OTBhYmNkZWYxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTBhYmNkZWYifX0sInJlcXVlc3QiOnsibWV0aG9kIjoiR0VUIiwidXJsIjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20iLCJoZWFkZXJzIjp7fX19",
       },
     });
 
@@ -232,12 +239,17 @@ describe("[unit|middleware-next]: paymentProxy", () => {
         },
       },
       server,
-      async () => new Response(JSON.stringify({ ok: false }), { status: 500, headers: { "Content-Type": "application/json" } })
+      async () =>
+        new Response(JSON.stringify({ ok: false }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }),
     );
 
     const request = new Request("http://localhost/api/protected", {
       headers: {
-        "PAYMENT-SIGNATURE": "eyJ4NDAyVmVyc2lvbiI6Miwic2NoZW1lIjoiZXhhY3QiLCJuZXR3b3JrIjoiZWlwMTU1Ojg0NTMyIiwicGF5bG9hZCI6eyJzaWduYXR1cmUiOiIweDRjMmQ4Zjg3MjI1NjllNmQ1MTkwYjczNmI5Njk4NzRkMzliNDRlOTFkMTJhMzJiYzY2YjRmNzkxM2Q2MmY4YTZhNWIwMGViZTFlN2ExNmQ0NzQxOWFhM2FjYTQ3OWQzZDVlZjA4MWRiYWI0ZjY3Y2Q4N2M0YWQ0NmYxYzNjMjUxYjEiLCJhdXRob3JpemF0aW9uIjp7ImZyb20iOiIweDcxNDQxRjg2QjUzQkUyNjQ0N0Q1QjI4Q0QxMzQ5NkUyRjUzRjFjRzYiLCJ0byI6IjB4QzUxQTY2NEE5NTY3YmM5ODNjYzRhOWQ2YzY0NEI4ZWQxODBBZTk2YiIsInZhbHVlIjoiMTAwMDAwMCIsInZhbGlkQWZ0ZXIiOiIxNzU4MTE4MzQ2IiwidmFsaWRCZWZvcmUiOiIxNzU4MTE5NDAwIiwibm9uY2UiOiIweDEyMzQ1Njc4OTBhYmNkZWYxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTBhYmNkZWYifX0sInJlcXVlc3QiOnsibWV0aG9kIjoiR0VUIiwidXJsIjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20iLCJoZWFkZXJzIjp7fX19",
+        "PAYMENT-SIGNATURE":
+          "eyJ4NDAyVmVyc2lvbiI6Miwic2NoZW1lIjoiZXhhY3QiLCJuZXR3b3JrIjoiZWlwMTU1Ojg0NTMyIiwicGF5bG9hZCI6eyJzaWduYXR1cmUiOiIweDRjMmQ4Zjg3MjI1NjllNmQ1MTkwYjczNmI5Njk4NzRkMzliNDRlOTFkMTJhMzJiYzY2YjRmNzkxM2Q2MmY4YTZhNWIwMGViZTFlN2ExNmQ0NzQxOWFhM2FjYTQ3OWQzZDVlZjA4MWRiYWI0ZjY3Y2Q4N2M0YWQ0NmYxYzNjMjUxYjEiLCJhdXRob3JpemF0aW9uIjp7ImZyb20iOiIweDcxNDQxRjg2QjUzQkUyNjQ0N0Q1QjI4Q0QxMzQ5NkUyRjUzRjFjRzYiLCJ0byI6IjB4QzUxQTY2NEE5NTY3YmM5ODNjYzRhOWQ2YzY0NEI4ZWQxODBBZTk2YiIsInZhbHVlIjoiMTAwMDAwMCIsInZhbGlkQWZ0ZXIiOiIxNzU4MTE4MzQ2IiwidmFsaWRCZWZvcmUiOiIxNzU4MTE5NDAwIiwibm9uY2UiOiIweDEyMzQ1Njc4OTBhYmNkZWYxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTBhYmNkZWYifX0sInJlcXVlc3QiOnsibWV0aG9kIjoiR0VUIiwidXJsIjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20iLCJoZWFkZXJzIjp7fX19",
       },
     });
 

@@ -1,10 +1,15 @@
 ---
+title: Make Payments with Web3.js
 description: Make payments with Web3.js
 ---
 
 # Make Payments with Web3.js
 
 Make payments to Armory-protected APIs using Web3.js wallets.
+
+`hooks` are lifecycle callbacks. `extensions` are protocol fields on x402 payloads/challenges. They work together but are separate.
+
+When payment verification fails on retry (`402`), Armory surfaces server detail (for example `insufficient_funds`) in the thrown error.
 
 ## Basic Payment
 
@@ -47,7 +52,7 @@ const info = await armory.call('https://api.example.com/data');
 console.log(premium.data, info.data);
 ```
 
-The `createArmory` object exposes `.get`, `.post`, `.put`, `.delete`, `.patch`, `.pay`, and `.call`. When the API responds with a 402, it automatically selects the best entry from the server's `accepts[]` array, giving higher priority to Base (chainId `8453`), the Base USDC contract (`0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913`), and the lowest amounts. Leaving `chains` or `tokens` unset allows Armory to consider any compatible option but still prefer Base/USDC.
+The `createArmory` object exposes `.get`, `.post`, `.put`, `.delete`, `.patch`, `.pay`, and `.call`. When the API responds with a 402, it selects from `accepts[]`. Without hooks it uses the first compatible option; add `@armory-sh/client-hooks` to apply chain/token/cheapest preferences.
 
 Use `.pay(url, { method: 'PATCH', body })` when you need to override the HTTP method and `.call(url)` for the default GET.
 

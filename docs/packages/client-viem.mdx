@@ -97,34 +97,33 @@ The client supports an extension hook system for handling protocol extensions li
 ```typescript
 import { createX402Client } from '@armory-sh/client-viem';
 import { createSIWxHook, createPaymentIdHook } from '@armory-sh/extensions';
+import { PaymentPreference, Logger } from '@armory-sh/client-hooks';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const account = privateKeyToAccount('0x...');
 
 const client = createX402Client({
   wallet: { type: 'account', account },
-  hooks: {
-    siwx: createSIWxHook({
+  hooks: [
+    createSIWxHook({
       domain: 'example.com',
       statement: 'Sign in to access premium content'
     }),
-    paymentId: createPaymentIdHook()
-  }
+    createPaymentIdHook(),
+    PaymentPreference.chain(['base', 'polygon', 'skale']),
+    PaymentPreference.token(['USDT', 'USDC', 'WBTC']),
+    PaymentPreference.cheapest(),
+    Logger.console(),
+  ]
 });
 
 // Hooks automatically add extensions when server requests them
 const response = await client.fetch('https://api.example.com/protected');
 ```
 
-### Hook Priority
+### Hook Order
 
-Hooks execute in priority order (higher first):
-
-| Hook | Default Priority |
-|------|------------------|
-| `createSIWxHook` | 100 |
-| `createPaymentIdHook` | 50 |
-| Custom hooks | 0 (default) |
+Hooks execute in array order.
 
 ### Custom Hooks
 
@@ -152,20 +151,19 @@ const myHook = createCustomHook({
 
 const client = createX402Client({
   wallet: { type: 'account', account },
-  hooks: {
-    custom: myHook
-  }
+  hooks: [myHook]
 });
 ```
 
 ### Hook Execution Points
 
-Hooks execute at two points in the payment flow:
+Hooks can execute at:
 
-1. **onPaymentRequired** - After receiving 402, before payment creation
-2. **beforePayment** - After payment creation, before sending to server
-
-Both hooks receive the same context, but `beforePayment` hooks have access to the created `payload`.
+1. `onPaymentRequired`
+2. `selectRequirement`
+3. `beforeSignPayment`
+4. `afterPaymentResponse`
+5. `onError`
 
 ## Exports
 
@@ -174,8 +172,5 @@ Both hooks receive the same context, but `beforePayment` hooks have access to th
 | `createX402Client` | Create a full x402 client |
 | `createX402Transport` | Create a fetch function for payments |
 | `armoryPay` | One-line payment function |
-| `executeHooks` | Execute a hook registry |
+| `executeHooks` | Execute extension hooks |
 | `mergeExtensions` | Merge extension objects |
-| `ViemHookRegistry` | Type for hook registry |
-| `ViemHookConfig` | Type for individual hook config |
-

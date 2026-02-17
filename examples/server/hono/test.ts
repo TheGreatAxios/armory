@@ -4,7 +4,11 @@
  * Run with: bun run test.ts
  */
 
-import { client, type AppType } from "./server";
+export {}; /**
+ * Test script for Hono X-402 server
+ *
+ * Run with: bun run test.ts
+ */
 
 const API_URL = "http://localhost:3001";
 
@@ -62,7 +66,7 @@ async function runTests() {
     requirements: await testRequirements(),
   };
 
-  console.log("\n" + "=".repeat(60));
+  console.log(`\n${"=".repeat(60)}`);
   console.log("Test Results:");
   console.log("=".repeat(60));
   Object.entries(results).forEach(([name, passed]) => {

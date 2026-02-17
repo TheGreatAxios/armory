@@ -71,10 +71,49 @@ function handler(state: string) { /* uses state param */ }
 
 ---
 
+## Package Architecture & Decision Flow
+
+**Primary Rule**: Logic shared across implementations belongs in `@armory-sh/base`.
+
+### Middleware Changes
+
+1. **Start in base** - All middleware logic should be implemented in `@armory-sh/base` first
+2. **Apply everywhere** - Once working in base, port to all middleware packages:
+   - `@armory-sh/middleware-hono`
+   - `@armory-sh/middleware-cloudflare`
+   - `@armory-sh/middleware-express`
+   - `@armory-sh/middleware-fastify`
+   - `@armory-sh/middleware-next`
+   - `@armory-sh/middleware-remix`
+   - `@armory-sh/middleware-vercel`
+
+### Client Changes
+
+1. **Start in base** - All client logic should be implemented in `@armory-sh/base` first
+2. **Hook runtime in base** - Shared hook lifecycle/types live in base and are reused by all clients
+3. **Reusable presets in client-hooks** - Keep reusable preference/logger hooks in `@armory-sh/client-hooks` (optional package)
+4. **Apply everywhere** - Once working in base, port to all client packages:
+   - `@armory-sh/client-viem`
+   - `@armory-sh/client-ethers`
+   - `@armory-sh/client-walletconnect`
+   - `@armory-sh/client-coinbase-wallet-sdk`
+   - `@armory-sh/client-sui`
+   - `@armory-sh/client-svm`
+
+### Framework-Specific Exceptions
+
+Only add framework-specific code directly in a package if:
+- It requires unique framework APIs not available elsewhere
+- The logic cannot be abstracted to `base` without losing functionality
+- The feature is exclusive to that framework
+
+---
+
 ## Package-Specific Guidelines
 
 ### @armory-sh/base (core)
 
+- **Source of truth** - All shared middleware/client logic originates here
 - **x402 v2 types** - MUST match Coinbase spec exactly
 - Encoding/decoding - MUST use exact x402 v2 wire format (Base64URL-encoded JSON)
   - NEVER change encoding without verifying x402 SDK compatibility
@@ -89,15 +128,19 @@ function handler(state: string) { /* uses state param */ }
 
 ### Middleware Packages
 
+- Thin wrappers around base middleware logic
+- Adapt base functions to framework-specific request/response patterns
 - Accept payment headers
 - Return payment response headers
 - Decode and verify x402 payment signatures
 
 ### Client Packages
 
+- Thin wrappers around base client logic
+- Adapt base functions to wallet library patterns (viem, ethers, etc.)
 - Create payment requests
 - Handle x402 headers
-- Parse responses
+- Parse responses (`PAYMENT-REQUIRED` with `accepts[]`, then selection)
 
 ---
 
@@ -117,9 +160,9 @@ function handler(state: string) { /* uses state param */ }
 
 ### Headers
 
-| Payment Header | Response Header |
-|---------------|-----------------|
-| `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
+| Challenge Header | Payment Header | Settlement Header |
+|------------------|----------------|-------------------|
+| `PAYMENT-REQUIRED` | `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
 
 ### Supported Networks
 
