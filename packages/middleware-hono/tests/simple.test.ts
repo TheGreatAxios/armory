@@ -266,6 +266,26 @@ describe("[unit|middleware-hono]: Simple Middleware API", () => {
     expect(result.requirements.length).toBeGreaterThanOrEqual(1);
   });
 
+  test("supports per-chain amount overrides with amounts map", () => {
+    const result = createPaymentRequirements({
+      payTo: "0x1234567890123456789012345678901234567890",
+      chains: ["base-sepolia", "skale-base-sepolia"],
+      tokens: ["usdc"],
+      amounts: {
+        default: "0.001",
+        "skale-base-sepolia": "0.0005",
+      },
+    });
+
+    expect(result.error).toBeUndefined();
+    const base = result.requirements.find((r) => r.network === "eip155:84532");
+    const skale = result.requirements.find(
+      (r) => r.network === "eip155:324705682",
+    );
+    expect(base && BigInt(base.amount)).toBe(1000n);
+    expect(skale && BigInt(skale.amount)).toBe(500n);
+  });
+
   test("middleware returns 402 when no payment header", async () => {
     const app = new Hono();
     app.use(
@@ -297,5 +317,24 @@ describe("[unit|middleware-hono]: Simple Middleware API", () => {
 
     expect(result.error).toBeUndefined();
     expect(result.requirements[0].amount).toBe("1000000");
+  });
+
+  test("enriches explicit requirements with top-level eip712 metadata", () => {
+    const result = createPaymentRequirements({
+      requirements: {
+        scheme: "exact",
+        network: "eip155:84532",
+        amount: "1000",
+        asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        payTo: "0x1234567890123456789012345678901234567890",
+        maxTimeoutSeconds: 300,
+      },
+      facilitatorUrl: "https://facilitator.payai.network",
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.requirements).toHaveLength(1);
+    expect(result.requirements[0].name).toBe("USDC");
+    expect(result.requirements[0].version).toBe("2");
   });
 });

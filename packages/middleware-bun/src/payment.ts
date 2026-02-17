@@ -38,6 +38,7 @@ export interface PaymentConfig {
   tokens?: TokenId[];
   token?: TokenId;
   amount?: string;
+  amounts?: Record<string, string>;
   maxTimeoutSeconds?: number;
   facilitatorUrl?: string;
   facilitatorUrlByChain?: Record<string, string>;

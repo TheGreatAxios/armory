@@ -47,6 +47,31 @@ describe(
 );
 
 describe(
+  "[unit|base] - [createPaymentRequirements|success] - supports per-network amounts with defaults",
+  () => {
+    test("applies chain-specific amount and falls back to default", () => {
+      const result = createPaymentRequirements({
+        payTo: "0x1234567890123456789012345678901234567890",
+        chains: ["base-sepolia", "skale-base-sepolia"],
+        tokens: ["usdc"],
+        amounts: {
+          default: "0.001",
+          "skale-base-sepolia": "0.0005",
+        },
+      });
+
+      expect(result.error).toBeUndefined();
+      const base = result.requirements.find((r) => r.network === "eip155:84532");
+      const skale = result.requirements.find(
+        (r) => r.network === "eip155:324705682",
+      );
+      expect(base && BigInt(base.amount)).toBe(1000n);
+      expect(skale && BigInt(skale.amount)).toBe(500n);
+    });
+  },
+);
+
+describe(
   "[unit|base] - [enrichPaymentRequirements|success] - hydrates name/version from network+asset",
   () => {
     test("fills missing token metadata for explicit requirements", () => {

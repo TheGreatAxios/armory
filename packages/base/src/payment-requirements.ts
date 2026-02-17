@@ -22,6 +22,7 @@ export interface PaymentConfig {
   tokens?: TokenId[];
   token?: TokenId;
   amount?: string;
+  amounts?: Record<string, string>;
   maxTimeoutSeconds?: number;
 
   payToByChain?: Record<string, Address | string>;
@@ -30,6 +31,35 @@ export interface PaymentConfig {
   facilitatorUrl?: string;
   facilitatorUrlByChain?: Record<string, string>;
   facilitatorUrlByToken?: Record<string, Record<string, string>>;
+}
+
+function resolveAmountForNetwork(
+  config: PaymentConfig,
+  network: ResolvedNetwork,
+): string {
+  const defaultAmount = config.amount ?? "1.0";
+  if (!config.amounts) {
+    return defaultAmount;
+  }
+
+  const explicitDefault = config.amounts.default;
+  const fallbackAmount = explicitDefault ?? defaultAmount;
+
+  for (const [networkKey, amount] of Object.entries(config.amounts)) {
+    if (networkKey === "default") {
+      continue;
+    }
+
+    const resolvedNetwork = resolveNetwork(networkKey);
+    if (
+      !isValidationError(resolvedNetwork) &&
+      resolvedNetwork.config.chainId === network.config.chainId
+    ) {
+      return amount;
+    }
+  }
+
+  return fallbackAmount;
 }
 
 export interface ResolvedRequirementsConfig {
@@ -308,7 +338,6 @@ export function createPaymentRequirements(
     chain,
     tokens,
     token,
-    amount = "1.0",
     maxTimeoutSeconds = 300,
   } = config;
 
@@ -324,6 +353,8 @@ export function createPaymentRequirements(
 
   for (const network of networks) {
     const tokensToResolve = tokenInputs?.length ? tokenInputs : DEFAULT_TOKENS;
+    const resolvedAmount = resolveAmountForNetwork(config, network);
+    const atomicAmount = toAtomicUnits(resolvedAmount);
 
     for (const tokenId of tokensToResolve) {
       const resolvedToken = resolveToken(tokenId, network);
@@ -331,7 +362,6 @@ export function createPaymentRequirements(
         continue;
       }
 
-      const atomicAmount = toAtomicUnits(amount);
       const tokenConfig = resolvedToken.config;
 
       const resolvedPayTo = resolvePayTo(config, network, resolvedToken);
