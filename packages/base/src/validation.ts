@@ -573,17 +573,16 @@ export const validateAcceptConfig = (
 
   const tokens: ResolvedToken[] = [];
   for (const tokenId of tokenIds) {
-    let found = false;
+    let matches = 0;
     for (const network of networks) {
       const resolved = resolveToken(tokenId, network);
       if ("code" in resolved) {
         continue;
       }
       tokens.push(resolved);
-      found = true;
-      break;
+      matches += 1;
     }
-    if (!found) {
+    if (matches === 0) {
       return {
         success: false,
         error: createError(
