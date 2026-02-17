@@ -13,6 +13,7 @@ import {
   decodeSettlementV2,
   getNetworkByChainId,
   encodePaymentV2,
+  PaymentException as PaymentError,
 } from "@armory-sh/base";
 
 import type {
@@ -23,7 +24,6 @@ import type {
   PaymentResult,
   UnsignedPaymentPayload,
 } from "./types";
-import { PaymentError } from "./errors";
 import {
   detectX402Version,
   parsePaymentRequired,

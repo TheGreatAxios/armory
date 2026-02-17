@@ -7,4 +7,5 @@ export type {
 
 export { x402ResourceServer } from "./resource-server";
 export { paymentProxy } from "./proxy";
-export { createMiddleware } from "./middleware";
+export { createMiddleware, paymentMiddleware, createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "./middleware";
+export type { PaymentConfig, ResolvedRequirementsConfig } from "./middleware";

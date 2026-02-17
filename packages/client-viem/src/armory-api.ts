@@ -22,9 +22,10 @@ import {
   isValidationError,
   createError,
   getNetworkByChainId,
+  decodeBase64ToUtf8,
+  encodeUtf8ToBase64,
 } from "@armory-sh/base";
 import { createX402Client } from "./client";
-import { decodeBase64ToUtf8, encodeUtf8ToBase64 } from "./bytes";
 
 // ═══════════════════════════════════════════════════════════════
 // Types

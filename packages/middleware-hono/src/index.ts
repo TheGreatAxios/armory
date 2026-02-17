@@ -1,26 +1,51 @@
 import type { Context, Next } from "hono";
 import type {
   X402PaymentPayload,
-  PaymentRequirements,
+  PaymentRequirementsV2,
+  PaymentRequiredV2,
+  ResourceInfo,
   VerifyResponse,
   X402SettlementResponse,
 } from "@armory-sh/base";
 import {
+  resolveNetwork,
+  resolveToken,
+  PAYMENT_SIGNATURE_HEADER,
+  V2_HEADERS,
   createPaymentRequiredHeaders,
   createSettlementHeaders,
-  PAYMENT_SIGNATURE_HEADER,
   decodePayloadHeader,
   verifyPayment,
   settlePayment,
+  safeBase64Encode,
+  createPaymentRequirements as createBasePaymentRequirements,
+  isValidationError,
+  TOKENS,
+  registerToken,
 } from "@armory-sh/base";
 
-export interface AdvancedPaymentConfig {
-  requirements: PaymentRequirements;
-  facilitatorUrl: string;
-  network?: string;
+type NetworkId = string | number;
+type TokenId = string;
+
+export interface PaymentConfig {
+  payTo: string;
+  chains?: NetworkId[];
+  chain?: NetworkId;
+  tokens?: TokenId[];
+  token?: TokenId;
+  amount?: string;
+  maxTimeoutSeconds?: number;
+  facilitatorUrl?: string;
+  facilitatorUrlByChain?: Record<string, string>;
+  facilitatorUrlByToken?: Record<string, Record<string, string>>;
 }
 
-export interface AugmentedRequest extends Request {
+export interface ResolvedRequirementsConfig {
+  requirements: PaymentRequirementsV2[];
+  error?: { code: string; message: string };
+}
+
+export interface AugmentedContext extends Context {
   payment?: {
     payload: X402PaymentPayload;
     payerAddress: string;
@@ -28,58 +53,130 @@ export interface AugmentedRequest extends Request {
   };
 }
 
-export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
-  const { requirements, facilitatorUrl } = config;
+function ensureTokensRegistered() {
+  for (const token of Object.values(TOKENS)) {
+    try {
+      registerToken(token);
+    } catch {
+    }
+  }
+}
+
+export function resolveFacilitatorUrlFromRequirement(
+  config: PaymentConfig,
+  requirement: PaymentRequirementsV2
+): string | undefined {
+  const chainId = parseInt(requirement.network.split(":")[1] || "0", 10);
+  const assetAddress = requirement.asset.toLowerCase();
+
+  if (config.facilitatorUrlByToken) {
+    for (const [chainKey, tokenMap] of Object.entries(config.facilitatorUrlByToken)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        for (const [, url] of Object.entries(tokenMap)) {
+          const network = resolveNetwork(chainKey);
+          if (!isValidationError(network)) {
+            for (const tokenKey of Object.keys(tokenMap)) {
+              const resolvedToken = resolveToken(tokenKey, network);
+              if (!isValidationError(resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === assetAddress) {
+                return url;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (config.facilitatorUrlByChain) {
+    for (const [chainKey, url] of Object.entries(config.facilitatorUrlByChain)) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+        return url;
+      }
+    }
+  }
+
+  return config.facilitatorUrl;
+}
+
+export function createPaymentRequirements(
+  config: PaymentConfig
+): ResolvedRequirementsConfig {
+  ensureTokensRegistered();
+  return createBasePaymentRequirements(config);
+}
+
+export function paymentMiddleware(config: PaymentConfig) {
+  const { requirements, error } = createPaymentRequirements(config);
 
   return async (c: Context, next: Next): Promise<Response | void> => {
+    if (error) {
+      c.status(500);
+      return c.json({
+        error: "Payment middleware configuration error",
+        details: error.message,
+      });
+    }
+
+    const primaryRequirement = requirements[0];
+    if (!primaryRequirement) {
+      c.status(500);
+      return c.json({ error: "Payment middleware configuration error", details: "No payment requirements configured" });
+    }
+
     const paymentHeader = c.req.header(PAYMENT_SIGNATURE_HEADER);
 
     if (!paymentHeader) {
-      const requiredHeaders = createPaymentRequiredHeaders(requirements);
+      const resource: ResourceInfo = {
+        url: c.req.url,
+        description: "API Access",
+        mimeType: "application/json",
+      };
+
+      const paymentRequired: PaymentRequiredV2 = {
+        x402Version: 2,
+        error: "Payment required",
+        resource,
+        accepts: requirements,
+      };
+
       c.status(402);
-      for (const [key, value] of Object.entries(requiredHeaders)) {
-        c.header(key, value);
-      }
+      c.header(PAYMENT_SIGNATURE_HEADER, safeBase64Encode(JSON.stringify(paymentRequired)));
       return c.json({
         error: "Payment required",
-        accepts: [requirements],
+        accepts: requirements,
       });
     }
 
-    let paymentPayload: X402PaymentPayload;
+    let parsedPayload: X402PaymentPayload;
     try {
-      paymentPayload = decodePayloadHeader(paymentHeader, {
-        accepted: requirements,
+      parsedPayload = decodePayloadHeader(paymentHeader, {
+        accepted: primaryRequirement,
       });
-    } catch (e) {
+    } catch {
       c.status(400);
-      return c.json({ error: "Invalid payment payload", details: String(e) });
+      return c.json({ error: "Invalid payment payload" });
     }
+
+    const facilitatorUrl = resolveFacilitatorUrlFromRequirement(config, primaryRequirement);
 
     if (!facilitatorUrl) {
       c.status(500);
       return c.json({ error: "Payment middleware configuration error", message: "Facilitator URL is required for verification" });
     }
 
-    const verifyResult: VerifyResponse = await verifyPayment(paymentPayload, requirements, { url: facilitatorUrl });
+    const verifyResult: VerifyResponse = await verifyPayment(parsedPayload, primaryRequirement, { url: facilitatorUrl });
 
     if (!verifyResult.isValid) {
-      const requiredHeaders = createPaymentRequiredHeaders(requirements);
       c.status(402);
-      for (const [key, value] of Object.entries(requiredHeaders)) {
-        c.header(key, value);
-      }
-      return c.json({
-        error: "Payment verification failed",
-        message: verifyResult.invalidReason,
-      });
+      c.header(PAYMENT_SIGNATURE_HEADER, createPaymentRequiredHeaders(requirements)[PAYMENT_SIGNATURE_HEADER]);
+      return c.json({ error: "Payment verification failed", message: verifyResult.invalidReason });
     }
 
-    const payerAddress = verifyResult.payer ?? paymentPayload.payload.authorization.from;
-
     c.set("payment", {
-      payload: paymentPayload,
-      payerAddress,
+      payload: parsedPayload,
+      payerAddress: verifyResult.payer,
       verified: true,
     });
 
@@ -89,7 +186,7 @@ export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
       return;
     }
 
-    const settleResult: X402SettlementResponse = await settlePayment(paymentPayload, requirements, { url: facilitatorUrl });
+    const settleResult: X402SettlementResponse = await settlePayment(parsedPayload, primaryRequirement, { url: facilitatorUrl });
 
     if (!settleResult.success) {
       c.status(502);
@@ -97,14 +194,12 @@ export const advancedPaymentMiddleware = (config: AdvancedPaymentConfig) => {
       return;
     }
 
-    const settlementHeaders = createSettlementHeaders(settleResult);
-    for (const [key, value] of Object.entries(settlementHeaders)) {
+    const headers = createSettlementHeaders(settleResult);
+    for (const [key, value] of Object.entries(headers)) {
       c.header(key, value);
     }
   };
-};
-
-export { paymentMiddleware, createPaymentRequirements, type PaymentConfig } from "./simple";
+}
 
 export { routeAwarePaymentMiddleware, type RouteAwarePaymentConfig } from "./routes";
 

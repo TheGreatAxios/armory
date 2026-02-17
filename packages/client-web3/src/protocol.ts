@@ -12,8 +12,10 @@ import {
   type X402PaymentPayloadV2,
   type PaymentPayloadV2,
   type EIP3009Authorization,
+  decodeBase64ToUtf8,
+  encodeUtf8ToBase64,
+  normalizeBase64Url,
 } from "@armory-sh/base";
-import { decodeBase64ToUtf8, encodeUtf8ToBase64, normalizeBase64Url } from "./bytes";
 
 // ============================================================================
 // Types

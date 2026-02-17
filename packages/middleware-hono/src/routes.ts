@@ -18,8 +18,8 @@ import {
   verifyPayment,
   settlePayment,
 } from "@armory-sh/base";
-import type { PaymentConfig } from "./simple";
-import { createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "./simple";
+import type { PaymentConfig, ResolvedRequirementsConfig } from "./index";
+import { createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "./index";
 
 interface LocalValidationError {
   code: string;

@@ -11,7 +11,6 @@ import type {
   TypedDataDomain,
   WalletClient,
 } from "viem";
-import { PaymentError, SigningError } from "./errors";
 import type {
   PaymentPayloadV2,
   PaymentRequirementsV2,
@@ -23,9 +22,13 @@ import {
   networkToCaip2,
   EIP712_TYPES,
   getNetworkByChainId,
+  decodeBase64ToUtf8,
+  normalizeBase64Url,
+  PaymentException as PaymentError,
+  SigningError,
+  createEIP712Domain,
+  createTransferWithAuthorization,
 } from "@armory-sh/base";
-import { createEIP712Domain, createTransferWithAuthorization } from "@armory-sh/base";
-import { decodeBase64ToUtf8, normalizeBase64Url } from "./bytes";
 
 export type X402Wallet =
   | { type: "account"; account: Account }

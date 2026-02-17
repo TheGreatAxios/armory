@@ -16,15 +16,6 @@ export {
   signWithPrivateKey,
 } from "./eip3009";
 
-// Re-export base types for convenience
-export type {
-  PaymentPayloadV2,
-  PaymentRequirementsV2,
-  EIP3009Authorization,
-  SchemePayloadV2,
-  SettlementResponseV2,
-} from "@armory-sh/base";
-
 // Simple one-line API
 export {
   armoryPay,

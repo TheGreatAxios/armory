@@ -123,3 +123,5 @@ export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
 };
 
 export { routeAwarePaymentMiddleware, type RouteAwarePaymentMiddlewareConfig, type PaymentMiddlewareConfigEntry, type RouteAwarePaymentInfo } from "./routes";
+export { paymentMiddleware, createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "./payment";
+export type { PaymentConfig, ResolvedRequirementsConfig } from "./payment";

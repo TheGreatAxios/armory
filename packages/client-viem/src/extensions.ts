@@ -16,7 +16,7 @@ import type {
 } from "@armory-sh/extensions";
 import type { X402Wallet } from "./protocol";
 import { getWalletAddress } from "./protocol";
-import { encodeUtf8ToBase64 } from "./bytes";
+import { encodeUtf8ToBase64 } from "@armory-sh/base";
 
 export interface ClientExtensionContext {
   bazaar?: BazaarExtensionInfo;

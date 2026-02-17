@@ -1,50 +1,3 @@
-// Re-export types from @armory-sh/base
-export type {
-  PaymentPayloadV2,
-  PaymentRequirementsV2,
-  SettlementResponseV2,
-  PaymentPayload,
-  PaymentRequirements,
-  SettlementResponse,
-  CAIP2ChainId,
-  CAIPAssetId,
-  Address,
-  Signature,
-  PayToV2,
-  Extensions,
-  NetworkConfig,
-  TransferWithAuthorizationParams,
-  BalanceOfParams,
-} from "@armory-sh/base";
-
-export {
-  V2_HEADERS,
-  isSettlementSuccessful,
-  getTxHash,
-  NETWORKS,
-  getNetworkConfig,
-  getNetworkByChainId,
-  getMainnets,
-  getTestnets,
-  ERC20_ABI,
-  encodePaymentV2,
-  decodePaymentV2,
-  encodeSettlementV2,
-  decodeSettlementV2,
-  detectPaymentVersion,
-  decodePayment,
-  isPaymentV2,
-  isSettlementV2,
-  isX402V2PaymentRequired,
-  EIP712_TYPES,
-  createEIP712Domain,
-  createTransferWithAuthorization,
-  validateTransferWithAuthorization,
-  isCAIP2ChainId,
-  isCAIPAssetId,
-  safeBase64Decode,
-} from "@armory-sh/base";
-
 // Ethers-specific exports - x402 protocol functions (V2 only)
 export {
   detectX402Version,
@@ -54,7 +7,7 @@ export {
   type ParsedPaymentRequirements,
 } from "./protocol";
 
-// Errors
+// Errors (ethers-specific + re-exported shared)
 export {
   X402ClientError,
   SigningError,

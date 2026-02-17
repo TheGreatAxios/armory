@@ -4,7 +4,7 @@
  */
 import { test, expect, describe } from "bun:test";
 import { Hono } from "hono";
-import { paymentMiddleware, createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "../src/simple";
+import { paymentMiddleware, createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "../src/index";
 
 describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
   test("[resolvePayTo|success] - resolves global payTo when no overrides exist", () => {

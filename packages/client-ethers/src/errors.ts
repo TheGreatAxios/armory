@@ -1,27 +1,15 @@
-export class X402ClientError extends Error {
-  override readonly cause?: unknown;
+// Import shared error classes from @armory-sh/base
+import {
+  X402ClientError,
+  SigningError as BaseSigningError,
+  PaymentException,
+} from "@armory-sh/base";
 
-  constructor(message: string, cause?: unknown) {
-    super(message);
-    this.name = "X402ClientError";
-    this.cause = cause;
-  }
-}
+// Re-export shared error classes
+export { X402ClientError, PaymentException as PaymentError } from "@armory-sh/base";
+export { BaseSigningError as SigningError };
 
-export class SigningError extends X402ClientError {
-  constructor(message: string, cause?: unknown) {
-    super(`Signing failed: ${message}`, cause);
-    this.name = "SigningError";
-  }
-}
-
-export class PaymentError extends X402ClientError {
-  constructor(message: string, cause?: unknown) {
-    super(`Payment failed: ${message}`, cause);
-    this.name = "PaymentError";
-  }
-}
-
+// Ethers-specific error classes
 export class SignerRequiredError extends X402ClientError {
   constructor(message = "Signer is required for this operation") {
     super(message);

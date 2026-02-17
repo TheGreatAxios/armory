@@ -15,9 +15,9 @@ export class SigningError extends X402ClientError {
   }
 }
 
-export class PaymentError extends X402ClientError {
+export class PaymentException extends X402ClientError {
   constructor(message: string, cause?: unknown) {
     super(`Payment failed: ${message}`, cause);
-    this.name = "PaymentError";
+    this.name = "PaymentException";
   }
 }

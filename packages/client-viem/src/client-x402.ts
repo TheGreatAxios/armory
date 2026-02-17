@@ -31,10 +31,11 @@ import {
   PAYMENT_REQUIRED_HEADER,
   safeBase64Decode,
   createNonce,
+  PaymentException as PaymentError,
+  SigningError,
 } from "@armory-sh/base";
 
 import type { X402Client, X402ClientConfig, X402Wallet } from "./types-x402";
-import { SigningError, PaymentError } from "./errors";
 
 const DEFAULT_EXPIRY = 3600;
 

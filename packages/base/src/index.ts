@@ -59,6 +59,16 @@ export {
 } from "./utils/x402";
 
 // ============================================
+// Base64 utilities
+// ============================================
+export {
+  encodeUtf8ToBase64,
+  decodeBase64ToUtf8,
+  toBase64Url,
+  normalizeBase64Url,
+} from "./utils/base64";
+
+// ============================================
 // V2 types and functions (x402 V2 compatible)
 // ============================================
 export type {
@@ -294,4 +304,39 @@ export {
   decodePayloadHeader,
   extractPayerAddress,
 } from "./payment-client";
+
+export {
+  createPaymentRequirements,
+  findRequirementByNetwork,
+} from "./payment-requirements";
+
+export type {
+  PaymentConfig,
+  ResolvedRequirementsConfig,
+} from "./payment-requirements";
+
+// ============================================
+// Client error classes (shared across all client packages)
+// ============================================
+export {
+  X402ClientError,
+  SigningError,
+  PaymentException,
+} from "./errors";
+
+// ============================================
+// Protocol utilities (shared across all client packages)
+// ============================================
+export {
+  parseJsonOrBase64,
+  detectX402Version,
+  getPaymentHeaderName,
+  generateNonce,
+  calculateValidBefore,
+} from "./protocol";
+
+// ============================================
+// Wallet adapter interface
+// ============================================
+export type { PaymentWallet } from "./types/wallet";
 

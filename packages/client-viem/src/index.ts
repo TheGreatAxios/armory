@@ -18,9 +18,6 @@ export {
 } from "./hooks";
 export { executeHooks, mergeExtensions } from "./hooks-engine";
 
-// Error types
-export { X402ClientError, SigningError, PaymentError } from "./errors";
-
 // Protocol functions
 export {
   detectX402Version,
@@ -54,28 +51,6 @@ export {
   type PaymentOptions,
   type HttpMethod,
 } from "./armory-api";
-
-// Re-export simple types from core
-export type {
-  NetworkId,
-  TokenId,
-  ArmoryPaymentResult,
-  FacilitatorConfig,
-} from "@armory-sh/base";
-
-// Re-export x402 V2 types for convenience
-export type {
-  PaymentPayloadV2,
-  PaymentRequirementsV2,
-  PaymentRequiredV2,
-  SettlementResponseV2,
-  SchemePayloadV2,
-  EIP3009Authorization,
-  ResourceInfo,
-} from "@armory-sh/base";
-
-// Re-export header constants
-export { V2_HEADERS } from "@armory-sh/base";
 
 // Extension support
 export {

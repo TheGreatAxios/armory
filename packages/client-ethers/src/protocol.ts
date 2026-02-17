@@ -24,11 +24,12 @@ import {
   EIP712_TYPES,
   normalizeNetworkName,
   type TransferWithAuthorization,
+  decodeBase64ToUtf8,
+  normalizeBase64Url,
 } from "@armory-sh/base";
 import type { TransferWithAuthorizationParams, EIP712Domain } from "./types";
 import { signEIP3009 } from "./eip3009";
 import { PaymentError } from "./errors";
-import { decodeBase64ToUtf8, normalizeBase64Url } from "./bytes";
 
 // ============================================================================
 // Version Detection (V2 Only)

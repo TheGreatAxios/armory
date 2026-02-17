@@ -1,6 +1,6 @@
 import { test, expect, mock } from "bun:test";
 import { createX402Client, createX402Transport } from "../src/client";
-import { SigningError, PaymentError } from "../src/errors";
+import { SigningError, PaymentException as PaymentError } from "@armory-sh/base";
 import type { X402Wallet } from "../src/types";
 import type { Account } from "viem";
 import { V2_HEADERS } from "@armory-sh/base";

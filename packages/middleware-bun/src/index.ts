@@ -8,9 +8,7 @@ import type {
 import { decodePayloadHeader, extractPayerAddress, verifyPayment, settlePayment, createPaymentRequiredHeaders, createSettlementHeaders, PAYMENT_SIGNATURE_HEADER } from "@armory-sh/base";
 import type { MiddlewareConfig } from "./types";
 import { createPaymentRequirements } from "./core";
-
-export type BunMiddleware = (request: Request) => Promise<Response | null>;
-export type BunHandler = (request: Request) => Promise<Response> | Response;
+import type { BunMiddleware, BunHandler } from "./payment";
 
 export interface BunMiddlewareConfig extends MiddlewareConfig {
   waitForSettlement?: boolean;
@@ -168,3 +166,5 @@ export const createBunMiddleware = (
 };
 
 export { createRouteAwareBunMiddleware, type RouteAwareBunMiddlewareConfig } from "./routes";
+export { paymentMiddleware, createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "./payment";
+export type { PaymentConfig, ResolvedRequirementsConfig, BunMiddleware, BunHandler } from "./payment";
