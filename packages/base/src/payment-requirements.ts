@@ -254,3 +254,47 @@ export function findRequirementByNetwork(
 
   return requirements.find((r) => r.network === netConfig.caip2Id);
 }
+
+export function findRequirementByAccepted(
+  requirements: PaymentRequirementsV2[],
+  accepted: {
+    scheme: string;
+    network: string;
+    amount: string;
+    asset: string;
+    payTo: string;
+  },
+): PaymentRequirementsV2 | undefined {
+  const acceptedPayTo =
+    typeof accepted.payTo === "string" ? accepted.payTo.toLowerCase() : "";
+  const exactMatch = requirements.find(
+    (requirement) =>
+      requirement.scheme === accepted.scheme &&
+      requirement.network === accepted.network &&
+      requirement.amount === accepted.amount &&
+      requirement.asset.toLowerCase() === accepted.asset.toLowerCase() &&
+      typeof requirement.payTo === "string" &&
+      requirement.payTo.toLowerCase() === acceptedPayTo,
+  );
+  if (exactMatch) {
+    return exactMatch;
+  }
+
+  const payToAwareMatch = requirements.find(
+    (requirement) =>
+      requirement.scheme === accepted.scheme &&
+      requirement.network === accepted.network &&
+      acceptedPayTo.length > 0 &&
+      typeof requirement.payTo === "string" &&
+      requirement.payTo.toLowerCase() === acceptedPayTo,
+  );
+  if (payToAwareMatch) {
+    return payToAwareMatch;
+  }
+
+  return requirements.find(
+    (requirement) =>
+      requirement.scheme === accepted.scheme &&
+      requirement.network === accepted.network,
+  );
+}

@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/client-ethers",
-  "version": "0.2.26",
+  "version": "0.2.27",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "keywords": [

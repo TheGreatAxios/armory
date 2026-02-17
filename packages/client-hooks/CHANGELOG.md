@@ -1,0 +1,16 @@
+# @armory-sh/client-hooks
+
+## 0.1.1
+
+### Patch Changes
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28

@@ -145,6 +145,8 @@ const client = createX402Client({
 const response = await client.fetch('https://api.example.com/protected')
 ```
 
+`hooks` are lifecycle callbacks. `extensions` are protocol payload fields. Hooks can select requirements and augment extensions, but they are distinct concepts.
+
 ### Configuration Options
 
 ```typescript
@@ -168,6 +170,7 @@ const client = createX402Client({
 ## Features
 
 - **Auto 402 Handling**: Automatically intercepts and pays for 402 responses
+- **Detailed Verification Errors**: 402 retry failures include server details (for example `insufficient_funds`)
 - **EIP-3009 Signing**: Full support for EIP-3009 TransferWithAuthorization
 - **Multi-Network**: Ethereum, Base, SKALE support
 - **Multi-Token**: USDC, EURC, USDT, WBTC, WETH, SKL

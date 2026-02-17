@@ -1,9 +1,11 @@
 import { expect, mock, test } from "bun:test";
 import {
+  decodePaymentV2,
   PaymentException as PaymentError,
   SigningError,
   V2_HEADERS,
 } from "@armory-sh/base";
+import type { ClientHook } from "@armory-sh/base/types/hooks";
 import type { Account } from "viem";
 import { createX402Client, createX402Transport } from "../src/client";
 import type { X402Wallet } from "../src/types";
@@ -728,6 +730,39 @@ test("throws PaymentError on failed settlement", async () => {
   ).rejects.toThrow(PaymentError);
 });
 
+test("[unit|client-viem] - [fetch|error] - includes 402 server error details in verification failures", async () => {
+  const client = createX402Client({ wallet: mockWallet });
+
+  let callCount = 0;
+  global.fetch = mock(() => {
+    callCount += 1;
+    if (callCount === 1) {
+      const encoded = Buffer.from(createMockPaymentRequired()).toString(
+        "base64",
+      );
+      return Promise.resolve(
+        new Response("Payment Required", {
+          status: 402,
+          headers: { "PAYMENT-REQUIRED": encoded },
+        }),
+      );
+    }
+    return Promise.resolve(
+      new Response(
+        JSON.stringify({
+          error: "Payment verification failed",
+          message: "insufficient_funds",
+        }),
+        { status: 402 },
+      ),
+    );
+  });
+
+  await expect(
+    client.fetch("https://api.example.com/insufficient-funds"),
+  ).rejects.toThrow("Payment verification failed: insufficient_funds");
+});
+
 test("throws PaymentError on malformed payment requirements", async () => {
   const client = createX402Client({ wallet: mockWallet });
 
@@ -845,7 +880,143 @@ test("PaymentError includes error details", async () => {
   } catch (error) {
     expect(error).toBeInstanceOf(PaymentError);
     expect((error as PaymentError).message).toContain(
-      "Failed to decode settlement",
+      "Payment verification failed",
     );
   }
+});
+
+test("[unit|client-viem] - [fetch|success] - retries accepts options without selector preferences", async () => {
+  const client = createX402Client({ wallet: mockWallet });
+  const signedNetworks: string[] = [];
+
+  let callCount = 0;
+  global.fetch = mock((_input, init) => {
+    callCount += 1;
+
+    if (callCount === 1) {
+      const paymentRequired = {
+        x402Version: 2,
+        resource: "https://api.example.com/auto-fallback",
+        accepts: [
+          {
+            scheme: "exact",
+            payTo: PAYEE,
+            amount: "1000000",
+            network: "eip155:84532",
+            asset: USDC_BASE,
+            maxTimeoutSeconds: 300,
+          },
+          {
+            scheme: "exact",
+            payTo: PAYEE,
+            amount: "1000000",
+            network: "eip155:324705682",
+            asset: "0x2e08028E3C4c2356572E096d8EF835cD5C6030bD",
+            maxTimeoutSeconds: 300,
+            extra: {
+              name: "Bridged USDC (SKALE Bridge)",
+              version: "2",
+            },
+          },
+        ],
+      };
+      const encoded = Buffer.from(JSON.stringify(paymentRequired)).toString(
+        "base64",
+      );
+      return Promise.resolve(
+        new Response("Payment Required", {
+          status: 402,
+          headers: { [V2_HEADERS.PAYMENT_REQUIRED]: encoded },
+        }),
+      );
+    }
+
+    const paymentHeader = new Headers(init?.headers).get(
+      V2_HEADERS.PAYMENT_SIGNATURE,
+    );
+    if (paymentHeader) {
+      signedNetworks.push(decodePaymentV2(paymentHeader).accepted.network);
+    }
+
+    if (callCount === 2) {
+      return Promise.resolve(new Response("Payment Failed", { status: 402 }));
+    }
+
+    return Promise.resolve(
+      new Response("Success", {
+        status: 200,
+        headers: {
+          [V2_HEADERS.PAYMENT_RESPONSE]: encodeResponse({
+            success: true,
+            transaction: "0xabc123",
+            network: "eip155:324705682",
+          }),
+        },
+      }),
+    );
+  });
+
+  const response = await client.fetch("https://api.example.com/auto-fallback");
+
+  expect(response.status).toBe(200);
+  expect(callCount).toBe(3);
+  expect(signedNetworks).toEqual(["eip155:84532", "eip155:324705682"]);
+});
+
+test("[unit|client-viem] - [fetch|error] - selector preference overrides fallback attempts", async () => {
+  const selectorHook: ClientHook<X402Wallet> = {
+    name: "selector-only",
+    async selectRequirement(context) {
+      return context.accepts[0];
+    },
+  };
+  const client = createX402Client({
+    wallet: mockWallet,
+    hooks: [selectorHook],
+  });
+
+  let callCount = 0;
+  global.fetch = mock(() => {
+    callCount += 1;
+    if (callCount === 1) {
+      const paymentRequired = {
+        x402Version: 2,
+        resource: "https://api.example.com/selector-override",
+        accepts: [
+          {
+            scheme: "exact",
+            payTo: PAYEE,
+            amount: "1000000",
+            network: "eip155:84532",
+            asset: USDC_BASE,
+            maxTimeoutSeconds: 300,
+          },
+          {
+            scheme: "exact",
+            payTo: PAYEE,
+            amount: "1000000",
+            network: "eip155:324705682",
+            asset: "0x2e08028E3C4c2356572E096d8EF835cD5C6030bD",
+            maxTimeoutSeconds: 300,
+          },
+        ],
+      };
+      const encoded = Buffer.from(JSON.stringify(paymentRequired)).toString(
+        "base64",
+      );
+      return Promise.resolve(
+        new Response("Payment Required", {
+          status: 402,
+          headers: { [V2_HEADERS.PAYMENT_REQUIRED]: encoded },
+        }),
+      );
+    }
+    return Promise.resolve(new Response("Payment Failed", { status: 402 }));
+  });
+
+  await expect(
+    client.fetch("https://api.example.com/selector-override"),
+  ).rejects.toThrow("Payment verification failed");
+  expect(callCount).toBeGreaterThanOrEqual(2);
+  expect(callCount).toBeLessThanOrEqual(3);
 });

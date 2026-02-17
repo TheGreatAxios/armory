@@ -11,6 +11,7 @@ import {
   createPaymentRequiredHeaders,
   createSettlementHeaders,
   decodePayloadHeader,
+  findRequirementByAccepted,
   isValidationError,
   PAYMENT_REQUIRED_HEADER,
   PAYMENT_SIGNATURE_HEADER,
@@ -28,7 +29,8 @@ type NetworkId = string | number;
 type TokenId = string;
 
 export interface PaymentConfig {
-  payTo: string;
+  payTo?: string;
+  requirements?: PaymentRequirementsV2 | PaymentRequirementsV2[];
   chains?: NetworkId[];
   chain?: NetworkId;
   tokens?: TokenId[];
@@ -116,8 +118,27 @@ export function resolveFacilitatorUrlFromRequirement(
 export function createPaymentRequirements(
   config: PaymentConfig,
 ): ResolvedRequirementsConfig {
+  if (config.requirements) {
+    return {
+      requirements: Array.isArray(config.requirements)
+        ? config.requirements
+        : [config.requirements],
+    };
+  }
+
+  if (!config.payTo) {
+    return {
+      requirements: [],
+      error: {
+        code: "VALIDATION_FAILED",
+        message:
+          "Missing payment configuration: provide payTo or explicit requirements",
+      },
+    };
+  }
+
   ensureTokensRegistered();
-  return createBasePaymentRequirements(config);
+  return createBasePaymentRequirements(config as PaymentConfig & { payTo: string });
 }
 
 export function paymentMiddleware(config: PaymentConfig) {
@@ -178,9 +199,21 @@ export function paymentMiddleware(config: PaymentConfig) {
       return c.json({ error: "Invalid payment payload" });
     }
 
+    const selectedRequirement = findRequirementByAccepted(
+      requirements,
+      parsedPayload.accepted,
+    );
+    if (!selectedRequirement) {
+      c.status(400);
+      return c.json({
+        error: "Invalid payment payload",
+        message: "Accepted requirement is not configured for this endpoint",
+      });
+    }
+
     const facilitatorUrl = resolveFacilitatorUrlFromRequirement(
       config,
-      primaryRequirement,
+      selectedRequirement,
     );
 
     if (!facilitatorUrl) {
@@ -193,7 +226,7 @@ export function paymentMiddleware(config: PaymentConfig) {
 
     const verifyResult: VerifyResponse = await verifyPayment(
       parsedPayload,
-      primaryRequirement,
+      selectedRequirement,
       { url: facilitatorUrl },
     );
 
@@ -223,7 +256,7 @@ export function paymentMiddleware(config: PaymentConfig) {
 
     const settleResult: X402SettlementResponse = await settlePayment(
       parsedPayload,
-      primaryRequirement,
+      selectedRequirement,
       { url: facilitatorUrl },
     );
 

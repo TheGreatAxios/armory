@@ -1,10 +1,15 @@
 ---
+title: Make Payments with Viem
 description: Make payments with Viem
 ---
 
 # Make Payments with Viem
 
 Make payments to Armory-protected APIs using Viem wallets.
+
+`hooks` are lifecycle callbacks. `extensions` are protocol fields on x402 payloads/challenges. They work together but are separate.
+
+When payment verification fails on retry (`402`), Armory surfaces server detail (for example `insufficient_funds`) in the thrown error.
 
 ## Basic Payment
 

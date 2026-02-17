@@ -5,10 +5,10 @@ import {
   V2_HEADERS,
 } from "@armory-sh/base";
 import {
+  getRequirementAttemptOrderWithHooks,
   runAfterPaymentResponseHooks,
   runBeforeSignPaymentHooks,
   runOnPaymentRequiredHooks,
-  selectRequirementWithHooks,
 } from "@armory-sh/base/client-hooks-runtime";
 import type { PaymentRequiredContext } from "@armory-sh/base/types/hooks";
 import type { Signer } from "ethers";
@@ -91,6 +91,38 @@ const getRequirementDomainOverrides = (
   };
 };
 
+const getPaymentFailureDetail = async (
+  response: Response,
+): Promise<string | undefined> => {
+  const text = (await response.clone().text()).trim();
+  if (!text) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    if (typeof parsed.message === "string" && parsed.message.trim()) {
+      return parsed.message.trim();
+    }
+    if (typeof parsed.error === "string" && parsed.error.trim()) {
+      return parsed.error.trim();
+    }
+  } catch {}
+
+  return text;
+};
+
+const createPaymentVerificationError = async (
+  response: Response,
+): Promise<Error> => {
+  const detail = await getPaymentFailureDetail(response);
+  return new Error(
+    detail
+      ? `Payment verification failed: ${detail}`
+      : "Payment verification failed",
+  );
+};
+
 const handlePaymentRequired = async (
   state: TransportState,
   response: Response,
@@ -124,55 +156,81 @@ const handlePaymentRequired = async (
       validBefore:
         Math.floor(Date.now() / 1000) + initialRequirement.maxTimeoutSeconds,
     };
-    await runOnPaymentRequiredHooks(state.config.hooks, paymentRequiredContext);
-    const selectedRequirement = await selectRequirementWithHooks(
+    await runOnPaymentRequiredHooks(
       state.config.hooks,
       paymentRequiredContext,
     );
-    const requirementDomain = getRequirementDomainOverrides(
-      parsed,
-      selectedRequirement,
+    const attemptRequirements = await getRequirementAttemptOrderWithHooks(
+      state.config.hooks,
+      paymentRequiredContext,
     );
-
-    const payload = await createX402Payment(
-      state.signer,
-      selectedRequirement,
-      from as `0x${string}`,
-      paymentRequiredContext.nonce,
-      paymentRequiredContext.validBefore,
-      requirementDomain.domainName,
-      requirementDomain.domainVersion,
-    );
-    await runBeforeSignPaymentHooks(state.config.hooks, {
-      payload,
-      requirements: selectedRequirement,
-      wallet: state.signer,
-      paymentContext: paymentRequiredContext,
-    });
-    const encoded = encodePaymentV2(payload);
     const headerName = getPaymentHeaderName(parsed.version);
+    let lastError: Error | undefined;
 
-    const paymentResponse = await fetchWithTimeout(
-      response.url,
-      {
-        method: "GET",
-        headers: { ...state.config.headers, [headerName]: encoded },
-      },
-      state.config.timeout,
-    );
+    for (const selectedRequirement of attemptRequirements) {
+      try {
+        const validBefore =
+          Math.floor(Date.now() / 1000) + selectedRequirement.maxTimeoutSeconds;
+        const attemptContext: PaymentRequiredContext = {
+          ...paymentRequiredContext,
+          requirements: selectedRequirement,
+          selectedRequirement,
+          validBefore,
+        };
+        const requirementDomain = getRequirementDomainOverrides(
+          parsed,
+          selectedRequirement,
+        );
 
-    // Decode settlement response from headers
-    const settlement = decodeSettlementV2(
-      paymentResponse.headers.get(V2_HEADERS.PAYMENT_RESPONSE) || "",
-    );
-    await runAfterPaymentResponseHooks(state.config.hooks, {
-      payload,
-      requirements: selectedRequirement,
-      wallet: state.signer,
-      paymentContext: paymentRequiredContext,
-      response: paymentResponse,
-    });
-    return { success: true, settlement };
+        const payload = await createX402Payment(
+          state.signer,
+          selectedRequirement,
+          from as `0x${string}`,
+          attemptContext.nonce,
+          attemptContext.validBefore,
+          requirementDomain.domainName,
+          requirementDomain.domainVersion,
+        );
+        await runBeforeSignPaymentHooks(state.config.hooks, {
+          payload,
+          requirements: selectedRequirement,
+          wallet: state.signer,
+          paymentContext: attemptContext,
+        });
+        const encoded = encodePaymentV2(payload);
+
+        const paymentResponse = await fetchWithTimeout(
+          response.url,
+          {
+            method: "GET",
+            headers: { ...state.config.headers, [headerName]: encoded },
+          },
+          state.config.timeout,
+        );
+
+        await runAfterPaymentResponseHooks(state.config.hooks, {
+          payload,
+          requirements: selectedRequirement,
+          wallet: state.signer,
+          paymentContext: attemptContext,
+          response: paymentResponse,
+        });
+
+        if (paymentResponse.status === 402) {
+          lastError = await createPaymentVerificationError(paymentResponse);
+          continue;
+        }
+
+        const settlement = decodeSettlementV2(
+          paymentResponse.headers.get(V2_HEADERS.PAYMENT_RESPONSE) || "",
+        );
+        return { success: true, settlement };
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
+    }
+
+    throw lastError ?? new Error("Payment verification failed");
   } catch (error) {
     return {
       success: false,

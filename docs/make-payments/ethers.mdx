@@ -1,10 +1,15 @@
 ---
+title: Make Payments with Ethers.js
 description: Make payments with Ethers.js
 ---
 
 # Make Payments with Ethers.js
 
 Make payments to Armory-protected APIs using Ethers.js wallets.
+
+`hooks` are lifecycle callbacks. `extensions` are protocol fields on x402 payloads/challenges. They work together but are separate.
+
+When payment verification fails on retry (`402`), Armory surfaces server detail (for example `insufficient_funds`) in the error path.
 
 ## Basic Payment
 

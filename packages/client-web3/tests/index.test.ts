@@ -3,7 +3,7 @@
  */
 
 import { expect, mock, test } from "bun:test";
-import type { SettlementResponseV2 } from "@armory-sh/base";
+import { type ClientHook, type SettlementResponseV2 } from "@armory-sh/base";
 import {
   adjustVForChainId,
   concatenateSignature,
@@ -630,3 +630,140 @@ test("transport fetch returns 402 when autoSign is false", async () => {
 
   expect(response.status).toBe(402);
 });
+
+test(
+  "[unit|client-web3] - [createX402Client|success] - applies extensions selector override for non-primary requirement",
+  async () => {
+    const account = {
+      address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+      signTypedData: mock(
+        async () => `0x${"a".repeat(128)}1b`,
+      ),
+    };
+    const selector: ClientHook<typeof account> = {
+      name: "prefer-skale",
+      async selectRequirement(context) {
+        return context.accepts.find(
+          (requirement) => requirement.network === "eip155:324705682",
+        );
+      },
+    };
+
+    const client = createX402Client({
+      account,
+      network: "base-sepolia",
+      hooks: [selector],
+    });
+
+    let selectedNetwork: string | undefined;
+    const mockFetch = mock((_input: string | Request, init?: RequestInit) => {
+      const paymentHeader = new Headers(init?.headers).get("PAYMENT-SIGNATURE");
+      if (!paymentHeader) {
+        const paymentRequired = {
+          x402Version: 2,
+          error: "Payment required",
+          resource: { url: "https://api.example.com/data" },
+          accepts: [
+            {
+              scheme: "exact",
+              payTo: "0x1234567890123456789012345678901234567890",
+              amount: "1000000",
+              network: "eip155:84532",
+              asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              maxTimeoutSeconds: 300,
+            },
+            {
+              scheme: "exact",
+              payTo: "0x1234567890123456789012345678901234567890",
+              amount: "1000000",
+              network: "eip155:324705682",
+              asset: "0x2e08028E3C4c2356572E096d8EF835cD5C6030bD",
+              maxTimeoutSeconds: 300,
+            },
+          ],
+        };
+        const encoded = Buffer.from(JSON.stringify(paymentRequired)).toString(
+          "base64",
+        );
+        return Promise.resolve(
+          new Response("Payment Required", {
+            status: 402,
+            headers: { "PAYMENT-REQUIRED": encoded },
+          }),
+        );
+      }
+
+      selectedNetwork = "eip155:324705682";
+      return Promise.resolve(new Response("Paid", { status: 200 }));
+    });
+
+    globalThis.fetch = mockFetch;
+    const response = await client.fetch("https://api.example.com/data");
+
+    expect(response.status).toBe(200);
+    expect(selectedNetwork).toBe("eip155:324705682");
+  },
+);
+
+test(
+  "[unit|client-web3] - [createX402Client|error] - includes 402 server verification details",
+  async () => {
+    const account = {
+      address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+      signTypedData: mock(
+        async () => `0x${"a".repeat(128)}1b`,
+      ),
+    };
+    const client = createX402Client({
+      account,
+      network: "base-sepolia",
+    });
+
+    let callCount = 0;
+    const mockFetch = mock((_input: string | Request, init?: RequestInit) => {
+      callCount += 1;
+      const paymentHeader = new Headers(init?.headers).get("PAYMENT-SIGNATURE");
+      if (!paymentHeader && callCount === 1) {
+        const paymentRequired = {
+          x402Version: 2,
+          error: "Payment required",
+          resource: { url: "https://api.example.com/data" },
+          accepts: [
+            {
+              scheme: "exact",
+              payTo: "0x1234567890123456789012345678901234567890",
+              amount: "1000000",
+              network: "eip155:84532",
+              asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              maxTimeoutSeconds: 300,
+            },
+          ],
+        };
+        const encoded = Buffer.from(JSON.stringify(paymentRequired)).toString(
+          "base64",
+        );
+        return Promise.resolve(
+          new Response("Payment Required", {
+            status: 402,
+            headers: { "PAYMENT-REQUIRED": encoded },
+          }),
+        );
+      }
+
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            error: "Payment verification failed",
+            message: "insufficient_funds",
+          }),
+          { status: 402 },
+        ),
+      );
+    });
+
+    globalThis.fetch = mockFetch;
+    await expect(client.fetch("https://api.example.com/data")).rejects.toThrow(
+      "Payment verification failed: insufficient_funds",
+    );
+  },
+);

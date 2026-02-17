@@ -15,10 +15,10 @@ import {
   V2_HEADERS,
 } from "@armory-sh/base";
 import {
+  getRequirementAttemptOrderWithHooks,
   runAfterPaymentResponseHooks,
   runBeforeSignPaymentHooks,
   runOnPaymentRequiredHooks,
-  selectRequirementWithHooks,
 } from "@armory-sh/base/client-hooks-runtime";
 import type {
   ClientHook,
@@ -109,6 +109,38 @@ const checkSettlement = (response: Response): SettlementResponseV2 => {
   }
 };
 
+const getPaymentFailureDetail = async (
+  response: Response,
+): Promise<string | undefined> => {
+  const text = (await response.clone().text()).trim();
+  if (!text) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    if (typeof parsed.message === "string" && parsed.message.trim()) {
+      return parsed.message.trim();
+    }
+    if (typeof parsed.error === "string" && parsed.error.trim()) {
+      return parsed.error.trim();
+    }
+  } catch {}
+
+  return text;
+};
+
+const createPaymentVerificationError = async (
+  response: Response,
+): Promise<PaymentError> => {
+  const detail = await getPaymentFailureDetail(response);
+  return new PaymentError(
+    detail
+      ? `Payment verification failed: ${detail}`
+      : "Payment verification failed",
+  );
+};
+
 const createFetch = (
   wallet: X402Wallet,
   config: {
@@ -160,8 +192,6 @@ const createFetch = (
       }
       const validBefore =
         Math.floor(Date.now() / 1000) + selectedRequirement.maxTimeoutSeconds;
-      const requirementDomain =
-        getRequirementDomainOverrides(selectedRequirement);
 
       const paymentRequiredContext: PaymentRequiredContext = {
         url: input,
@@ -179,55 +209,84 @@ const createFetch = (
         await runOnPaymentRequiredHooks(hooks, paymentRequiredContext);
       }
 
-      const requirement = await selectRequirementWithHooks(
+      const attemptRequirements = await getRequirementAttemptOrderWithHooks(
         hooks,
         paymentRequiredContext,
       );
+      let lastError: Error | undefined;
 
-      const payment = await createX402Payment(
-        protocolWallet,
-        requirement,
-        fromAddress,
-        nonce,
-        validBefore,
-        domainName ?? requirementDomain.domainName,
-        domainVersion ?? requirementDomain.domainVersion,
-      );
+      for (const requirement of attemptRequirements) {
+        try {
+          const attemptValidBefore =
+            Math.floor(Date.now() / 1000) + requirement.maxTimeoutSeconds;
+          const attemptContext: PaymentRequiredContext = {
+            ...paymentRequiredContext,
+            requirements: requirement,
+            selectedRequirement: requirement,
+            validBefore: attemptValidBefore,
+          };
+          const attemptRequirementDomain =
+            getRequirementDomainOverrides(requirement);
 
-      if (debug) {
-        console.log("[X402] Created payment payload");
+          const payment = await createX402Payment(
+            protocolWallet,
+            requirement,
+            fromAddress,
+            nonce,
+            attemptValidBefore,
+            domainName ?? attemptRequirementDomain.domainName,
+            domainVersion ?? attemptRequirementDomain.domainVersion,
+          );
+
+          if (debug) {
+            console.log("[X402] Created payment payload");
+          }
+
+          if (hooks) {
+            const paymentPayloadContext = {
+              payload: payment,
+              requirements: requirement,
+              wallet: protocolWallet,
+              paymentContext: attemptContext,
+            };
+            await runBeforeSignPaymentHooks(hooks, paymentPayloadContext);
+          }
+
+          const headers = new Headers(init?.headers);
+          addPaymentHeader(headers, payment);
+
+          response = await fetch(input, { ...init, headers });
+
+          if (debug) {
+            console.log(`[X402] Payment response status: ${response.status}`);
+          }
+
+          if (hooks) {
+            await runAfterPaymentResponseHooks(hooks, {
+              payload: payment,
+              requirements: requirement,
+              wallet: protocolWallet,
+              paymentContext: attemptContext,
+              response,
+            });
+          }
+
+          if (response.status === 402) {
+            lastError = await createPaymentVerificationError(response);
+            continue;
+          }
+
+          checkSettlement(response);
+          return response;
+        } catch (error) {
+          lastError =
+            error instanceof Error
+              ? error
+              : new PaymentError("Payment verification failed");
+        }
       }
 
-      if (hooks) {
-        const paymentPayloadContext = {
-          payload: payment,
-          requirements: requirement,
-          wallet: protocolWallet,
-          paymentContext: paymentRequiredContext,
-        };
-        await runBeforeSignPaymentHooks(hooks, paymentPayloadContext);
-      }
-
-      const headers = new Headers(init?.headers);
-      addPaymentHeader(headers, payment);
-
-      response = await fetch(input, { ...init, headers });
-
-      if (debug) {
-        console.log(`[X402] Payment response status: ${response.status}`);
-      }
-
-      if (hooks) {
-        await runAfterPaymentResponseHooks(hooks, {
-          payload: payment,
-          requirements: requirement,
-          wallet: protocolWallet,
-          paymentContext: paymentRequiredContext,
-          response,
-        });
-      }
-
-      checkSettlement(response);
+      throw lastError ?? new PaymentError("Payment verification failed");
     }
 
     return response;

@@ -62,7 +62,11 @@ const handlePaymentRequired = async (
 
   const parsed = await parsePaymentRequired(response, version);
 
-  const selectedRequirements = parsed.requirements[0];
+  const selectedRequirements =
+    parsed.requirements.find(
+      (requirement) =>
+        requirement.network === client.getNetwork()?.caip2Id,
+    ) ?? parsed.requirements[0];
 
   if (!selectedRequirements) {
     throw new Error("No supported payment scheme found in requirements");

@@ -90,6 +90,26 @@ export const selectRequirementWithHooks = async <TWallet>(
   return selected;
 };
 
+export const getRequirementAttemptOrderWithHooks = async <TWallet>(
+  hooks: ClientHook<TWallet>[] | undefined,
+  context: PaymentRequiredContext,
+): Promise<PaymentRequirementsV2[]> => {
+  if (!context.accepts.length) {
+    throw new Error("No payment requirements found in accepts array");
+  }
+
+  const hasSelectorHook = Boolean(hooks?.some((hook) => hook.selectRequirement));
+  if (!hasSelectorHook) {
+    const first = context.accepts[0];
+    context.selectedRequirement = first;
+    context.requirements = first;
+    return context.accepts;
+  }
+
+  const selected = await selectRequirementWithHooks(hooks, context);
+  return [selected];
+};
+
 export const runBeforeSignPaymentHooks = async <TWallet>(
   hooks: ClientHook<TWallet>[] | undefined,
   context: PaymentPayloadContext<TWallet>,

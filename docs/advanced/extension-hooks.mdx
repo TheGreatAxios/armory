@@ -1,11 +1,16 @@
 ---
-description: Extension hook system for x402 clients
+title: Extensions and Hooks
+description: Use protocol extensions and lifecycle hooks together
 ---
 
-# Extension Hooks
+# Extensions and Hooks
 
-The extension hook system allows you to automatically handle protocol extensions
-when making payments to x402-protected APIs.
+Armory has two separate concepts:
+
+1. `extensions`: protocol data attached to x402 payloads/challenges (`extensions` object on wire format).
+2. `hooks`: lifecycle callbacks in the client or middleware flow.
+
+Use hooks to inspect or mutate context during payment flow. Use extensions to send or read protocol-level metadata.
 
 ## How Hooks Work
 

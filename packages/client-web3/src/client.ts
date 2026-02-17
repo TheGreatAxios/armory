@@ -10,10 +10,10 @@ import {
   V2_HEADERS,
 } from "@armory-sh/base";
 import {
+  getRequirementAttemptOrderWithHooks,
   runAfterPaymentResponseHooks,
   runBeforeSignPaymentHooks,
   runOnPaymentRequiredHooks,
-  selectRequirementWithHooks,
 } from "@armory-sh/base/client-hooks-runtime";
 import type { PaymentRequiredContext } from "@armory-sh/base/types/hooks";
 import { Web3 } from "web3";
@@ -246,6 +246,38 @@ const extractNetworkFromRequirements = (
   return network;
 };
 
+const getPaymentFailureDetail = async (
+  response: Response,
+): Promise<string | undefined> => {
+  const text = (await response.clone().text()).trim();
+  if (!text) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    if (typeof parsed.message === "string" && parsed.message.trim()) {
+      return parsed.message.trim();
+    }
+    if (typeof parsed.error === "string" && parsed.error.trim()) {
+      return parsed.error.trim();
+    }
+  } catch {}
+
+  return text;
+};
+
+const createPaymentVerificationError = async (
+  response: Response,
+): Promise<Error> => {
+  const detail = await getPaymentFailureDetail(response);
+  return new Error(
+    detail
+      ? `Payment verification failed: ${detail}`
+      : "Payment verification failed",
+  );
+};
+
 export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
   const state = createClientState(config);
   const hooks = config.hooks;
@@ -254,13 +286,16 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
     url: string | Request,
     init?: RequestInit,
   ): Promise<Response> => {
-    let response = await fetch(url, init);
+    let response = await globalThis.fetch(url, init);
 
     if (response.status === 402) {
       const version = detectX402Version(response, state.version);
       const parsed = await parsePaymentRequired(response, version);
 
-      const selectedRequirements = parsed.requirements[0];
+      const selectedRequirements =
+        parsed.requirements.find(
+          (requirement) => requirement.network === state.network?.caip2Id,
+        ) ?? parsed.requirements[0];
       if (!selectedRequirements) {
         throw new Error("No supported payment scheme found in requirements");
       }
@@ -280,46 +315,73 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
           selectedRequirements.maxTimeoutSeconds,
       };
       await runOnPaymentRequiredHooks(hooks, paymentRequiredContext);
-      const req = await selectRequirementWithHooks(
+      const attemptRequirements = await getRequirementAttemptOrderWithHooks(
         hooks,
         paymentRequiredContext,
       );
-      const to =
-        typeof req.payTo === "string"
-          ? req.payTo
-          : "0x0000000000000000000000000000000000000000";
+      let lastError: Error | undefined;
 
-      const network = extractNetworkFromRequirements(req);
+      for (const req of attemptRequirements) {
+        try {
+          const to =
+            typeof req.payTo === "string"
+              ? req.payTo
+              : "0x0000000000000000000000000000000000000000";
+          const attemptValidBefore =
+            Math.floor(Date.now() / 1000) + req.maxTimeoutSeconds;
+          const attemptContext: PaymentRequiredContext = {
+            ...paymentRequiredContext,
+            requirements: req,
+            selectedRequirement: req,
+            validBefore: attemptValidBefore,
+          };
+          const network = extractNetworkFromRequirements(req);
 
-      const result = await signPaymentV2(state, network, {
-        from,
-        to,
-        amount: req.amount,
-        nonce: crypto.randomUUID(),
-        expiry: Math.floor(Date.now() / 1000) + req.maxTimeoutSeconds,
-        accepted: req,
-      });
-      await runBeforeSignPaymentHooks(hooks, {
-        payload: result.payload,
-        requirements: req,
-        wallet: state.account,
-        paymentContext: paymentRequiredContext,
-      });
+          const result = await signPaymentV2(state, network, {
+            from,
+            to,
+            amount: req.amount,
+            nonce: crypto.randomUUID(),
+            expiry: attemptValidBefore,
+            accepted: req,
+          });
+          await runBeforeSignPaymentHooks(hooks, {
+            payload: result.payload,
+            requirements: req,
+            wallet: state.account,
+            paymentContext: attemptContext,
+          });
 
-      const paymentHeaders = new Headers(init?.headers);
-      paymentHeaders.set(
-        V2_HEADERS.PAYMENT_SIGNATURE,
-        encodePaymentV2(result.payload),
-      );
+          const paymentHeaders = new Headers(init?.headers);
+          paymentHeaders.set(
+            V2_HEADERS.PAYMENT_SIGNATURE,
+            encodePaymentV2(result.payload),
+          );
 
-      response = await fetch(url, { ...init, headers: paymentHeaders });
-      await runAfterPaymentResponseHooks(hooks, {
-        payload: result.payload,
-        requirements: req,
-        wallet: state.account,
-        paymentContext: paymentRequiredContext,
-        response,
-      });
+          response = await globalThis.fetch(url, {
+            ...init,
+            headers: paymentHeaders,
+          });
+          await runAfterPaymentResponseHooks(hooks, {
+            payload: result.payload,
+            requirements: req,
+            wallet: state.account,
+            paymentContext: attemptContext,
+            response,
+          });
+
+          if (response.status === 402) {
+            lastError = await createPaymentVerificationError(response);
+            continue;
+          }
+
+          return response;
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
+        }
+      }
+
+      throw lastError ?? new Error("Payment verification failed");
     }
 
     return response;

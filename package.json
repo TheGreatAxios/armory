@@ -18,6 +18,8 @@
     "test:e2e": "bun test e2e/**/*.test.ts",
     "test:pay": "bun e2e/payments/live-payment-test.ts",
     "build": "turbo run build",
+    "link:register": "bun scripts/link-workspaces.mjs register",
+    "link:to": "bun scripts/link-workspaces.mjs use",
     "changeset": "changeset",
     "ci:version": "changeset version && bun update",
     "ci:resolve-workspaces": "node scripts/resolve-workspaces.mjs",

@@ -9,6 +9,7 @@ import {
   createPaymentRequiredHeaders,
   createSettlementHeaders,
   decodePayloadHeader,
+  findRequirementByAccepted,
   matchRoute,
   safeBase64Encode,
   settlePayment,
@@ -150,11 +151,23 @@ export const routeAwarePaymentMiddleware = (
       return c.json({ error: "Invalid payment payload" });
     }
 
+    const selectedRequirement = findRequirementByAccepted(
+      requirements,
+      parsedPayload.accepted,
+    );
+    if (!selectedRequirement) {
+      c.status(400);
+      return c.json({
+        error: "Invalid payment payload",
+        message: "Accepted requirement is not configured for this route",
+      });
+    }
+
     const facilitatorUrl =
       matchedRoute.config.facilitatorUrl ??
       resolveFacilitatorUrlFromRequirement(
         matchedRoute.config,
-        primaryRequirement,
+        selectedRequirement,
       );
 
     if (!facilitatorUrl) {
@@ -167,7 +180,7 @@ export const routeAwarePaymentMiddleware = (
 
     const verifyResult: VerifyResponse = await verifyPayment(
       parsedPayload,
-      primaryRequirement,
+      selectedRequirement,
       { url: facilitatorUrl },
     );
 
@@ -198,7 +211,7 @@ export const routeAwarePaymentMiddleware = (
 
     const settleResult: X402SettlementResponse = await settlePayment(
       parsedPayload,
-      primaryRequirement,
+      selectedRequirement,
       { url: facilitatorUrl },
     );
 

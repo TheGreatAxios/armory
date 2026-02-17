@@ -79,10 +79,12 @@ const client = createX402Client({
 ```
 
 `parsePaymentRequired` returns `accepts[]` (x402 v2 challenge options). Clients select from this list.
+`hooks` are lifecycle callbacks. `extensions` are protocol payload fields. Hooks can drive selection and payload behavior, but they are not extensions.
 
 ## Features
 
 - **Auto 402 Handling**: Automatically intercepts and pays for 402 responses
+- **Detailed Verification Errors**: 402 retry failures include server details (for example `insufficient_funds`)
 - **EIP-3009 Signing**: Full support for EIP-3009 TransferWithAuthorization
 - **Multi-Network**: Ethereum, Base, SKALE support
 - **Multi-Token**: USDC, EURC, USDT, WBTC, WETH, SKL
