@@ -1,0 +1,12 @@
+---
+title: Chain Preference Hook
+description: Prefer specific networks when multiple payment options are available
+---
+
+```typescript
+import { PaymentPreference } from '@armory-sh/client-hooks';
+
+const hook = PaymentPreference.chain(['base', 'ethereum', 'skale-base']);
+```
+
+Use this hook first when you want deterministic network preference.

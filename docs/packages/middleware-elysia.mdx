@@ -3,11 +3,22 @@ description: Payment middleware for Elysia
 title: "@armory-sh/middleware-elysia"
 ---
 
+
 Accept crypto payments in your Elysia API with a single middleware plugin.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-elysia
+
+# yarn
+yarn add @armory-sh/middleware-elysia
+
+# pnpm
+pnpm add @armory-sh/middleware-elysia
+
+# bun
 bun add @armory-sh/middleware-elysia
 ```
 
@@ -25,8 +36,7 @@ const app = new Elysia()
       expiry: Date.now() + 3600 * 1000,
       chainId: 'eip155:8453',
       assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-    },
-    facilitatorUrl: 'https://facilitator.armory.sh'
+    }
   }))
   .get('/api/protected', ({ store }) => {
     return { message: `Hello ${store.payment.payerAddress}!` };
@@ -63,23 +73,9 @@ The middleware plugin:
 }
 ```
 
-### Facilitator
-
-For production use, specify a facilitator:
-
-```typescript
-{
-  facilitatorUrl: 'https://facilitator.armory.sh'
-}
-```
-
 ### Verification Options
 
-```typescript
-{
-  facilitatorUrl: string  // Required for payment verification
-}
-```
+Provide your verification backend configuration in middleware options for production deployments.
 
 ---
 
@@ -192,4 +188,3 @@ Payment signature or amount was invalid.
 <Note>
 Elysia's store is shared across all middleware and routes. Payment info will be available in any route handler after the middleware runs.
 </Note>
-

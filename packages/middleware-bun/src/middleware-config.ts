@@ -166,12 +166,18 @@ export const resolveMiddlewareConfig = (
         tokenSymbol,
         "",
       );
+      const selectedFacilitator =
+        facilitatorPricing.find((f) => f.pricing)?.url ??
+        facilitatorPricing[0]?.url;
+      const selectedPricing = selectedFacilitator
+        ? findPricingConfig(pricing, networkName, tokenSymbol, selectedFacilitator)
+        : defaultPricing;
 
       return {
         ...c,
-        amount: defaultPricing?.amount ?? c.amount,
-        facilitatorUrl: facilitatorPricing[0]?.url,
-        pricing: defaultPricing,
+        amount: selectedPricing?.amount ?? defaultPricing?.amount ?? c.amount,
+        facilitatorUrl: selectedFacilitator,
+        pricing: selectedPricing ?? defaultPricing,
       };
     },
   );
@@ -214,6 +220,9 @@ export const getRequirements = (
       message: `No configuration found for network "${network}" with token "${token}"`,
     } as ValidationError;
   }
+  const matchingFacilitator =
+    matchingConfig.facilitators.find((f) => f.url === matchingConfig.facilitatorUrl) ??
+    matchingConfig.facilitators[0];
 
   return createPaymentRequirements({
     payTo: matchingConfig.payTo,
@@ -221,7 +230,12 @@ export const getRequirements = (
       normalizeNetworkName(matchingConfig.network.config.name),
     ),
     amount: matchingConfig.amount,
-    facilitator: config.facilitators[0],
+    facilitator: matchingFacilitator
+      ? {
+          url: matchingFacilitator.url,
+          headers: matchingFacilitator.input.headers,
+        }
+      : config.facilitators[0],
   });
 };
 

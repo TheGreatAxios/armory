@@ -4,362 +4,2571 @@ title: Changelog
 rss: true
 ---
 
-<Update label="0.2.25" description="February 2026" tags={["@armory-sh/base", "Clients", "Middleware", "extensions", "cli"]}>
+Subscribe via RSS: `/changelog/rss.xml`.
 
-**@armory-sh/base** — `0.2.25`
-- Bug Fixes
+<Update label="@armory-sh/base" description="Unreleased" tags={["next"]}>
 
-**@armory-sh/extensions** — `0.1.6`
-- Bug Fixes
-- @armory-sh/base@0.2.25
+### Patch Changes
 
-**armory-cli** — `0.3.5`
-- Bug Fixes
-- @armory-sh/extensions@0.1.6
-- @armory-sh/base@0.2.25
+- Deterministic facilitator routing precedence across network/token combinations:
 
-**Clients** (viem/ethers/web3) — `0.2.24`
-- Bug Fixes
-- @armory-sh/extensions@0.1.6
-- @armory-sh/base@0.2.25
+  - `facilitatorUrlByToken[network][token]`
+  - `facilitatorUrlByChain[network]`
+  - `facilitatorUrl`
 
-**Middleware** — Express `0.4.12` | Others `0.3.23`/`0.3.25` | Express-v4/Next `0.1.6`
-- Bug Fixes
-- @armory-sh/base@0.2.25
+- Fixed middleware token-map resolution bug that could select the wrong facilitator URL on shared chains.
+- Added fail-open extension capability filtering for challenge headers: unsupported extension keys are automatically omitted per facilitator `/supported` response (with cache).
+- Added facilitator-aware pricing selection support for middleware config resolvers (`network + token + facilitator` before fallback tiers).
+- Added regression coverage for facilitator precedence and extension capability filtering.
 
 </Update>
 
-<Update label="0.2.24" description="February 2026" tags={["@armory-sh/base", "Clients", "Middleware", "extensions", "cli"]}>
+<Update label="@armory-sh/base" description="Release" tags={["0.2.28"]}>
 
-**@armory-sh/base** — `0.2.24`
-- Enhanced package documentation and README guides across all packages
-- Migrated changelog to centralized docs system
+### Patch Changes
 
-**@armory-sh/extensions** — `0.1.5`
-- Enhanced package documentation and README guides across all packages
-- @armory-sh/base@0.2.24
+- 993834f: Fix v2 Headers
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
 
-**armory-cli** — `0.3.4`
-- Enhanced package documentation and README guides across all packages
-- @armory-sh/extensions@0.1.5
-- @armory-sh/base@0.2.24
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
 
-**Clients** (viem/ethers/web3) — `0.2.23`
-- Enhanced package documentation and README guides across all packages
-- @armory-sh/extensions@0.1.5
-- @armory-sh/base@0.2.24
-
-**Middleware** — Express `0.4.11` | Others `0.3.22`/`0.3.24` | Express-v4/Next `0.1.5`
-- Enhanced package documentation and README guides across all packages
-- @armory-sh/base@0.2.24
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
 
 </Update>
 
-<Update label="0.2.23" description="February 2025" tags={["@armory-sh/base", "Clients", "Middleware", "extensions", "cli"]}>
+<Update label="@armory-sh/base" description="Release" tags={["0.2.25"]}>
 
-**@armory-sh/base** — `0.2.23`
-- Fix USDC Names
-- Fix Dependency Resolution
-- Fix Nonce Type
-- Fixing Amount
+### Patch Changes
 
-**@armory-sh/extensions** — `0.1.4`
-- @armory-sh/base@0.2.23
-
-**armory-cli** — `0.3.3`
-- @armory-sh/extensions@0.1.4
-- @armory-sh/base@0.2.23
-
-**Clients** (viem/ethers/web3) — `0.2.22`
-- @armory-sh/extensions@0.1.4
-- @armory-sh/base@0.2.23
-
-**Middleware** — Express `0.4.10` | Others `0.4.10` | Express-v4/Next `0.2.23`
-- @armory-sh/base@0.2.23
+- 281eeb8: Fix Versions
 
 </Update>
 
-<Update label="0.2.22" description="February 2025" tags={["@armory-sh/base", "Clients", "Middleware", "extensions", "cli"]}>
+<Update label="@armory-sh/base" description="Release" tags={["0.2.24"]}>
 
-**@armory-sh/base** — `0.2.22`
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.23"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.22"]}>
+
+### Patch Changes
+
 - Fix Amount
 
-**@armory-sh/extensions** — `0.1.3`
-- @armory-sh/base@0.2.22
+</Update>
 
-**armory-cli** — `0.3.2`
-- @armory-sh/extensions@0.1.3
-- @armory-sh/base@0.2.22
+<Update label="@armory-sh/base" description="Release" tags={["0.2.21"]}>
 
-**Clients** (viem/ethers/web3) — `0.2.21`
-- @armory-sh/extensions@0.1.3
-- @armory-sh/base@0.2.22
+### Patch Changes
 
-**Middleware** — Express `0.4.9` | Others `0.4.9` | Express-v4/Next `0.2.22`
-- @armory-sh/base@0.2.22
+- Clenaup Flows
 
 </Update>
 
-<Update label="0.2.21" description="February 2025" tags={["@armory-sh/base", "Clients", "Middleware", "extensions", "cli"]}>
+<Update label="@armory-sh/base" description="Release" tags={["0.2.20"]}>
 
-**@armory-sh/base** — `0.2.21`
-- Cleanup Flows
+### Patch Changes
 
-**@armory-sh/extensions** — `0.1.2`
-- @armory-sh/base@0.2.21
-
-**armory-cli** — `0.3.1`
-- @armory-sh/extensions@0.1.2
-- @armory-sh/base@0.2.21
-
-**Clients** (viem/ethers/web3) — `0.2.20`
-- @armory-sh/extensions@0.1.2
-- @armory-sh/base@0.2.21
-
-**Middleware** — Express `0.4.8` | Others `0.4.8` | Express-v4/Next `0.2.21`
-- @armory-sh/base@0.2.21
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
 
 </Update>
 
-<Update label="0.2.20" description="February 2025" tags={["@armory-sh/base", "Clients", "Middleware", "extensions", "cli"]}>
+<Update label="@armory-sh/base" description="Release" tags={["0.2.19"]}>
 
-**@armory-sh/base** — `0.2.20`
-- Next.js Middleware, Extensions Package, Client Robustness, Route Filtering Added
+### Patch Changes
 
-**@armory-sh/extensions** — `0.1.1`
-- Next.js Middleware, Extensions Package, Client Robustness, Route Filtering Added
-- @armory-sh/base@0.2.20
-
-**armory-cli** — `0.2.11`
-- Next.js Middleware, Extensions Package, Client Robustness, Route Filtering Added
-
-**Clients** (viem/ethers/web3) — `0.2.19`
-- @armory-sh/extensions@0.1.1
-- @armory-sh/base@0.2.20
-
-**Middleware** — Express `0.4.7` | Others `0.4.7` | Express-v4/Next `0.2.20`
-- @armory-sh/base@0.2.20
-
-</Update>
-
-<Update label="0.2.19" description="January 2025" tags={["@armory-sh/base", "Clients", "Middleware", "cli"]}>
-
-**@armory-sh/base** — `0.2.19`
 - Add Simple Middleware Back
 
-**armory-cli** — `0.2.10`
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.18"]}>
+
+### Patch Changes
+
+- ALpah Test
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.17"]}>
+
+### Patch Changes
+
+- Test Link
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.16"]}>
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.15"]}>
+
+### Minor Changes
+
+- **Added**: Export token constants (`TOKENS`, `USDC_BASE`, `EURC_BASE`, etc.) from `@armory-sh/tokens` package
+- **Added**: Token helper functions (`getToken`, `getAllTokens`, `getTokensBySymbol`, `getUSDCTokens`, etc.)
+- Token constants are now available directly from `@armory-sh/base` for convenience
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.14"]}>
+
+### Patch Changes
+
+- v2 Only, Cleanup
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.13"]}>
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.12"]}>
+
+### Patch Changes
+
+- :wq!
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.11"]}>
+
+### Patch Changes
+
+- Automated release
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.10"]}>
+
+### Patch Changes
+
+- 0b7c70b: Automated release
+- 77ddc6c: Automated release
+- 0e32676: Automated release
+- Automated release
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.9"]}>
+
+### Patch Changes
+
+- Automated release
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.8"]}>
+
+### Patch Changes
+
+- Automated release
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.7"]}>
+
+### Patch Changes
+
+- Automated release
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.6"]}>
+
+### Patch Changes
+
+- Automated release
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.5"]}>
+
+### Patch Changes
+
+- Automated release
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.4"]}>
+
+### Patch Changes
+
+- Cleanup
+
+</Update>
+
+<Update label="@armory-sh/base" description="Release" tags={["0.2.3"]}>
+
+### Patch Changes
+
+- Cleanup Code, Add Bespoke Middleware
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.3.8"]}>
+
+### Patch Changes
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+  - @armory-sh/extensions@0.1.9
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.3.5"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/extensions@0.1.6
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.3.4"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/extensions@0.1.5
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.3.3"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/extensions@0.1.4
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.3.2"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/extensions@0.1.3
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.3.1"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/extensions@0.1.2
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.2.11"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.2.10"]}>
+
+### Patch Changes
+
 - Add Simple Middleware Back
 
-**Clients** (viem/ethers/web3) — `0.2.18`
-- @armory-sh/base@0.2.19
+</Update>
 
-**Middleware** — Express `0.4.6` | Others `0.4.6` | Express-v4/Next `0.2.19`
-- @armory-sh/base@0.2.19
+<Update label="armory-cli" description="Release" tags={["0.2.9"]}>
+
+### Patch Changes
+
+- ALpah Test
 
 </Update>
 
-<Update label="0.2.18" description="January 2025" tags={["@armory-sh/base", "Clients", "Middleware", "cli"]}>
+<Update label="armory-cli" description="Release" tags={["0.2.8"]}>
 
-**@armory-sh/base** — `0.2.18`
-- Alpha Test
+### Patch Changes
 
-**armory-cli** — `0.2.9`
-- Alpha Test
-
-**Clients** (viem/ethers/web3) — `0.2.17`
-- @armory-sh/base@0.2.18
-
-**Middleware** — Express `0.4.5` | Others `0.4.5` | Express-v4/Next `0.2.18`
-- @armory-sh/base@0.2.18
-
-</Update>
-
-<Update label="0.2.17" description="January 2025" tags={["@armory-sh/base", "Clients", "Middleware", "cli"]}>
-
-**@armory-sh/base** — `0.2.17`
 - Test Link
 
-**armory-cli** — `0.2.8`
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.2.7"]}>
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.2.6"]}>
+
+### Patch Changes
+
+- v2 Only, Cleanup
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.2.5"]}>
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.2.4"]}>
+
+### Patch Changes
+
+- :wq!
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.2.3"]}>
+
+### Patch Changes
+
+- Cleanup
+
+</Update>
+
+<Update label="armory-cli" description="Release" tags={["0.2.2"]}>
+
+### Patch Changes
+
+- Cleanup Code, Add Bespoke Middleware
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.27"]}>
+
+### Patch Changes
+
+- 993834f: Fix v2 Headers
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
+
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.24"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.23"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.22"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.21"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.20"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.19"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.18"]}>
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.17"]}>
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.16"]}>
+
+### Patch Changes
+
 - Test Link
-
-**Clients** (viem/ethers/web3) — `0.2.16`
-- @armory-sh/base@0.2.17
-
-**Middleware** — Express `0.4.4` | Others `0.4.4` | Express-v4/Next `0.2.17`
-- @armory-sh/base@0.2.17
+- Updated dependencies
+  - @armory-sh/base@0.2.17
 
 </Update>
 
-<Update label="0.2.16" description="January 2025" tags={["@armory-sh/base", "Clients", "Middleware", "cli"]}>
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.15"]}>
 
-**@armory-sh/base** — `0.2.16`
+### Patch Changes
+
 - Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
 
-**armory-cli** — `0.2.7`
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.14"]}>
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.13"]}>
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.12"]}>
+
+### Patch Changes
+
+- :wq!
+- Updated dependencies
+  - @armory-sh/base@0.2.12
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.11"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.11
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.10"]}>
+
+### Patch Changes
+
+- 0b7c70b: Automated release
+- 77ddc6c: Automated release
+- 0e32676: Automated release
+- Updated dependencies [0b7c70b]
+- Updated dependencies [77ddc6c]
+- Updated dependencies [0e32676]
+- Updated dependencies
+  - @armory-sh/base@0.2.10
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.9"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.9
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.8"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.8
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.7"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.7
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.6"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.6
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.5"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.5
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.4"]}>
+
+### Patch Changes
+
+- Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.4
+
+</Update>
+
+<Update label="@armory-sh/client-ethers" description="Release" tags={["0.2.3"]}>
+
+### Patch Changes
+
+- Cleanup Code, Add Bespoke Middleware
+- Updated dependencies
+  - @armory-sh/base@0.2.3
+
+</Update>
+
+<Update label="@armory-sh/client-hooks" description="Release" tags={["0.1.1"]}>
+
+### Patch Changes
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.27"]}>
+
+### Patch Changes
+
+- 993834f: Fix v2 Headers
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
+
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+  - @armory-sh/extensions@0.1.9
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.24"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/extensions@0.1.6
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.23"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/extensions@0.1.5
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.22"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/extensions@0.1.4
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.21"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/extensions@0.1.3
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.20"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/extensions@0.1.2
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.19"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/extensions@0.1.1
+  - @armory-sh/base@0.2.20
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.18"]}>
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.17"]}>
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.16"]}>
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.15"]}>
+
+### Patch Changes
+
 - Completed E2E Flows w/ v2
-
-**Clients** (viem/ethers/web3) — `0.2.15`
-- @armory-sh/base@0.2.16
-
-**Middleware** — Express `0.4.3` | Others `0.4.3` | Express-v4/Next `0.2.16`
-- @armory-sh/base@0.2.16
+- Updated dependencies
+  - @armory-sh/base@0.2.16
 
 </Update>
 
-<Update label="0.2.15" description="January 2025" tags={["@armory-sh/base", "Clients", "Middleware"]}>
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.14"]}>
 
-**@armory-sh/base** — `0.2.15`
-- Export token constants (`TOKENS`, `USDC_BASE`, `EURC_BASE`, etc.) from `@armory-sh/tokens` package
-- Token helper functions (`getToken`, `getAllTokens`, `getTokensBySymbol`, `getUSDCTokens`, etc.)
-- Token constants available directly from `@armory-sh/base`
+### Patch Changes
 
-**Clients** (viem/ethers/web3) — `0.2.14`
-- @armory-sh/base@0.2.15
-
-**Middleware** — Express `0.4.2` | Others `0.4.2` | Express-v4/Next `0.2.15`
-- @armory-sh/base@0.2.15
-
-</Update>
-
-<Update label="0.2.14" description="January 2025" tags={["@armory-sh/base", "Clients", "Middleware", "cli"]}>
-
-**@armory-sh/base** — `0.2.14`
 - v2 Only, Cleanup
-
-**armory-cli** — `0.2.6`
-- v2 Only, Cleanup
-
-**Clients** (viem/ethers/web3) — `0.2.13`
-- @armory-sh/base@0.2.14
-
-**Middleware** — Express `0.4.2` | Others `0.4.2` | Express-v4/Next `0.2.14`
-- v2 Only, Cleanup
-- @armory-sh/base@0.2.14
+- Updated dependencies
+  - @armory-sh/base@0.2.14
 
 </Update>
 
-<Update label="0.2.13" description="January 2025" tags={["@armory-sh/base", "Clients", "Middleware", "cli"]}>
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.13"]}>
 
-**@armory-sh/base** — `0.2.13`
+### Patch Changes
+
 - Add Deep Test Suite, Enhance Compatibility
-
-**armory-cli** — `0.2.5`
-- Add Deep Test Suite, Enhance Compatibility
-
-**Clients** (viem/ethers/web3) — `0.2.12`
-- @armory-sh/base@0.2.13
-
-**Middleware** — Express `0.4.1` | Others `0.4.1` | Express-v4/Next `0.2.13`
-- Add Deep Test Suite, Enhance Compatibility
-- @armory-sh/base@0.2.13
+- Updated dependencies
+  - @armory-sh/base@0.2.13
 
 </Update>
 
-<Update label="0.2.12" description="January 2025" tags={["@armory-sh/base", "Clients", "cli"]}>
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.12"]}>
 
-**@armory-sh/base** — `0.2.12`
+### Patch Changes
+
 - :wq!
+- Updated dependencies
+  - @armory-sh/base@0.2.12
 
-**armory-cli** — `0.2.4`
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.11"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.11
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.10"]}>
+
+### Patch Changes
+
+- 0b7c70b: Automated release
+- 77ddc6c: Automated release
+- 0e32676: Automated release
+- Updated dependencies [0b7c70b]
+- Updated dependencies [77ddc6c]
+- Updated dependencies [0e32676]
+- Updated dependencies
+  - @armory-sh/base@0.2.10
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.9"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.9
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.8"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.8
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.7"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.7
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.6"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.6
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.5"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.5
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.4"]}>
+
+### Patch Changes
+
+- Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.4
+
+</Update>
+
+<Update label="@armory-sh/client-viem" description="Release" tags={["0.2.3"]}>
+
+### Patch Changes
+
+- Cleanup Code, Add Bespoke Middleware
+- Updated dependencies
+  - @armory-sh/base@0.2.3
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.24"]}>
+
+### Patch Changes
+
+- 993834f: Fix v2 Headers
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
+
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.21"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.20"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.19"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.18"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.17"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.16"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.15"]}>
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.14"]}>
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.13"]}>
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.12"]}>
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.11"]}>
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.10"]}>
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.9"]}>
+
+### Patch Changes
+
 - :wq!
-
-**Clients** (viem/ethers/web3) — `0.2.11`
-- @armory-sh/base@0.2.12
+- Updated dependencies
+  - @armory-sh/base@0.2.12
 
 </Update>
 
-<Update label="0.2.11" description="January 2025" tags={["@armory-sh/base", "Clients"]}>
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.8"]}>
 
-**@armory-sh/base** — `0.2.11`
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.11
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.7"]}>
+
+### Patch Changes
+
+- 0b7c70b: Automated release
+- 77ddc6c: Automated release
+- Updated dependencies [0b7c70b]
+- Updated dependencies [77ddc6c]
+- Updated dependencies [0e32676]
+- Updated dependencies
+  - @armory-sh/base@0.2.10
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.6"]}>
+
+### Patch Changes
+
 - Automated release
 
-**Clients** (viem/ethers/web3) — `0.2.10`
-- @armory-sh/base@0.2.11
-
 </Update>
 
-<Update label="0.2.10" description="January 2025" tags={["@armory-sh/base", "Clients"]}>
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.6"]}>
 
-**@armory-sh/base** — `0.2.10`
+### Patch Changes
+
 - Automated release
 
-**Clients** (viem/ethers/web3) — `0.2.9`
-- @armory-sh/base@0.2.10
-
 </Update>
 
-<Update label="0.2.9" description="January 2025" tags={["@armory-sh/base", "Clients"]}>
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.6"]}>
 
-**@armory-sh/base** — `0.2.9`
+### Patch Changes
+
 - Automated release
 
-**Clients** (viem/ethers/web3) — `0.2.8`
-- @armory-sh/base@0.2.9
-
 </Update>
 
-<Update label="0.2.8" description="January 2025" tags={["@armory-sh/base", "Clients"]}>
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.9"]}>
 
-**@armory-sh/base** — `0.2.8`
+### Patch Changes
+
 - Automated release
-
-**Clients** (viem/ethers/web3) — `0.2.7`
-- @armory-sh/base@0.2.8
+- Updated dependencies
+  - @armory-sh/base@0.2.9
 
 </Update>
 
-<Update label="0.2.7" description="January 2025" tags={["@armory-sh/base", "Clients"]}>
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.8"]}>
 
-**@armory-sh/base** — `0.2.7`
+### Patch Changes
+
 - Automated release
-
-**Clients** (viem/ethers/web3) — `0.2.6`
-- @armory-sh/base@0.2.7
+- Updated dependencies
+  - @armory-sh/base@0.2.8
 
 </Update>
 
-<Update label="0.2.6" description="January 2025" tags={["@armory-sh/base", "Clients"]}>
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.7"]}>
 
-**@armory-sh/base** — `0.2.6`
+### Patch Changes
+
 - Automated release
-
-**Clients** (viem/ethers/web3) — `0.2.5`
-- @armory-sh/base@0.2.6
+- Updated dependencies
+  - @armory-sh/base@0.2.7
 
 </Update>
 
-<Update label="0.2.5" description="January 2025" tags={["@armory-sh/base", "Clients"]}>
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.6"]}>
 
-**@armory-sh/base** — `0.2.5`
+### Patch Changes
+
 - Automated release
-
-**Clients** (viem/ethers/web3) — `0.2.4`
-- @armory-sh/base@0.2.5
+- Updated dependencies
+  - @armory-sh/base@0.2.6
 
 </Update>
 
-<Update label="0.2.4" description="January 2025" tags={["@armory-sh/base", "Clients", "cli"]}>
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.5"]}>
 
-**@armory-sh/base** — `0.2.4`
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.5
+
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.4"]}>
+
+### Patch Changes
+
 - Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.4
 
-**armory-cli** — `0.2.3`
+</Update>
+
+<Update label="@armory-sh/client-web3" description="Release" tags={["0.2.3"]}>
+
+### Patch Changes
+
+- Cleanup Code, Add Bespoke Middleware
+- Updated dependencies
+  - @armory-sh/base@0.2.3
+
+</Update>
+
+<Update label="@armory-sh/extensions" description="Release" tags={["0.1.9"]}>
+
+### Patch Changes
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+
+</Update>
+
+<Update label="@armory-sh/extensions" description="Release" tags={["0.1.6"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="@armory-sh/extensions" description="Release" tags={["0.1.5"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="@armory-sh/extensions" description="Release" tags={["0.1.4"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="@armory-sh/extensions" description="Release" tags={["0.1.3"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="@armory-sh/extensions" description="Release" tags={["0.1.2"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="@armory-sh/extensions" description="Release" tags={["0.1.1"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.26"]}>
+
+### Patch Changes
+
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
+
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.23"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.22"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.21"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.20"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.19"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.18"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.17"]}>
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.16"]}>
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.15"]}>
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.14"]}>
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.13"]}>
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.12"]}>
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.11"]}>
+
+### Patch Changes
+
+- Fix Structure
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.10"]}>
+
+### Patch Changes
+
+- d5977fa: Fix Compatiblity
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.9"]}>
+
+### Patch Changes
+
+- :wq!
+- Updated dependencies
+  - @armory-sh/base@0.2.12
+  - @armory-sh/facilitator@0.2.12
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.9"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.11
+  - @armory-sh/facilitator@0.2.11
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.8"]}>
+
+### Patch Changes
+
+- Updated dependencies [0b7c70b]
+- Updated dependencies [77ddc6c]
+- Updated dependencies [0e32676]
+- Updated dependencies
+  - @armory-sh/base@0.2.10
+  - @armory-sh/facilitator@0.2.10
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.7"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.9
+  - @armory-sh/facilitator@0.2.9
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.6"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.8
+  - @armory-sh/facilitator@0.2.8
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.5"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.7
+  - @armory-sh/facilitator@0.2.7
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.4"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.6
+  - @armory-sh/facilitator@0.2.6
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.3"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.5
+  - @armory-sh/facilitator@0.2.5
+
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.2"]}>
+
+### Patch Changes
+
 - Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.4
+  - @armory-sh/facilitator@0.2.4
 
-**Clients** (viem/ethers/web3) — `0.2.3`
-- @armory-sh/base@0.2.4
+</Update>
+
+<Update label="@armory-sh/middleware-bun" description="Release" tags={["0.3.1"]}>
+
+### Patch Changes
+
+- Cleanup Code, Add Bespoke Middleware
+- Updated dependencies
+  - @armory-sh/base@0.2.3
+  - @armory-sh/facilitator@0.2.3
 
 </Update>
 
-<Update label="0.2.3" description="January 2025" tags={["@armory-sh/base", "Clients", "cli"]}>
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.26"]}>
 
-**@armory-sh/base** — `0.2.3`
-- Cleanup Code, Add Bespoke Middleware
+### Patch Changes
 
-**armory-cli** — `0.2.2`
-- Cleanup Code, Add Bespoke Middleware
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
 
-**Clients** (viem/ethers/web3) — `0.2.2`
-- @armory-sh/base@0.2.3
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
 
 </Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.23"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.22"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.21"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.20"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.19"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.18"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.17"]}>
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.16"]}>
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.15"]}>
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.14"]}>
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.13"]}>
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.12"]}>
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.11"]}>
+
+### Patch Changes
+
+- Fix Structure
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.10"]}>
+
+### Patch Changes
+
+- d5977fa: Fix Compatiblity
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.9"]}>
+
+### Patch Changes
+
+- :wq!
+- Updated dependencies
+  - @armory-sh/base@0.2.12
+  - @armory-sh/facilitator@0.2.12
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.9"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.11
+  - @armory-sh/facilitator@0.2.11
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.8"]}>
+
+### Patch Changes
+
+- Updated dependencies [0b7c70b]
+- Updated dependencies [77ddc6c]
+- Updated dependencies [0e32676]
+- Updated dependencies
+  - @armory-sh/base@0.2.10
+  - @armory-sh/facilitator@0.2.10
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.7"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.9
+  - @armory-sh/facilitator@0.2.9
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.6"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.8
+  - @armory-sh/facilitator@0.2.8
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.5"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.7
+  - @armory-sh/facilitator@0.2.7
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.4"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.6
+  - @armory-sh/facilitator@0.2.6
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.3"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.5
+  - @armory-sh/facilitator@0.2.5
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.2"]}>
+
+### Patch Changes
+
+- Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.4
+  - @armory-sh/facilitator@0.2.4
+
+</Update>
+
+<Update label="@armory-sh/middleware-elysia" description="Release" tags={["0.3.1"]}>
+
+### Patch Changes
+
+- Cleanup Code, Add Bespoke Middleware
+- Updated dependencies
+  - @armory-sh/base@0.2.3
+  - @armory-sh/facilitator@0.2.3
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.1.10"]}>
+
+### Patch Changes
+
+- 3ba536a: Streamline Client, Multitoken Middleware
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.1.6"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.1.5"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.1.4"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.1.3"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.1.2"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.1.1"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.3.19"]}>
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.3.18"]}>
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.3.17"]}>
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.3.16"]}>
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.3.15"]}>
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
+</Update>
+
+<Update label="@armory-sh/middleware-express-v4" description="Release" tags={["0.3.14"]}>
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.16"]}>
+
+### Patch Changes
+
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
+
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.12"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.11"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.10"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.9"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.8"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.7"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.6"]}>
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.5"]}>
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.4"]}>
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.3"]}>
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.2"]}>
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
+</Update>
+
+<Update label="@armory-sh/middleware-express" description="Release" tags={["0.4.1"]}>
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.28"]}>
+
+### Patch Changes
+
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
+
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+  - @armory-sh/extensions@0.1.9
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.25"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/extensions@0.1.6
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.24"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/extensions@0.1.5
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.23"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/extensions@0.1.4
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.22"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/extensions@0.1.3
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.21"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/extensions@0.1.2
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.20"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/extensions@0.1.1
+  - @armory-sh/base@0.2.20
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.19"]}>
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.18"]}>
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.17"]}>
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.16"]}>
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.15"]}>
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.14"]}>
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.13"]}>
+
+### Patch Changes
+
+- Fix Structure
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.12"]}>
+
+### Patch Changes
+
+- d5977fa: Fix Compatiblity
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.11"]}>
+
+### Patch Changes
+
+- :wq!
+- Updated dependencies
+  - @armory-sh/base@0.2.12
+  - @armory-sh/facilitator@0.2.12
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.11"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.11
+  - @armory-sh/facilitator@0.2.11
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.10"]}>
+
+### Patch Changes
+
+- 0b7c70b: Automated release
+- 77ddc6c: Automated release
+- Updated dependencies [0b7c70b]
+- Updated dependencies [77ddc6c]
+- Updated dependencies [0e32676]
+- Updated dependencies
+  - @armory-sh/base@0.2.10
+  - @armory-sh/facilitator@0.2.10
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.9"]}>
+
+### Patch Changes
+
+- Automated release
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.8"]}>
+
+### Patch Changes
+
+- Automated release
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.7"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.9
+  - @armory-sh/facilitator@0.2.9
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.6"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.8
+  - @armory-sh/facilitator@0.2.8
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.5"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.7
+  - @armory-sh/facilitator@0.2.7
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.4"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.6
+  - @armory-sh/facilitator@0.2.6
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.3"]}>
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.5
+  - @armory-sh/facilitator@0.2.5
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.2"]}>
+
+### Patch Changes
+
+- Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.4
+  - @armory-sh/facilitator@0.2.4
+
+</Update>
+
+<Update label="@armory-sh/middleware-hono" description="Release" tags={["0.3.1"]}>
+
+### Patch Changes
+
+- Cleanup Code, Add Bespoke Middleware
+- Updated dependencies
+  - @armory-sh/base@0.2.3
+  - @armory-sh/facilitator@0.2.3
+
+</Update>
+
+<Update label="@armory-sh/middleware-next" description="Release" tags={["0.1.9"]}>
+
+### Patch Changes
+
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
+
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+
+</Update>
+
+<Update label="@armory-sh/middleware-next" description="Release" tags={["0.1.6"]}>
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/base@0.2.25
+
+</Update>
+
+<Update label="@armory-sh/middleware-next" description="Release" tags={["0.1.5"]}>
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/base@0.2.24
+
+</Update>
+
+<Update label="@armory-sh/middleware-next" description="Release" tags={["0.1.4"]}>
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/base@0.2.23
+
+</Update>
+
+<Update label="@armory-sh/middleware-next" description="Release" tags={["0.1.3"]}>
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/base@0.2.22
+
+</Update>
+
+<Update label="@armory-sh/middleware-next" description="Release" tags={["0.1.2"]}>
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/base@0.2.21
+
+</Update>
+
+<Update label="@armory-sh/middleware-next" description="Release" tags={["0.1.1"]}>
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/base@0.2.20
+
+</Update>
+

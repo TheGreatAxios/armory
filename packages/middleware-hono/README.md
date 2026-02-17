@@ -14,23 +14,46 @@ bun add @armory-sh/middleware-hono
 
 Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Accept payments from any x402-compatible client—Coinbase SDK, Armory SDK, or your own implementation.
 
-## Key Exports
+## API Reference
+
+### Middleware
 
 ```typescript
 import {
-  // Middleware
   paymentMiddleware,
   routeAwarePaymentMiddleware,
-
-  // Requirements
-  createPaymentRequirements,
 
   // Types
   type PaymentConfig,
   type RouteAwarePaymentConfig,
-  type HonoPaymentContext,
+  type AugmentedContext,
 } from '@armory-sh/middleware-hono';
 ```
+
+### Payment Requirements
+
+```typescript
+import {
+  createPaymentRequirements,
+
+  // Types
+  type ResolvedRequirementsConfig,
+} from '@armory-sh/middleware-hono';
+```
+
+### Extensions
+
+```typescript
+import {
+  buildExtensions,
+  extractExtension,
+
+  // Types
+  type ExtensionConfig,
+} from '@armory-sh/middleware-hono';
+```
+
+---
 
 ## Quick Start
 
@@ -168,6 +191,7 @@ interface RouteAwarePaymentConfig extends PaymentConfig {
 | Base Sepolia | 84532 |
 | SKALE Base | 1187947933 |
 | SKALE Base Sepolia | 324705682 |
+| Ethereum Sepolia | 11155111 |
 
 ## License
 

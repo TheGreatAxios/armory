@@ -1,0 +1,44 @@
+---
+title: Sign-In-With-X
+description: Add SIWX authentication to x402 payment flows
+---
+
+## Client Hook
+
+```typescript
+import { createSIWxHook } from '@armory-sh/extensions';
+
+const hook = createSIWxHook({
+  domain: 'api.example.com',
+  statement: 'Sign in to access protected routes',
+  expirationSeconds: 3600
+});
+```
+
+## Server Declaration
+
+```typescript
+import { declareSIWxExtension } from '@armory-sh/extensions';
+
+const extension = declareSIWxExtension({
+  domain: 'api.example.com',
+  statement: 'Sign in to access this API',
+  network: 'eip155:8453',
+  expirationSeconds: 3600
+});
+```
+
+## Validation
+
+```typescript
+import { parseSIWxHeader, validateSIWxMessage, verifySIWxSignature } from '@armory-sh/extensions';
+
+const payload = parseSIWxHeader(header);
+const messageResult = validateSIWxMessage(payload, 'https://api.example.com/data');
+
+if (messageResult.valid) {
+  const signatureResult = await verifySIWxSignature(payload, {
+    evmVerifier: async () => true
+  });
+}
+```

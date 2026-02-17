@@ -1,0 +1,16 @@
+---
+title: Combine Hooks
+description: Compose multiple hooks and hook arrays into one list
+---
+
+```typescript
+import { combineHooks, Logger, PaymentPreference } from '@armory-sh/client-hooks';
+
+const hooks = combineHooks(
+  PaymentPreference.chain(['base']),
+  [PaymentPreference.token(['USDC'])],
+  PaymentPreference.cheapest(),
+  Logger.console(),
+  null
+);
+```

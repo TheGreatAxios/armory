@@ -1,0 +1,70 @@
+---
+title: Key Concepts
+description: Core x402 v2 concepts and how Armory applies them
+---
+
+This page explains the core x402 v2 model and how Armory maps it into practical server and client libraries.
+
+## What Armory Is
+
+Armory is a TypeScript toolkit for implementing x402 v2 payments over HTTP.
+
+- Server middleware packages enforce payment requirements and verify payloads.
+- Client packages create and send payment payloads from wallets.
+- Shared protocol logic and types live in `@armory-sh/base`.
+
+## x402 v2 in One Flow
+
+1. Client requests a protected resource.
+2. Server returns `402` with `PAYMENT-REQUIRED` and an `accepts[]` list.
+3. Client selects one requirement, signs payment authorization, and retries with `PAYMENT-SIGNATURE`.
+4. Server verifies and settles, then returns data with `PAYMENT-RESPONSE`.
+
+## Three Actors
+
+- Resource server: protects routes and requires payment.
+- Client: picks a requirement and signs authorization with a wallet.
+- Facilitator: verifies and settles payments.
+
+## Core Objects
+
+- `PaymentRequirements`: server-offered requirement options in `accepts[]`.
+- `PaymentPayload`: client-signed payment payload tied to one accepted requirement.
+- `SettlementResponse`: settlement result returned from verification/settlement.
+- `VerifyResponse`: verification result from facilitator.
+
+## HTTP Header Contract
+
+- `PAYMENT-REQUIRED`: challenge with `accepts[]` and resource metadata.
+- `PAYMENT-SIGNATURE`: client payment payload.
+- `PAYMENT-RESPONSE`: settlement response.
+
+## Versioning Rule
+
+Armory is v2-only. Requests and responses should use x402 v2 fields and wire format.
+
+## Scheme and Signing
+
+For EVM exact payments, Armory uses EIP-3009 (`transferWithAuthorization`) and EIP-712 signatures.
+
+- Payer signs authorization off-chain.
+- Settlement executes token transfer on-chain.
+- Nonce and validity windows prevent replay.
+
+## Identifiers You Will See
+
+- Network: CAIP-2 format, for example `eip155:8453`.
+- Token/asset: token contract or CAIP asset form.
+- Chain/token inputs can often be provided as names, IDs, or CAIP forms.
+
+## How to Apply This in Armory
+
+- Accept payments: start with a middleware package under `/accept-payments/*`.
+- Make payments: start with a client package under `/make-payments/*`.
+- Extend behavior: use extension docs and client hooks for selection/logging.
+
+## References
+
+- [x402 Spec v2](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md)
+- [HTTP Transport v2](https://github.com/coinbase/x402/tree/main/specs/transports-v2/http.md)
+- [A2A Transport v2](https://github.com/coinbase/x402/tree/main/specs/transports-v2/a2a.md)

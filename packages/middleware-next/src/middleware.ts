@@ -10,6 +10,7 @@ import {
   createSettlementHeaders,
   decodePayloadHeader,
   findRequirementByAccepted,
+  getSupported,
   isValidationError,
   PAYMENT_SIGNATURE_HEADER,
   registerToken,
@@ -24,6 +25,10 @@ import type { x402ResourceServer } from "./resource-server";
 
 type NetworkId = string | number;
 type TokenId = string;
+type CapabilityCacheEntry = { expiresAt: number; keys: Set<string> };
+
+const extensionCapabilityCache = new Map<string, CapabilityCacheEntry>();
+const EXTENSION_CAPABILITY_TTL_MS = 5 * 60 * 1000;
 
 export interface PaymentConfig {
   payTo?: string;
@@ -37,6 +42,7 @@ export interface PaymentConfig {
   facilitatorUrl?: string;
   facilitatorUrlByChain?: Record<string, string>;
   facilitatorUrlByToken?: Record<string, Record<string, string>>;
+  extensions?: Record<string, unknown>;
 }
 
 export interface ResolvedRequirementsConfig {
@@ -65,23 +71,19 @@ export function resolveFacilitatorUrlFromRequirement(
     )) {
       const resolvedChain = resolveNetwork(chainKey);
       if (
-        !isValidationError(resolvedChain) &&
-        resolvedChain.config.chainId === chainId
+        isValidationError(resolvedChain) ||
+        resolvedChain.config.chainId !== chainId
       ) {
-        for (const [, url] of Object.entries(tokenMap)) {
-          const network = resolveNetwork(chainKey);
-          if (!isValidationError(network)) {
-            for (const tokenKey of Object.keys(tokenMap)) {
-              const resolvedToken = resolveToken(tokenKey, network);
-              if (
-                !isValidationError(resolvedToken) &&
-                resolvedToken.config.contractAddress.toLowerCase() ===
-                  assetAddress
-              ) {
-                return url;
-              }
-            }
-          }
+        continue;
+      }
+
+      for (const [tokenKey, url] of Object.entries(tokenMap)) {
+        const resolvedToken = resolveToken(tokenKey, resolvedChain);
+        if (
+          !isValidationError(resolvedToken) &&
+          resolvedToken.config.contractAddress.toLowerCase() === assetAddress
+        ) {
+          return url;
         }
       }
     }
@@ -130,8 +132,65 @@ export function createPaymentRequirements(
   return createBasePaymentRequirements(config as PaymentConfig & { payTo: string });
 }
 
+async function resolvePaymentRequiredExtensions(
+  config: PaymentConfig,
+  requirements: PaymentRequirementsV2[],
+): Promise<Record<string, unknown>> {
+  if (!config.extensions) {
+    return {};
+  }
+
+  let filtered: Record<string, unknown> = { ...config.extensions };
+  for (const requirement of requirements) {
+    const facilitatorUrl = resolveFacilitatorUrlFromRequirement(config, requirement);
+    if (!facilitatorUrl) {
+      continue;
+    }
+
+    const cacheKey = `${facilitatorUrl}|${requirement.network.toLowerCase()}`;
+    const now = Date.now();
+    let keys = extensionCapabilityCache.get(cacheKey);
+    if (!keys || keys.expiresAt <= now) {
+      try {
+        const supported = await getSupported({ url: facilitatorUrl });
+        const nextKeys = new Set<string>();
+        for (const kind of supported.kinds) {
+          if (kind.network.toLowerCase() !== requirement.network.toLowerCase()) {
+            continue;
+          }
+          if (kind.extra && typeof kind.extra === "object") {
+            for (const key of Object.keys(kind.extra)) {
+              nextKeys.add(key);
+            }
+          }
+        }
+        keys = { expiresAt: now + EXTENSION_CAPABILITY_TTL_MS, keys: nextKeys };
+      } catch {
+        keys = { expiresAt: now + EXTENSION_CAPABILITY_TTL_MS, keys: new Set() };
+      }
+      extensionCapabilityCache.set(cacheKey, keys);
+    }
+
+    filtered = Object.fromEntries(
+      Object.entries(filtered).filter(([key]) => keys.keys.has(key)),
+    );
+    if (Object.keys(filtered).length === 0) {
+      return {};
+    }
+  }
+
+  return filtered;
+}
+
 export function paymentMiddleware(config: PaymentConfig) {
   const { requirements, error } = createPaymentRequirements(config);
+  const resolvePaymentRequiredHeaders = async () =>
+    createPaymentRequiredHeaders(requirements, {
+      extensions: await resolvePaymentRequiredExtensions(
+        config,
+        requirements,
+      ),
+    });
 
   return async (request: NextRequest): Promise<NextResponse> => {
     if (error) {
@@ -158,11 +217,12 @@ export function paymentMiddleware(config: PaymentConfig) {
     const paymentHeader = request.headers.get(PAYMENT_SIGNATURE_HEADER);
 
     if (!paymentHeader) {
+      const requiredHeaders = await resolvePaymentRequiredHeaders();
       return NextResponse.json(
         { error: "Payment required", accepts: requirements },
         {
           status: 402,
-          headers: createPaymentRequiredHeaders(requirements),
+          headers: requiredHeaders,
         },
       );
     }
@@ -215,6 +275,7 @@ export function paymentMiddleware(config: PaymentConfig) {
     );
 
     if (!verifyResult.isValid) {
+      const requiredHeaders = await resolvePaymentRequiredHeaders();
       return NextResponse.json(
         {
           error: "Payment verification failed",
@@ -222,7 +283,7 @@ export function paymentMiddleware(config: PaymentConfig) {
         },
         {
           status: 402,
-          headers: createPaymentRequiredHeaders(requirements),
+          headers: requiredHeaders,
         },
       );
     }

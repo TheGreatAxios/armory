@@ -1,0 +1,52 @@
+---
+title: Create
+description: Scaffold server and client payment projects
+---
+
+`armory create` scaffolds starter projects for payment-enabled servers and clients.
+
+## Syntax
+
+```bash
+armory create <template> <name>
+```
+
+## Templates
+
+Server templates:
+- `bun-server`
+- `elysia-server`
+- `express-server`
+- `hono-server`
+- `next-server`
+
+Client templates:
+- `viem-client`
+- `ethers-client`
+- `web3-client`
+
+## Example: Bun Merchant + Viem Client
+
+```bash
+armory create bun-server merchant-api
+cd merchant-api
+bun install
+bun run dev
+
+cd ..
+armory create viem-client buyer-app
+cd buyer-app
+bun install
+PRIVATE_KEY=0xYOUR_PRIVATE_KEY bun run dev
+```
+
+## Example: Next.js Protected Routes
+
+```bash
+armory create next-server paywalled-next
+cd paywalled-next
+bun install
+bun run dev
+```
+
+After scaffold, configure `payTo`, token, and chain in the generated middleware config.

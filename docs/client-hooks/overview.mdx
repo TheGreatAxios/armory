@@ -1,0 +1,31 @@
+---
+title: Armory Hooks Overview
+description: Understand Armory's client hook lifecycle and execution model
+---
+
+Armory hooks are lifecycle callbacks that run during payment execution.
+
+Hooks are not x402 protocol fields. They are local runtime behavior for selection, mutation, logging, and error handling.
+
+## Lifecycle
+
+1. `onPaymentRequired`
+2. `selectRequirement`
+3. `beforeSignPayment`
+4. `afterPaymentResponse`
+5. `onError`
+
+## Execution Model
+
+- Hooks execute in array order
+- Selection narrows progressively as hooks run
+- Hook failures are fail-closed by default
+
+## Next Pages
+
+- [Chain Preference](/client-hooks/chain)
+- [Token Preference](/client-hooks/token)
+- [Cheapest Selection](/client-hooks/cheapest)
+- [Logger](/client-hooks/logger)
+- [combineHooks](/client-hooks/combine)
+- [Custom Hooks](/client-hooks/custom-hooks)

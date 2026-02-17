@@ -3,11 +3,22 @@ description: Payment middleware for Hono
 title: "@armory-sh/middleware-hono"
 ---
 
+
 Accept crypto payments in your Hono API with a single middleware function.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-hono
+
+# yarn
+yarn add @armory-sh/middleware-hono
+
+# pnpm
+pnpm add @armory-sh/middleware-hono
+
+# bun
 bun add @armory-sh/middleware-hono
 ```
 
@@ -64,7 +75,6 @@ acceptPaymentsViaArmory({
   amount: string | bigint,                 // Amount to charge
   token?: string,                          // Token symbol (default: USDC)
   network?: string,                        // Network name (default: base)
-  facilitator?: string | FacilitatorConfig, // Facilitator URL/config
   defaultVersion?: 1 | 2                   // Payment version (default: 2)
 }
 ```
@@ -141,11 +151,7 @@ app.use('/api/*', acceptPaymentsViaArmory({
   amount: '1.0',
   accept: {
     networks: ['base', 'ethereum', 'polygon'],
-    tokens: ['usdc', 'usdt'],
-    facilitators: [
-      { url: 'https://facilitator1.com' },
-      { url: 'https://facilitator2.com' }
-    ]
+    tokens: ['usdc', 'usdt']
   }
 }));
 ```
@@ -165,4 +171,3 @@ Hono middleware applies to routes that match the path pattern. Use `/api/*` to p
 <Warning>
 The middleware will return 402 before your handler runs if payment is missing or invalid. Only verified requests reach your route handlers.
 </Warning>
-

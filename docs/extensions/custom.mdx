@@ -1,0 +1,29 @@
+---
+title: Custom Extensions
+description: Build your own extension behavior with custom hooks
+---
+
+```typescript
+import { createCustomHook } from '@armory-sh/extensions';
+
+const customHook = createCustomHook({
+  key: 'my-extension',
+  handler: async (context) => {
+    if (!context.payload) {
+      return;
+    }
+
+    context.payload.extensions = {
+      ...(context.payload.extensions ?? {}),
+      'my-extension': { enabled: true }
+    };
+  },
+  priority: 75
+});
+```
+
+## Best Practices
+
+- Add extension data only if the server requested it
+- Keep extension payloads small and deterministic
+- Version extension data when schema changes

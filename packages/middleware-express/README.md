@@ -69,6 +69,7 @@ app.listen(3000)
 | Base Sepolia | 84532 |
 | SKALE Base | 1187947933 |
 | SKALE Base Sepolia | 324705682 |
+| Ethereum Sepolia | 11155111 |
 
 ## License
 

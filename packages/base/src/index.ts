@@ -116,6 +116,12 @@ export {
   settlePayment,
   verifyPayment,
 } from "./payment-client";
+export {
+  clearFacilitatorCapabilityCache,
+  filterExtensionsForFacilitator,
+  filterExtensionsForFacilitators,
+  filterExtensionsForRequirements,
+} from "./facilitator-capabilities";
 export type {
   PaymentConfig,
   ResolvedRequirementsConfig,
@@ -124,6 +130,7 @@ export {
   createPaymentRequirements,
   findRequirementByAccepted,
   findRequirementByNetwork,
+  resolveFacilitatorUrlFromRequirement,
 } from "./payment-requirements";
 // ============================================
 // Protocol utilities (shared across all client packages)

@@ -36,6 +36,12 @@ export interface ResolvedRequirementsConfig {
   error?: ValidationError;
 }
 
+export interface FacilitatorRoutingConfig {
+  facilitatorUrl?: string;
+  facilitatorUrlByChain?: Record<string, string>;
+  facilitatorUrlByToken?: Record<string, Record<string, string>>;
+}
+
 const DEFAULT_NETWORKS: NetworkId[] = [
   "ethereum",
   "base",
@@ -119,6 +125,54 @@ function resolveFacilitatorUrl(
           ) {
             return url;
           }
+        }
+      }
+    }
+  }
+
+  if (config.facilitatorUrlByChain) {
+    for (const [chainKey, url] of Object.entries(
+      config.facilitatorUrlByChain,
+    )) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (
+        !isValidationError(resolvedChain) &&
+        resolvedChain.config.chainId === chainId
+      ) {
+        return url;
+      }
+    }
+  }
+
+  return config.facilitatorUrl;
+}
+
+export function resolveFacilitatorUrlFromRequirement(
+  config: FacilitatorRoutingConfig,
+  requirement: Pick<PaymentRequirementsV2, "network" | "asset">,
+): string | undefined {
+  const chainId = parseInt(requirement.network.split(":")[1] || "0", 10);
+  const assetAddress = requirement.asset.toLowerCase();
+
+  if (config.facilitatorUrlByToken) {
+    for (const [chainKey, tokenMap] of Object.entries(
+      config.facilitatorUrlByToken,
+    )) {
+      const resolvedChain = resolveNetwork(chainKey);
+      if (
+        isValidationError(resolvedChain) ||
+        resolvedChain.config.chainId !== chainId
+      ) {
+        continue;
+      }
+
+      for (const [tokenKey, url] of Object.entries(tokenMap)) {
+        const resolvedToken = resolveToken(tokenKey, resolvedChain);
+        if (
+          !isValidationError(resolvedToken) &&
+          resolvedToken.config.contractAddress.toLowerCase() === assetAddress
+        ) {
+          return url;
         }
       }
     }

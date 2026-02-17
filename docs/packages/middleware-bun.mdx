@@ -3,11 +3,22 @@ description: Payment middleware for Bun servers
 title: "@armory-sh/middleware-bun"
 ---
 
+
 Accept crypto payments in your Bun HTTP server with a single function call.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-bun
+
+# yarn
+yarn add @armory-sh/middleware-bun
+
+# pnpm
+pnpm add @armory-sh/middleware-bun
+
+# bun
 bun add @armory-sh/middleware-bun
 ```
 
@@ -77,19 +88,9 @@ const middleware = createBunMiddleware({
 | `settle` | Verify and settle on-chain before responding |
 | `async` | Return immediately, settle in background |
 
-### Facilitator
+### Verification Backend
 
-For production use, specify a facilitator for verification:
-
-```typescript
-const middleware = createBunMiddleware({
-  payTo: '0x...',
-  amount: '1.0',
-  facilitator: {
-    url: 'https://facilitator.armory.sh'
-  }
-});
-```
+Use your deployed verification backend in production.
 
 ---
 
@@ -159,4 +160,3 @@ The `amount` can be specified as a human-readable string like `"1.0"` for 1 toke
 <Warning>
 Always validate the `payTo` address matches your wallet. The middleware does not check if the address is valid or belongs to you.
 </Warning>
-

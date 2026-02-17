@@ -1,0 +1,13 @@
+---
+title: Logger Hook
+description: Emit payment lifecycle logs during client execution
+---
+
+```typescript
+import { Logger } from '@armory-sh/client-hooks';
+
+const hook = Logger.console({
+  prefix: '[x402]',
+  enabled: true
+});
+```

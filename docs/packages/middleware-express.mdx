@@ -3,24 +3,32 @@ description: Payment middleware for Express
 title: "@armory-sh/middleware-express"
 ---
 
+
 Accept crypto payments in your Express API with a single middleware function.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-express
+
+# yarn
+yarn add @armory-sh/middleware-express
+
+# pnpm
+pnpm add @armory-sh/middleware-express
+
+# bun
 bun add @armory-sh/middleware-express
 ```
 
 ## Quick Start
 
-Use the version of the Express package that matches your framework:
+This page covers Express v5+ with `@armory-sh/middleware-express`.
 
-- **Express v5+:** `@armory-sh/middleware-express` (shown in the first tab)
-- **Express v4:** `@armory-sh/middleware-express-v4` (shown in the second tab)
+For Express v4, use the separate package page: [`@armory-sh/middleware-express-v4`](/packages/middleware-express-v4).
 
-<CodeGroup>
-
-```typescript Express v5
+```typescript
 import express from 'express';
 import { paymentMiddleware } from '@armory-sh/middleware-express';
 
@@ -33,8 +41,7 @@ app.use(paymentMiddleware({
     expiry: Date.now() + 3600 * 1000,
     chainId: 'eip155:8453',
     assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913'
-  },
-  facilitatorUrl: 'https://facilitator.armory.sh'
+  }
 }));
 
 app.get('/api/protected', (req, res) => {
@@ -45,36 +52,6 @@ app.get('/api/protected', (req, res) => {
 
 app.listen(3000);
 ```
-
-```typescript Express v4
-import express from 'express';
-import { paymentMiddleware } from '@armory-sh/middleware-express-v4';
-
-const app = express();
-
-app.use(paymentMiddleware({
-  requirements: {
-    scheme: 'exact',
-    network: 'eip155:8453',
-    amount: '1000000',
-    asset: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913',
-    payTo: '0xYourWalletAddress...',
-    maxTimeoutSeconds: 3600
-  },
-  facilitatorUrl: 'https://facilitator.armory.sh'
-}));
-
-app.get('/api/protected', (req, res) => {
-  console.log(req.payment);
-  res.json({ message: 'Payment verified!' });
-});
-
-app.listen(3000);
-```
-
-</CodeGroup>
-
-Both tabs show the same protection flow; use the v4 package if you are still on Express 4 and the core package once you upgrade to Express 5+.
 
 ---
 
@@ -113,23 +90,9 @@ The middleware intercepts requests and:
 | Ethereum | USDC | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
 | Base | USDT | `0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb` |
 
-### Facilitator
-
-For production use, specify a facilitator for payment verification:
-
-```typescript
-{
-  facilitatorUrl: 'https://facilitator.armory.sh'
-}
-```
-
 ### Verification Options
 
-```typescript
-{
-  facilitatorUrl: string  // Required for payment verification
-}
-```
+See runtime verification configuration in your deployment environment and middleware setup.
 
 ---
 

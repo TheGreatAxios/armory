@@ -3,11 +3,22 @@ description: Payment middleware for Express v4
 title: "@armory-sh/middleware-express-v4"
 ---
 
+
 Accept crypto payments in your Express v4 API with a single middleware function.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-express-v4
+
+# yarn
+yarn add @armory-sh/middleware-express-v4
+
+# pnpm
+pnpm add @armory-sh/middleware-express-v4
+
+# bun
 bun add @armory-sh/middleware-express-v4
 ```
 
@@ -28,8 +39,7 @@ app.use(paymentMiddleware({
     payTo: '0xYourWalletAddress...',
     maxTimeoutSeconds: 3600,
     extra: {}
-  },
-  facilitatorUrl: 'https://facilitator.armory.sh'
+  }
 }));
 
 app.get('/api/protected', (req, res) => {
@@ -96,6 +106,19 @@ app.use(routeAwarePaymentMiddleware({
 When upgrading to Express v5, switch to `@armory-sh/middleware-express`:
 
 ```bash
+# npm
+npm uninstall @armory-sh/middleware-express-v4
+npm install @armory-sh/middleware-express
+
+# yarn
+yarn remove @armory-sh/middleware-express-v4
+yarn add @armory-sh/middleware-express
+
+# pnpm
+pnpm remove @armory-sh/middleware-express-v4
+pnpm add @armory-sh/middleware-express
+
+# bun
 bun remove @armory-sh/middleware-express-v4
 bun add @armory-sh/middleware-express
 ```

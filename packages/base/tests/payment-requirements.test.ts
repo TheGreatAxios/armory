@@ -1,7 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
+  clearFacilitatorCapabilityCache,
+  filterExtensionsForRequirements,
   findRequirementByAccepted,
   type PaymentRequirementsV2,
+  resolveFacilitatorUrlFromRequirement,
 } from "../src/index";
 
 const BASE_REQUIREMENT: PaymentRequirementsV2 = {
@@ -30,6 +33,145 @@ describe(
       const matched = findRequirementByAccepted(requirements, SKALE_REQUIREMENT);
 
       expect(matched).toEqual(SKALE_REQUIREMENT);
+    });
+  },
+);
+
+describe(
+  "[unit|base] - [resolveFacilitator|success] - picks facilitator by network+token over chain/global",
+  () => {
+    test("returns token-specific facilitator for matching network and token", () => {
+      const url = resolveFacilitatorUrlFromRequirement(
+        {
+          facilitatorUrl: "https://global.facilitator",
+          facilitatorUrlByChain: {
+            "base-sepolia": "https://chain.facilitator",
+          },
+          facilitatorUrlByToken: {
+            "base-sepolia": {
+              usdc: "https://token.facilitator",
+            },
+          },
+        },
+        BASE_REQUIREMENT,
+      );
+
+      expect(url).toBe("https://token.facilitator");
+    });
+  },
+);
+
+describe(
+  "[unit|base] - [resolveFacilitator|success] - falls back chain then global",
+  () => {
+    test("returns chain facilitator when token mapping does not match", () => {
+      const url = resolveFacilitatorUrlFromRequirement(
+        {
+          facilitatorUrl: "https://global.facilitator",
+          facilitatorUrlByChain: {
+            "skale-base-sepolia": "https://chain.facilitator",
+          },
+          facilitatorUrlByToken: {
+            "base-sepolia": {
+              usdc: "https://token.facilitator",
+            },
+          },
+        },
+        SKALE_REQUIREMENT,
+      );
+
+      expect(url).toBe("https://chain.facilitator");
+    });
+  },
+);
+
+describe(
+  "[unit|base] - [resolveExtensions|success] - strips unsupported extensions from facilitator capabilities",
+  () => {
+    const originalFetch = globalThis.fetch;
+
+    beforeEach(() => {
+      clearFacilitatorCapabilityCache();
+    });
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+      clearFacilitatorCapabilityCache();
+    });
+
+    test("keeps only extension keys returned by supported response", async () => {
+      globalThis.fetch = mock(async () => {
+        return new Response(
+          JSON.stringify({
+            kinds: [
+              {
+                x402Version: 2,
+                scheme: "exact",
+                network: BASE_REQUIREMENT.network,
+                extra: { bazaar: {} },
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      }) as typeof fetch;
+
+      const filtered = await filterExtensionsForRequirements(
+        {
+          bazaar: { enabled: true },
+          "sign-in-with-x": { enabled: true },
+        },
+        [BASE_REQUIREMENT],
+        { facilitatorUrl: "https://payai.facilitator" },
+      );
+
+      expect(filtered).toEqual({ bazaar: { enabled: true } });
+    });
+
+    test("uses cached capability response for subsequent calls", async () => {
+      const fetchMock = mock(async () => {
+        return new Response(
+          JSON.stringify({
+            kinds: [
+              {
+                x402Version: 2,
+                scheme: "exact",
+                network: BASE_REQUIREMENT.network,
+                extra: { bazaar: {} },
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      });
+      globalThis.fetch = fetchMock as typeof fetch;
+
+      await filterExtensionsForRequirements(
+        { bazaar: { enabled: true } },
+        [BASE_REQUIREMENT],
+        { facilitatorUrl: "https://payai.facilitator" },
+      );
+      await filterExtensionsForRequirements(
+        { bazaar: { enabled: true } },
+        [BASE_REQUIREMENT],
+        { facilitatorUrl: "https://payai.facilitator" },
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    test("returns empty extension set when supported lookup fails", async () => {
+      globalThis.fetch = mock(async () => {
+        throw new Error("network failed");
+      }) as typeof fetch;
+
+      const filtered = await filterExtensionsForRequirements(
+        { bazaar: { enabled: true } },
+        [BASE_REQUIREMENT],
+        { facilitatorUrl: "https://payai.facilitator" },
+      );
+
+      expect(filtered).toEqual({});
     });
   },
 );

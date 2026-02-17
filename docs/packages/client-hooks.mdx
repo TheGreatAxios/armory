@@ -3,22 +3,184 @@ description: Optional hook presets for x402 clients
 title: "@armory-sh/client-hooks"
 ---
 
+
 Optional preset hooks for Armory clients.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/client-hooks
+
+# yarn
+yarn add @armory-sh/client-hooks
+
+# pnpm
+pnpm add @armory-sh/client-hooks
+
+# bun
 bun add @armory-sh/client-hooks
 ```
 
-## Included Hooks
+## API Reference
 
-| Hook | Purpose |
-|------|---------|
-| `PaymentPreference.chain(...)` | Prefer matching chains/networks |
-| `PaymentPreference.token(...)` | Prefer matching tokens/assets |
-| `PaymentPreference.cheapest()` | Choose lowest amount within selected chain+asset |
-| `Logger.console()` | Log payment challenge/response events |
+### PaymentPreference
+
+Chain and token selection hooks.
+
+#### PaymentPreference.chain(preferredChains)
+
+Prefer specific networks when multiple options are available.
+
+```typescript
+import { PaymentPreference } from '@armory-sh/client-hooks';
+
+const hook = PaymentPreference.chain(['base', 'ethereum', 'skale-base']);
+```
+
+**Parameter:**
+- `preferredChains` - Array of network keys (string or string[])
+
+**Supported network keys:**
+- `ethereum` - Ethereum Mainnet
+- `base` - Base Mainnet
+- `base-sepolia` - Base Sepolia Testnet
+- `skale-base` - SKALE Base
+- `skale-base-sepolia` - SKALE Base Sepolia
+- `ethereum-sepolia` - Ethereum Sepolia Testnet
+
+#### PaymentPreference.token(preferredTokens)
+
+Prefer specific tokens when multiple options are available.
+
+```typescript
+const hook = PaymentPreference.token(['USDT', 'USDC', 'WBTC']);
+```
+
+**Parameter:**
+- `preferredTokens` - Array of token symbols (string or string[])
+
+#### PaymentPreference.cheapest()
+
+Select the option with the lowest amount within the selected network and asset.
+
+```typescript
+const hook = PaymentPreference.cheapest();
+```
+
+### Logger
+
+Payment event logging.
+
+#### Logger.console(options?)
+
+Log payment events to the console.
+
+```typescript
+import { Logger } from '@armory-sh/client-hooks';
+
+const hook = Logger.console({
+  prefix: '[x402]',
+  enabled: true
+});
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `prefix` | `string` | `"[x402]"` | Log prefix |
+| `enabled` | `boolean` | `true` | Enable logging |
+
+### Utilities
+
+#### combineHooks(...hooks)
+
+Combine multiple hook arrays into a single array.
+
+```typescript
+import { combineHooks } from '@armory-sh/client-hooks';
+
+const hooks = combineHooks(
+  PaymentPreference.chain(['base']),
+  [PaymentPreference.token(['USDC'])], // Can pass arrays
+  null, // Nulls/undefined are filtered
+);
+```
+
+### Types
+
+```typescript
+import type {
+  PaymentRequiredContext,
+  PaymentPayloadContext,
+  ClientHookErrorContext,
+  ClientHook,
+} from '@armory-sh/client-hooks';
+```
+
+#### PaymentRequiredContext
+
+Context passed when payment is required.
+
+```typescript
+interface PaymentRequiredContext {
+  url: RequestInfo | URL;
+  requestInit: RequestInit | undefined;
+  accepts: PaymentRequirementsV2[];
+  requirements: PaymentRequirementsV2;
+  selectedRequirement?: PaymentRequirementsV2;
+  serverExtensions: Extensions | undefined;
+  fromAddress: Address;
+  nonce: `0x${string}`;
+  validBefore: number;
+}
+```
+
+#### PaymentPayloadContext
+
+Context passed before signing payment.
+
+```typescript
+interface PaymentPayloadContext<TWallet = unknown> {
+  payload: PaymentPayloadV2;
+  requirements: PaymentRequirementsV2;
+  wallet: TWallet;
+  paymentContext: PaymentRequiredContext;
+}
+```
+
+#### ClientHookErrorContext
+
+Context passed when a hook errors.
+
+```typescript
+interface ClientHookErrorContext {
+  error: unknown;
+  phase: 'onPaymentRequired' | 'selectRequirement' | 'beforeSignPayment' | 'afterPaymentResponse';
+}
+```
+
+#### ClientHook
+
+Hook interface.
+
+```typescript
+interface ClientHook<TWallet = unknown> {
+  name?: string;
+  onPaymentRequired?: (context: PaymentRequiredContext) => void | Promise<void>;
+  selectRequirement?: (
+    context: PaymentRequiredContext
+  ) => PaymentRequirementsV2 | undefined | Promise<PaymentRequirementsV2 | undefined>;
+  beforeSignPayment?: (
+    context: PaymentPayloadContext<TWallet>
+  ) => void | Promise<void>;
+  afterPaymentResponse?: (
+    context: PaymentPayloadContext<TWallet> & { response: Response }
+  ) => void | Promise<void>;
+  onError?: (context: ClientHookErrorContext) => void | Promise<void>;
+}
+```
 
 ## Usage
 
@@ -29,7 +191,7 @@ import { PaymentPreference, Logger } from '@armory-sh/client-hooks';
 const client = createX402Client({
   wallet: { type: 'account', account },
   hooks: [
-    PaymentPreference.chain(['base', 'polygon', 'skale']),
+    PaymentPreference.chain(['base', 'ethereum', 'skale-base']),
     PaymentPreference.token(['USDT', 'USDC', 'WBTC']),
     PaymentPreference.cheapest(),
     Logger.console(),
@@ -39,10 +201,10 @@ const client = createX402Client({
 
 ## Selection Behavior
 
-- Hook selection narrows progressively in array order.
-- Chain preference runs first, then token preference can narrow within selected chain.
-- Cheapest refines within the selected network and asset.
-- If no hook selects, clients fall back to the first compatible `accepts[]` option from `PAYMENT-REQUIRED`.
+- Hook selection narrows progressively in array order
+- Chain preference runs first, then token preference can narrow within selected chain
+- Cheapest refines within the selected network and asset
+- If no hook selects, clients fall back to the first compatible `accepts[]` option from `PAYMENT-REQUIRED`
 
 ## Notes
 

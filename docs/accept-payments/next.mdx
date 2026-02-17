@@ -1,15 +1,23 @@
 ---
-title: "Next.js"
+title: With Next.js
 description: Accept x402 payments in your Next.js App Router application
 ---
-
-# Next.js Middleware
 
 Accept x402 payments in your Next.js App Router application using the `@armory-sh/middleware-next` package.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-next
+
+# yarn
+yarn add @armory-sh/middleware-next
+
+# pnpm
+pnpm add @armory-sh/middleware-next
+
+# bun
 bun add @armory-sh/middleware-next
 ```
 
@@ -21,11 +29,10 @@ Create a `middleware.ts` file in your Next.js app root:
 // middleware.ts
 import { paymentProxy, x402ResourceServer } from "@armory-sh/middleware-next";
 
-// Create a facilitator client for verification
-const facilitatorClient = {
+// Create a verification client
+const verificationClient = {
   async verify(headers: Headers) {
-    // Verify payment with your facilitator
-    const response = await fetch("https://your-facilitator.com/verify", {
+    const response = await fetch("https://your-verifier.com/verify", {
       method: "POST",
       headers: Object.fromEntries(headers.entries()),
     });
@@ -34,7 +41,7 @@ const facilitatorClient = {
 };
 
 // Create the resource server
-const resourceServer = new x402ResourceServer(facilitatorClient);
+const resourceServer = new x402ResourceServer(verificationClient);
 
 // Configure payment proxy with per-route settings
 export const proxy = paymentProxy(
@@ -158,7 +165,7 @@ const exactScheme: PaymentScheme = {
 };
 
 // Register schemes for different chains
-const resourceServer = new x402ResourceServer(facilitatorClient)
+const resourceServer = new x402ResourceServer(verificationClient)
   .register("eip155:8453", exactScheme)  // Base
   .register("eip155:1", exactScheme);    // Ethereum
 ```
@@ -197,9 +204,9 @@ When payment is required, it returns a 402 response with payment requirements:
 // middleware.ts
 import { paymentProxy, x402ResourceServer } from "@armory-sh/middleware-next";
 
-const facilitatorClient = {
+const verificationClient = {
   async verify(headers: Headers) {
-    const response = await fetch("https://facilitator.example.com/verify", {
+    const response = await fetch("https://verifier.example.com/verify", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -213,7 +220,7 @@ const facilitatorClient = {
   },
 };
 
-const resourceServer = new x402ResourceServer(facilitatorClient);
+const resourceServer = new x402ResourceServer(verificationClient);
 
 export const proxy = paymentProxy(
   {
@@ -287,7 +294,6 @@ The middleware automatically handles common errors:
 
 ```typescript
 import type {
-  HTTPFacilitatorClient,
   PaymentScheme,
   RoutePaymentConfig,
 } from "@armory-sh/middleware-next";

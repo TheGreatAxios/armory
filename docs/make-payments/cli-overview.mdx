@@ -1,0 +1,53 @@
+---
+title: Overview
+description: Use Armory CLI to build and validate payment flows
+---
+
+Use `armory-cli` to scaffold projects and inspect supported x402 payment configuration.
+
+## Install
+
+```bash
+bunx armory-cli --help
+# or
+bun add -g armory-cli
+```
+
+## Command Map
+
+- `armory create` to scaffold payment-enabled apps
+- `armory networks` to list supported chains
+- `armory tokens` to list supported tokens
+- `armory validate` to validate chain/token identifiers
+- `armory extensions` to inspect available extension helpers
+- `armory verify` to inspect endpoint payment headers
+
+## End-to-End CLI Workflow
+
+```bash
+# 1) Create a server
+armory create bun-server merchant-api
+cd merchant-api
+bun install
+bun run dev
+
+# 2) Validate target network/token for the client flow
+armory validate network base
+armory validate token usdc
+
+# 3) Inspect payment requirements from the protected endpoint
+armory verify http://localhost:3000/api/premium
+
+# 4) Scaffold a client to pay the endpoint
+cd ..
+armory create viem-client buyer-client
+cd buyer-client
+bun install
+PRIVATE_KEY=0xYOUR_KEY bun run dev
+```
+
+## Next Steps
+
+- [CLI Create](/make-payments/cli-create)
+- [CLI Verify](/make-payments/cli-verify)
+- [CLI Examples](/make-payments/cli-examples)

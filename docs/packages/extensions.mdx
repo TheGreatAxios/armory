@@ -3,11 +3,22 @@ description: x402 protocol extensions
 title: "@armory-sh/extensions"
 ---
 
+
 Protocol extensions for the x402 payment standard.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/extensions
+
+# yarn
+yarn add @armory-sh/extensions
+
+# pnpm
+pnpm add @armory-sh/extensions
+
+# bun
 bun add @armory-sh/extensions
 ```
 
@@ -19,11 +30,13 @@ bun add @armory-sh/extensions
 | Payment Identifier | Idempotency for payment requests |
 | Bazaar | Resource discovery |
 
-## Hook Creators
+## API Reference
+
+### Hook Creators (Client-Side)
 
 Hooks allow you to automatically handle server extension requirements.
 
-### createSIWxHook
+#### createSIWxHook
 
 Creates a hook that handles Sign-In-With-X authentication:
 
@@ -45,7 +58,7 @@ const hook = createSIWxHook({
 | `statement` | `string` | Human-readable statement |
 | `expirationSeconds` | `number` | Seconds until expiration |
 
-### createPaymentIdHook
+#### createPaymentIdHook
 
 Creates a hook that adds payment idempotency:
 
@@ -67,7 +80,7 @@ const hook = createPaymentIdHook({
 |--------|------|-------------|
 | `paymentId` | `string` | Custom payment identifier |
 
-### createCustomHook
+#### createCustomHook
 
 Create custom extension hooks:
 
@@ -89,11 +102,11 @@ const customHook = createCustomHook({
 });
 ```
 
-## Server Extension Declaration
+### Server Extension Declaration
 
 For server-side middleware, declare extensions that clients should provide:
 
-### declareSIWxExtension
+#### declareSIWxExtension
 
 ```typescript
 import { declareSIWxExtension } from '@armory-sh/extensions';
@@ -106,7 +119,7 @@ const extension = declareSIWxExtension({
 });
 ```
 
-### declarePaymentIdentifierExtension
+#### declarePaymentIdentifierExtension
 
 ```typescript
 import { declarePaymentIdentifierExtension } from '@armory-sh/extensions';
@@ -117,11 +130,21 @@ const extension = declarePaymentIdentifierExtension({
 });
 ```
 
-## Verification
+#### declareDiscoveryExtension
+
+```typescript
+import { declareDiscoveryExtension } from '@armory-sh/extensions';
+
+const extension = declareDiscoveryExtension({
+  required: true
+});
+```
+
+### Verification
 
 Verify client-provided extension data:
 
-### validateSIWxMessage
+#### validateSIWxMessage
 
 ```typescript
 import { validateSIWxMessage, parseSIWxHeader } from '@armory-sh/extensions';
@@ -141,7 +164,7 @@ if (result.valid) {
 }
 ```
 
-### verifySIWxSignature
+#### verifySIWxSignature
 
 ```typescript
 import { verifySIWxSignature } from '@armory-sh/extensions';
@@ -154,7 +177,57 @@ const result = await verifySIWxSignature(payload, {
 });
 ```
 
-## Exports
+### Utilities
+
+#### generatePaymentId
+
+Generate a random payment identifier:
+
+```typescript
+import { generatePaymentId } from '@armory-sh/extensions';
+
+const id = generatePaymentId();
+```
+
+#### extractExtension
+
+Extract extension data from a payload:
+
+```typescript
+import { extractExtension } from '@armory-sh/extensions';
+
+const siwxData = extractExtension(payload.extensions, 'siwx');
+```
+
+### Constants
+
+```typescript
+import {
+  SIGN_IN_WITH_X,
+  PAYMENT_IDENTIFIER,
+  BAZAAR,
+} from '@armory-sh/extensions';
+```
+
+### Types
+
+```typescript
+import type {
+  SIWxHookConfig,
+  PaymentIdHookConfig,
+  CustomHookConfig,
+  SIWxExtensionConfig,
+  PaymentIdentifierConfig,
+  BazaarDiscoveryConfig,
+  SIWxPayload,
+  SIWxExtensionInfo,
+  PaymentIdentifierExtensionInfo,
+  BazaarExtensionInfo,
+  Extension,
+} from '@armory-sh/extensions';
+```
+
+## Exports Summary
 
 | Export | Description |
 |--------|-------------|
@@ -163,8 +236,15 @@ const result = await verifySIWxSignature(payload, {
 | `createCustomHook` | Create custom hooks |
 | `declareSIWxExtension` | Declare SIWX extension for server |
 | `declarePaymentIdentifierExtension` | Declare payment ID extension |
+| `declareDiscoveryExtension` | Declare Bazaar discovery extension |
 | `validateSIWxMessage` | Validate SIWX payload |
 | `verifySIWxSignature` | Verify SIWX signature |
 | `parseSIWxHeader` | Parse SIWX header |
 | `encodeSIWxHeader` | Encode SIWX header |
+| `createSIWxMessage` | Create SIWX message |
+| `createSIWxPayload` | Create SIWX payload |
 | `generatePaymentId` | Generate random payment ID |
+| `extractExtension` | Extract extension data |
+| `isSIWxExtension` | Check if extension is SIWX |
+| `isPaymentIdentifierExtension` | Check if extension is Payment ID |
+| `isDiscoveryExtension` | Check if extension is Bazaar discovery |

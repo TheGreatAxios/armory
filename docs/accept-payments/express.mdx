@@ -1,15 +1,23 @@
 ---
-title: Accept Payments with Express
+title: With Express
 description: Accept Armory payments in Express
 ---
-
-# Accept Payments with Express
 
 Accept crypto payments in your Express API with the Armory middleware.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-express
+
+# yarn
+yarn add @armory-sh/middleware-express
+
+# pnpm
+pnpm add @armory-sh/middleware-express
+
+# bun
 bun add @armory-sh/middleware-express
 ```
 
@@ -29,8 +37,7 @@ app.use(paymentMiddleware({
     expiry: Date.now() + 3600 * 1000,
     chainId: 'eip155:8453',
     assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-  },
-  facilitatorUrl: 'https://facilitator.armory.sh'
+  }
 }));
 
 app.get('/api/data', (req, res) => {
@@ -76,6 +83,19 @@ app.get('/api/premium',
     res.json({ message: 'Paid content' });
   }
 );
+```
+
+## Route Configuration
+
+For per-route pricing or requirements, use `routeAwarePaymentMiddleware`:
+
+```typescript
+import { routeAwarePaymentMiddleware } from '@armory-sh/middleware-express';
+
+app.use('/api', routeAwarePaymentMiddleware({
+  '/api/basic': { requirements: basicRequirements },
+  '/api/premium': { requirements: premiumRequirements },
+}));
 ```
 
 ---

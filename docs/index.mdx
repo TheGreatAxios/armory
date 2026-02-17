@@ -1,67 +1,46 @@
 ---
-description: Overview of the Armory protocol and architecture
-title: Overview
+description: Introduction to Armory and how to get started with x402 v2 payments
+title: Introduction
 ---
 
-Armory is a payment protocol for APIs, built on EIP-3009. Let your users pay with USDC directly from their wallet—no credit cards, no middlemen.
+Armory is a TypeScript toolkit for x402 v2 payments that lets APIs require wallet-based payment over standard HTTP flows.
 
 <Callout type="info">
-**x402 Specification Compatibility**: Armory is fully compatible with the [Coinbase x402 specification](https://github.com/coinbase/x402). All protocol changes must be validated against the official spec to ensure cross-SDK compatibility. See the [x402 V2 spec](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md) for details.
+Armory targets x402 v2 wire compatibility so Armory clients and middleware can interoperate with Coinbase x402 SDK implementations.
 </Callout>
 
-## How it works
+## What You Can Build
 
-Your client signs a payment authorization (off-chain, no gas) and sends it with their API request. You verify the signature, respond with the data they paid for, and settle the payment on-chain. Simple as that.
+- Paid API endpoints using middleware in Express, Hono, Bun, Elysia, and Next.js.
+- Wallet-based API clients using Viem, Ethers.js, and Web3.js.
+- Multi-network and multi-token payment flows with shared base logic.
 
-### HTTP Headers (x402 v2)
+## How Armory Works
 
-- `PAYMENT-REQUIRED`: 402 challenge with `accepts[]`
-- `PAYMENT-SIGNATURE`: client payment payload
-- `PAYMENT-RESPONSE`: settlement result
+1. A protected endpoint returns `402` with `PAYMENT-REQUIRED`.
+2. The client selects one option from `accepts[]` and signs a payment payload.
+3. The retried request sends `PAYMENT-SIGNATURE`.
+4. The server verifies/settles and returns data with `PAYMENT-RESPONSE`.
 
-## Packages
+## Start Here
 
-**Core**
-- `@armory-sh/base` — Types, encoding, network config
+- [Key Concepts](/key-concepts)
+- [Accept Payments](/accept-payments/express)
+- [Make Payments](/make-payments/viem)
+- [CLI](/cli)
 
-**Server-side**
-- `@armory-sh/middleware` — Drop-in middleware for Express, Hono, Bun, Elysia
-- `@armory-sh/middleware-express` — Express v5 middleware
-- `@armory-sh/middleware-express-v4` — Express v4 middleware
-- `@armory-sh/middleware-hono` — Hono middleware
-- `@armory-sh/middleware-bun` — Bun middleware
-- `@armory-sh/middleware-elysia` — Elysia middleware
-- `@armory-sh/middleware-next` — Next.js App Router middleware
+## Core Packages
 
-**Client-side**
-- `@armory-sh/client-viem` — Viem integration
-- `@armory-sh/client-ethers` — Ethers.js v6 integration
-- `@armory-sh/client-web3` — Web3.js integration
-- `@armory-sh/client-hooks` — Optional chain/token/cheapest/logger hook presets
+- `@armory-sh/base`: shared protocol types, encoding, and payment flow logic.
+- Middleware packages: route protection and payment verification.
+- Client packages: wallet integration and payment retries.
+- `@armory-sh/extensions`: optional protocol extensions.
+- `@armory-sh/client-hooks`: optional selection/logging hooks.
 
-**Utilities**
-- `@armory-sh/tokens` — Pre-configured token objects
-- `@armory-sh/extensions` — Protocol extensions (SIWX, payment ID)
-- `armory-cli` — CLI for scaffolding projects
+## Supported Networks and Tokens
 
-## Get Started
+Armory supports Ethereum, Base, SKALE, and testnets listed in the protocol docs, with major payment tokens including USDC.
 
-- [Accept Payments](/accept-payments/express) — Add payments to your API
-- [Make Payments](/make-payments/viem) — Pay for APIs from your app
-- [Packages](/packages/base) — Full API reference
+## Next Step
 
-## Why EIP-3009?
-
-EIP-3009's `transferWithAuthorization` lets payers create off-chain signatures that anyone can execute. That means:
-
-- **Gasless for payers** — Your users don't pay gas
-- **Secure** — Nonces and expiration prevent replay attacks
-- **Standard** — Works with any EIP-3009 token out of the box
-
-## Networks
-
-Ethereum, Base, and SKALE — mainnets and testnets ready.
-
-## Tokens
-
-USDC everywhere. USDT, DAI, and WBTC on select chains.
+Go to [Key Concepts](/key-concepts) to understand the model before implementing server or client code.

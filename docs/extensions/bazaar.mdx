@@ -1,0 +1,16 @@
+---
+title: Bazaar
+description: Declare discovery extension metadata for x402 resources
+---
+
+## Server Declaration
+
+```typescript
+import { declareDiscoveryExtension } from '@armory-sh/extensions';
+
+const extension = declareDiscoveryExtension({
+  required: true
+});
+```
+
+Bazaar is primarily server-driven and used for discovery metadata in x402 resource ecosystems.

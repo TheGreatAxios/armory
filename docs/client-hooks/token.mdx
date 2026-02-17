@@ -1,0 +1,12 @@
+---
+title: Token Preference Hook
+description: Prefer specific assets when multiple token options are available
+---
+
+```typescript
+import { PaymentPreference } from '@armory-sh/client-hooks';
+
+const hook = PaymentPreference.token(['USDC', 'USDT', 'WBTC']);
+```
+
+Run this after chain preference if you want network-first, token-second selection.

@@ -2,13 +2,22 @@
 title: "@armory-sh/middleware-next"
 ---
 
-# @armory-sh/middleware-next
 
 x402 payment middleware for Next.js App Router.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-next
+
+# yarn
+yarn add @armory-sh/middleware-next
+
+# pnpm
+pnpm add @armory-sh/middleware-next
+
+# bun
 bun add @armory-sh/middleware-next
 ```
 
@@ -17,7 +26,7 @@ bun add @armory-sh/middleware-next
 - Per-route payment configuration
 - Route pattern matching (exact, wildcard, parameterized)
 - Resource server for payment scheme management
-- Built-in facilitator integration
+- Built-in verification integration
 - Full TypeScript support
 
 ## Quick Start
@@ -26,13 +35,13 @@ bun add @armory-sh/middleware-next
 // middleware.ts
 import { paymentProxy, x402ResourceServer } from "@armory-sh/middleware-next";
 
-const facilitatorClient = {
+const verificationClient = {
   async verify(headers: Headers) {
     return { success: true, payerAddress: "0x..." };
   },
 };
 
-const resourceServer = new x402ResourceServer(facilitatorClient);
+const resourceServer = new x402ResourceServer(verificationClient);
 
 export const proxy = paymentProxy(
   {
@@ -71,12 +80,11 @@ Registers and manages payment schemes.
 - `register(chainId, scheme)`: Register a payment scheme
 - `getRequirements(chainId)`: Get requirements for a chain
 - `getAllRequirements()`: Get all registered requirements
-- `getFacilitator()`: Get the facilitator client
 
 ### Types
 
 ```typescript
-interface HTTPFacilitatorClient {
+interface VerificationClient {
   verify(headers: Headers): Promise<{
     success: boolean;
     payerAddress?: string;

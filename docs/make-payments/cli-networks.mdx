@@ -1,0 +1,37 @@
+---
+title: Networks
+description: Query supported chains and IDs
+---
+
+`armory networks` lists supported chain names, chain IDs, and CAIP identifiers.
+
+## Common Usage
+
+```bash
+# all networks
+armory networks
+
+# filtered
+armory networks --mainnet
+armory networks --testnet
+```
+
+## Scripted Validation Example
+
+```bash
+NETWORK=base
+if armory networks | rg -qi "$NETWORK"; then
+  echo "supported: $NETWORK"
+else
+  echo "unsupported: $NETWORK"
+fi
+```
+
+## Build Input Values for Clients
+
+```bash
+# validate the network format your app will pass
+armory validate network base
+armory validate network 8453
+armory validate network eip155:8453
+```

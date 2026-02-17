@@ -1,6 +1,6 @@
 # @armory-sh/extensions
 
-Armory x402 SDK — Protocol extensions for x402 payments. Add SIWX, payment ID, and custom extensions.
+Armory x402 SDK — Protocol extensions for x402 payments. Add SIWX, payment ID, Bazaar discovery, and custom extensions.
 
 [Documentation](https://armory.sh) | [License](LICENSE)
 
@@ -14,32 +14,84 @@ bun add @armory-sh/extensions
 
 Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Extensions add powerful functionality like authentication and idempotency.
 
-## Key Exports
+## API Reference
+
+### Hook Creators (Client-Side)
 
 ```typescript
 import {
-  // Hook Creators
   createSIWxHook,
   createPaymentIdHook,
   createCustomHook,
-
-  // Server Extensions
-  declareSIWxExtension,
-  declarePaymentIdentifierExtension,
-
-  // Utilities
-  validateSIWxMessage,
-  verifySIWxSignature,
-  generatePaymentId,
 
   // Types
   type SIWxHookConfig,
   type PaymentIdHookConfig,
   type CustomHookConfig,
-  type SIWxExtension,
-  type PaymentIdentifierExtension,
 } from '@armory-sh/extensions';
 ```
+
+### Server Extension Declaration
+
+```typescript
+import {
+  // Sign-In-With-X
+  declareSIWxExtension,
+  createSIWxMessage,
+  createSIWxPayload,
+  encodeSIWxHeader,
+  parseSIWxHeader,
+  validateSIWxMessage,
+  verifySIWxSignature,
+  isSIWxExtension,
+
+  // Payment Identifier
+  declarePaymentIdentifierExtension,
+  extractPaymentIdentifierInfo,
+  isPaymentIdentifierExtension,
+  validatePaymentIdentifierExtension,
+
+  // Bazaar Discovery
+  declareDiscoveryExtension,
+  createDiscoveryConfig,
+  extractDiscoveryInfo,
+  isDiscoveryExtension,
+  validateDiscoveryExtension,
+
+  // Types
+  type SIWxExtensionConfig,
+  type PaymentIdentifierConfig,
+  type BazaarDiscoveryConfig,
+  type SIWxPayload,
+} from '@armory-sh/extensions';
+```
+
+### Extension Utilities
+
+```typescript
+import {
+  // Generic Extension
+  createExtension,
+  extractExtension,
+  validateExtension,
+
+  // Payment ID Generation
+  generatePaymentId,
+
+  // Constants
+  SIGN_IN_WITH_X,
+  PAYMENT_IDENTIFIER,
+  BAZAAR,
+
+  // Types
+  type Extension,
+  type SIWxExtensionInfo,
+  type PaymentIdentifierExtensionInfo,
+  type BazaarExtensionInfo,
+} from '@armory-sh/extensions';
+```
+
+---
 
 ## Quick Start
 

@@ -15,35 +15,55 @@ bun add @armory-sh/client-hooks # optional preference/logger hooks
 
 Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Let your users pay with USDC directly from their wallet—no credit cards, no middlemen, no gas for payers.
 
-## Key Exports
+## API Reference
+
+### Client Creation
 
 ```typescript
 import {
-  // Client Creation
   createX402Client,
   createX402Transport,
-
-  // Protocol
-  detectX402Version,
-  parsePaymentRequired,
-
-  // Signing
-  signPayment,
-  signEIP3009,
-  recoverEIP3009Signer,
 
   // Types
   type X402Client,
   type X402ClientConfig,
   type X402TransportConfig,
-  type SignPaymentOptions,
+} from '@armory-sh/client-ethers';
+```
 
-  // Errors
+### Protocol Detection & Parsing
+
+```typescript
+import {
+  detectX402Version,
+  parsePaymentRequired,
+} from '@armory-sh/client-ethers';
+```
+
+### Signing Functions
+
+```typescript
+import {
+  signPayment,
+  signEIP3009,
+  recoverEIP3009Signer,
+
+  // Types
+  type SignPaymentOptions,
+} from '@armory-sh/client-ethers';
+```
+
+### Error Classes
+
+```typescript
+import {
   X402ClientError,
   SigningError,
   PaymentError,
 } from '@armory-sh/client-ethers';
 ```
+
+---
 
 ## Quick Start
 
@@ -70,7 +90,7 @@ import { PaymentPreference, Logger } from '@armory-sh/client-hooks'
 const client = createX402Client({
   signer,
   hooks: [
-    PaymentPreference.chain(['base', 'polygon', 'skale']),
+    PaymentPreference.chain(['base', 'ethereum', 'skale-base']),
     PaymentPreference.token(['USDT', 'USDC', 'WBTC']),
     PaymentPreference.cheapest(),
     Logger.console(),
@@ -101,6 +121,7 @@ const client = createX402Client({
 | Base Sepolia | 84532 |
 | SKALE Base | 1187947933 |
 | SKALE Base Sepolia | 324705682 |
+| Ethereum Sepolia | 11155111 |
 
 ## License
 

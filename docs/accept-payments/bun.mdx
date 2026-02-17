@@ -1,15 +1,23 @@
 ---
-title: Accept Payments with Bun
+title: With Bun
 description: Accept Armory payments in Bun
 ---
-
-# Accept Payments with Bun
 
 Accept crypto payments in your Bun HTTP server with the Armory middleware.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-bun
+
+# yarn
+yarn add @armory-sh/middleware-bun
+
+# pnpm
+pnpm add @armory-sh/middleware-bun
+
+# bun
 bun add @armory-sh/middleware-bun
 ```
 
@@ -73,9 +81,26 @@ const middleware = createBunMiddleware({
 const middleware = createBunMiddleware({
   payTo: '0x...',
   amount: '1.0',
-  settlementMode: 'verify',
-  facilitator: {
-    url: 'https://facilitator.armory.sh'
+  settlementMode: 'verify'
+});
+```
+
+## Route Configuration
+
+For per-route behavior, use `createRouteAwareBunMiddleware`:
+
+```typescript
+import { createRouteAwareBunMiddleware } from '@armory-sh/middleware-bun';
+
+const middleware = createRouteAwareBunMiddleware({
+  routes: ['/api/basic', '/api/premium/*'],
+  payTo: '0xYourAddress...',
+  amount: '$1.00',
+  network: 'base',
+  perRoute: {
+    '/api/premium/*': {
+      amount: '$5.00'
+    }
   }
 });
 ```

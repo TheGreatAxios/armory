@@ -1,15 +1,23 @@
 ---
-title: Accept Payments with Hono
+title: With Hono
 description: Accept Armory payments in Hono
 ---
-
-# Accept Payments with Hono
 
 Accept crypto payments in your Hono API with the Armory middleware.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-hono
+
+# yarn
+yarn add @armory-sh/middleware-hono
+
+# pnpm
+pnpm add @armory-sh/middleware-hono
+
+# bun
 bun add @armory-sh/middleware-hono
 ```
 
@@ -84,6 +92,26 @@ app.use('/api/*', acceptPaymentsViaArmory({
   accept: {
     networks: ['base', 'ethereum', 'polygon'],
     tokens: ['usdc', 'usdt']
+  }
+}));
+```
+
+## Route Configuration
+
+For route-specific configuration, use `routeAwarePaymentMiddleware`:
+
+```typescript
+import { routeAwarePaymentMiddleware } from '@armory-sh/middleware-hono';
+
+app.use('/api/*', routeAwarePaymentMiddleware({
+  routes: ['/api/basic', '/api/premium/*'],
+  payTo: '0xYourAddress...',
+  amount: '$1.00',
+  network: 'base',
+  perRoute: {
+    '/api/premium/*': {
+      amount: '$5.00'
+    }
   }
 }));
 ```

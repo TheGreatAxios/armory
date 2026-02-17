@@ -1,0 +1,32 @@
+---
+title: Validate
+description: Validate network and token identifiers before runtime
+---
+
+`armory validate` checks whether your identifier is recognized.
+
+## Network Validation
+
+```bash
+armory validate network base
+armory validate network 8453
+armory validate network eip155:8453
+```
+
+## Token Validation
+
+```bash
+armory validate token usdc
+armory validate token 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+```
+
+## Practical Preflight Script
+
+```bash
+set -e
+armory validate network "$TARGET_CHAIN"
+armory validate token "$TARGET_TOKEN"
+echo "inputs valid"
+```
+
+Use this before startup to fail fast on misconfigured chain/token values.

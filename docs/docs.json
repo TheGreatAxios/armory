@@ -22,54 +22,174 @@
       "description": "Couldn't find that page. Check the [navigation](/packages/base) or [search](/) for what you're looking for."
     }
   },
+  "redirects": [
+    {
+      "source": "/cli",
+      "destination": "/make-payments/cli-overview"
+    },
+    {
+      "source": "/extensions/overview",
+      "destination": "/extensions"
+    },
+    {
+      "source": "/package-changelogs/base",
+      "destination": "/changelogs/base"
+    },
+    {
+      "source": "/package-changelogs/client-ethers",
+      "destination": "/changelogs/client-ethers"
+    },
+    {
+      "source": "/package-changelogs/client-hooks",
+      "destination": "/changelogs/client-hooks"
+    },
+    {
+      "source": "/package-changelogs/client-viem",
+      "destination": "/changelogs/client-viem"
+    },
+    {
+      "source": "/package-changelogs/client-web3",
+      "destination": "/changelogs/client-web3"
+    },
+    {
+      "source": "/package-changelogs/extensions",
+      "destination": "/changelogs/extensions"
+    },
+    {
+      "source": "/package-changelogs/middleware-bun",
+      "destination": "/changelogs/middleware-bun"
+    },
+    {
+      "source": "/package-changelogs/middleware-elysia",
+      "destination": "/changelogs/middleware-elysia"
+    },
+    {
+      "source": "/package-changelogs/middleware-express",
+      "destination": "/changelogs/middleware-express"
+    },
+    {
+      "source": "/package-changelogs/middleware-express-v4",
+      "destination": "/changelogs/middleware-express-v4"
+    },
+    {
+      "source": "/package-changelogs/middleware-hono",
+      "destination": "/changelogs/middleware-hono"
+    },
+    {
+      "source": "/package-changelogs/middleware-next",
+      "destination": "/changelogs/middleware-next"
+    },
+    {
+      "source": "/package-changelogs/cli",
+      "destination": "/changelogs/cli"
+    }
+  ],
   "navigation": {
     "groups": [
       {
-        "group": "Overview",
-        "pages": ["index", "cli", "changelog"]
+        "group": "Getting Started",
+        "pages": ["index", "key-concepts"]
       },
       {
         "group": "Accept Payments",
         "pages": [
+          "accept-payments/bun",
+          "accept-payments/elysia",
           "accept-payments/express",
           "accept-payments/hono",
-          "accept-payments/next",
-          "accept-payments/elysia",
-          "accept-payments/bun"
+          "accept-payments/next"
         ]
       },
       {
         "group": "Make Payments",
         "pages": [
-          "make-payments/viem",
           "make-payments/ethers",
+          "make-payments/viem",
           "make-payments/web3"
+        ]
+      },
+      {
+        "group": "CLI",
+        "pages": [
+          "cli",
+          "make-payments/cli-overview",
+          {
+            "group": "Commands",
+            "pages": [
+              "make-payments/cli-create",
+              "make-payments/cli-verify",
+              "make-payments/cli-validate",
+              "make-payments/cli-networks",
+              "make-payments/cli-tokens",
+              "make-payments/cli-extensions"
+            ]
+          },
+          "make-payments/cli-examples"
         ]
       },
       {
         "group": "Advanced Guides",
         "pages": [
-          "route-configuration",
-          "advanced/extension-hooks",
-          "advanced/custom-tokens",
-          "advanced/custom-networks"
+          "advanced/custom-networks",
+          "advanced/custom-tokens"
+        ]
+      },
+      {
+        "group": "Extensions",
+        "pages": [
+          "extensions",
+          "extensions/siwx",
+          "extensions/payment-identifier",
+          "extensions/bazaar",
+          "extensions/custom"
+        ]
+      },
+      {
+        "group": "Client Hooks",
+        "pages": [
+          "client-hooks/overview",
+          "client-hooks/chain",
+          "client-hooks/token",
+          "client-hooks/cheapest",
+          "client-hooks/logger",
+          "client-hooks/combine",
+          "client-hooks/custom-hooks"
         ]
       },
       {
         "group": "Packages",
         "pages": [
           "packages/base",
+          "packages/client-ethers",
+          "packages/client-hooks",
+          "packages/client-viem",
+          "packages/client-web3",
+          "packages/extensions",
           "packages/middleware-bun",
+          "packages/middleware-elysia",
           "packages/middleware-express",
           "packages/middleware-express-v4",
           "packages/middleware-hono",
-          "packages/middleware-elysia",
-          "packages/middleware-next",
-          "packages/client-viem",
-          "packages/client-ethers",
-          "packages/client-web3",
-          "packages/client-hooks",
-          "packages/extensions"
+          "packages/middleware-next"
+        ]
+      },
+      {
+        "group": "Changelogs",
+        "pages": [
+          "changelog",
+          "changelogs/base",
+          "changelogs/client-ethers",
+          "changelogs/client-hooks",
+          "changelogs/client-viem",
+          "changelogs/client-web3",
+          "changelogs/extensions",
+          "changelogs/middleware-bun",
+          "changelogs/middleware-elysia",
+          "changelogs/middleware-express",
+          "changelogs/middleware-express-v4",
+          "changelogs/middleware-hono",
+          "changelogs/middleware-next",
+          "changelogs/cli"
         ]
       }
     ]

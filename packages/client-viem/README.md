@@ -14,64 +14,121 @@ bun add @armory-sh/client-viem
 
 Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Let your users pay with USDC directly from their wallet—no credit cards, no middlemen, no gas for payers.
 
-## Key Exports
+## API Reference
+
+### Client Creation
 
 ```typescript
 import {
-  // Client Creation
   createX402Client,
   createX402Transport,
   createArmory,
 
-  // Simple API
+  // Types
+  type X402Client,
+  type X402ClientConfig,
+  type X402TransportConfig,
+  type X402Wallet,
+  type X402ProtocolVersion,
+} from '@armory-sh/client-viem';
+```
+
+### Simple API (One-Line Payments)
+
+```typescript
+import {
   armoryPay,
   armoryGet,
   armoryPost,
   armoryPut,
   armoryDelete,
   armoryPatch,
+
+  // Configuration
+  createArmory,
+
+  // Utilities
   getWalletAddress,
+  normalizeWallet,
   validateNetwork,
   validateToken,
   getNetworks,
   getTokens,
-  normalizeWallet,
 
-  // Protocol
+  // Types
+  type SimpleWalletInput,
+  type NormalizedWallet,
+  type PaymentResult,
+  type ArmoryPaymentResult,
+  type ArmoryConfig,
+  type ArmoryInstance,
+  type PaymentOptions,
+  type HttpMethod,
+} from '@armory-sh/client-viem';
+```
+
+### Protocol Detection & Parsing
+
+```typescript
+import {
   detectX402Version,
   parsePaymentRequired,
 
-  // Extensions
+  // Types
+  type ParsedPaymentRequired,
+} from '@armory-sh/client-viem';
+```
+
+### Extension Support
+
+```typescript
+import {
   parseExtensions,
   extractExtension,
-  createSIWxProof,
   addExtensionsToPayload,
+  createSIWxProof,
 
-  // Hooks
+  // Types
+  type ClientExtensionContext,
+} from '@armory-sh/client-viem';
+```
+
+### Hooks System
+
+```typescript
+import {
   executeHooks,
   mergeExtensions,
 
   // Types
-  type X402Client,
-  type X402ClientConfig,
-  type X402Wallet,
-  type X402ProtocolVersion,
-  type Token,
-  type PaymentResult,
-  type X402TransportConfig,
-  type SimpleWalletInput,
-  type NormalizedWallet,
-  type NetworkId,
-  type TokenId,
-  type ArmoryPaymentResult,
-  type FacilitatorConfig,
+  type ViemHookConfig,
+  type ViemHookRegistry,
+  type ViemPaymentPayloadContext,
+} from '@armory-sh/client-viem';
+```
 
-  // Errors
+### Error Classes
+
+```typescript
+import {
   X402ClientError,
   SigningError,
   PaymentError,
 } from '@armory-sh/client-viem';
 ```
+
+### Additional Types
+
+```typescript
+import type {
+  Token,
+  NetworkId,
+  TokenId,
+  FacilitatorConfig,
+} from '@armory-sh/client-viem';
+```
+
+---
 
 ## Quick Start
 
@@ -135,7 +192,7 @@ import { PaymentPreference, Logger } from '@armory-sh/client-hooks'
 const client = createX402Client({
   wallet: { type: 'account', account },
   hooks: [
-    PaymentPreference.chain(['base', 'polygon', 'skale']),
+    PaymentPreference.chain(['base', 'ethereum', 'skale-base']),
     PaymentPreference.token(['USDT', 'USDC', 'WBTC']),
     PaymentPreference.cheapest(),
     Logger.console(),
@@ -187,6 +244,7 @@ const client = createX402Client({
 | Base Sepolia | 84532 |
 | SKALE Base | 1187947933 |
 | SKALE Base Sepolia | 324705682 |
+| Ethereum Sepolia | 11155111 |
 
 ## License
 
