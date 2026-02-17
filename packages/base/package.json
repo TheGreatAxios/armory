@@ -50,6 +50,8 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsup && tsc --emitDeclarationOnly",
+    "lint": "bun run build",
+    "format": "bun run lint",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   }

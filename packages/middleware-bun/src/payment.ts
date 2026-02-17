@@ -1,23 +1,23 @@
 import type {
   PaymentRequirementsV2,
-  X402PaymentPayload,
   VerifyResponse,
+  X402PaymentPayload,
   X402SettlementResponse,
 } from "@armory-sh/base";
 import {
-  resolveNetwork,
-  resolveToken,
-  PAYMENT_SIGNATURE_HEADER,
+  createPaymentRequirements as createBasePaymentRequirements,
   createPaymentRequiredHeaders,
   createSettlementHeaders,
   decodePayloadHeader,
   extractPayerAddress,
-  verifyPayment,
-  settlePayment,
-  createPaymentRequirements as createBasePaymentRequirements,
   isValidationError,
-  TOKENS,
+  PAYMENT_SIGNATURE_HEADER,
   registerToken,
+  resolveNetwork,
+  resolveToken,
+  settlePayment,
+  TOKENS,
+  verifyPayment,
 } from "@armory-sh/base";
 
 type NetworkId = string | number;
@@ -48,28 +48,36 @@ function ensureTokensRegistered() {
   for (const token of Object.values(TOKENS)) {
     try {
       registerToken(token);
-    } catch {
-    }
+    } catch {}
   }
 }
 
 export function resolveFacilitatorUrlFromRequirement(
   config: PaymentConfig,
-  requirement: PaymentRequirementsV2
+  requirement: PaymentRequirementsV2,
 ): string | undefined {
   const chainId = parseInt(requirement.network.split(":")[1] || "0", 10);
   const assetAddress = requirement.asset.toLowerCase();
 
   if (config.facilitatorUrlByToken) {
-    for (const [chainKey, tokenMap] of Object.entries(config.facilitatorUrlByToken)) {
+    for (const [chainKey, tokenMap] of Object.entries(
+      config.facilitatorUrlByToken,
+    )) {
       const resolvedChain = resolveNetwork(chainKey);
-      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+      if (
+        !isValidationError(resolvedChain) &&
+        resolvedChain.config.chainId === chainId
+      ) {
         for (const [, url] of Object.entries(tokenMap)) {
           const network = resolveNetwork(chainKey);
           if (!isValidationError(network)) {
             for (const tokenKey of Object.keys(tokenMap)) {
               const resolvedToken = resolveToken(tokenKey, network);
-              if (!isValidationError(resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === assetAddress) {
+              if (
+                !isValidationError(resolvedToken) &&
+                resolvedToken.config.contractAddress.toLowerCase() ===
+                  assetAddress
+              ) {
                 return url;
               }
             }
@@ -80,9 +88,14 @@ export function resolveFacilitatorUrlFromRequirement(
   }
 
   if (config.facilitatorUrlByChain) {
-    for (const [chainKey, url] of Object.entries(config.facilitatorUrlByChain)) {
+    for (const [chainKey, url] of Object.entries(
+      config.facilitatorUrlByChain,
+    )) {
       const resolvedChain = resolveNetwork(chainKey);
-      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+      if (
+        !isValidationError(resolvedChain) &&
+        resolvedChain.config.chainId === chainId
+      ) {
         return url;
       }
     }
@@ -92,7 +105,7 @@ export function resolveFacilitatorUrlFromRequirement(
 }
 
 export function createPaymentRequirements(
-  config: PaymentConfig
+  config: PaymentConfig,
 ): ResolvedRequirementsConfig {
   ensureTokensRegistered();
   return createBasePaymentRequirements(config);
@@ -102,7 +115,7 @@ const errorResponse = (
   error: string,
   status: number,
   headers?: Record<string, string>,
-  accepts?: unknown[]
+  accepts?: unknown[],
 ): Response =>
   new Response(JSON.stringify({ error, accepts }), {
     status,
@@ -111,7 +124,7 @@ const errorResponse = (
 
 const successResponse = (
   payerAddress: string,
-  settlement?: X402SettlementResponse
+  settlement?: X402SettlementResponse,
 ): Response => {
   const isSuccess = settlement?.success;
   const txHash = settlement?.transaction;
@@ -130,13 +143,13 @@ const successResponse = (
         "X-Payer-Address": payerAddress,
         ...(settlement ? createSettlementHeaders(settlement) : {}),
       },
-    }
+    },
   );
 };
 
 const appendSettlementHeaders = (
   response: Response,
-  settlement: X402SettlementResponse
+  settlement: X402SettlementResponse,
 ): Response => {
   const headers = new Headers(response.headers);
   const settlementHeaders = createSettlementHeaders(settlement);
@@ -153,40 +166,69 @@ const appendSettlementHeaders = (
 
 export const paymentMiddleware = (
   config: PaymentConfig,
-  handler?: BunHandler
+  handler?: BunHandler,
 ): BunMiddleware => {
   const { requirements, error } = createPaymentRequirements(config);
 
   return async (request: Request): Promise<Response> => {
     if (error) {
-      return errorResponse("Payment middleware configuration error", 500, undefined, [error.message]);
+      return errorResponse(
+        "Payment middleware configuration error",
+        500,
+        undefined,
+        [error.message],
+      );
     }
 
     const primaryRequirement = requirements[0];
     if (!primaryRequirement) {
-      return errorResponse("Payment middleware configuration error: No payment requirements configured", 500);
+      return errorResponse(
+        "Payment middleware configuration error: No payment requirements configured",
+        500,
+      );
     }
 
     const paymentSig = request.headers.get(PAYMENT_SIGNATURE_HEADER);
     if (!paymentSig) {
-      return errorResponse("Payment required", 402, createPaymentRequiredHeaders(requirements), [requirements]);
+      return errorResponse(
+        "Payment required",
+        402,
+        createPaymentRequiredHeaders(requirements),
+        [requirements],
+      );
     }
 
     let payload: X402PaymentPayload;
     try {
-      payload = decodePayloadHeader(paymentSig, { accepted: primaryRequirement });
+      payload = decodePayloadHeader(paymentSig, {
+        accepted: primaryRequirement,
+      });
     } catch {
       return errorResponse("Invalid payment payload", 400);
     }
 
-    const facilitatorUrl = resolveFacilitatorUrlFromRequirement(config, primaryRequirement);
+    const facilitatorUrl = resolveFacilitatorUrlFromRequirement(
+      config,
+      primaryRequirement,
+    );
     if (!facilitatorUrl) {
-      return errorResponse("Payment middleware configuration error: Facilitator URL is required", 500);
+      return errorResponse(
+        "Payment middleware configuration error: Facilitator URL is required",
+        500,
+      );
     }
 
-    const verifyResult: VerifyResponse = await verifyPayment(payload, primaryRequirement, { url: facilitatorUrl });
+    const verifyResult: VerifyResponse = await verifyPayment(
+      payload,
+      primaryRequirement,
+      { url: facilitatorUrl },
+    );
     if (!verifyResult.isValid) {
-      return errorResponse(`Payment verification failed: ${verifyResult.invalidReason}`, 402, createPaymentRequiredHeaders(requirements));
+      return errorResponse(
+        `Payment verification failed: ${verifyResult.invalidReason}`,
+        402,
+        createPaymentRequiredHeaders(requirements),
+      );
     }
 
     const payerAddress = verifyResult.payer ?? extractPayerAddress(payload);
@@ -201,9 +243,16 @@ export const paymentMiddleware = (
       return response;
     }
 
-    const settleResult: X402SettlementResponse = await settlePayment(payload, primaryRequirement, { url: facilitatorUrl });
+    const settleResult: X402SettlementResponse = await settlePayment(
+      payload,
+      primaryRequirement,
+      { url: facilitatorUrl },
+    );
     if (!settleResult.success) {
-      return errorResponse(settleResult.errorReason ?? "Settlement failed", 502);
+      return errorResponse(
+        settleResult.errorReason ?? "Settlement failed",
+        502,
+      );
     }
 
     return appendSettlementHeaders(response, settleResult);

@@ -2,9 +2,9 @@
  * Ethers Client - With Wallet Example
  */
 
+import { TOKENS } from "@armory-sh/base";
 import { createX402Client } from "@armory-sh/client-ethers";
 import { ethers } from "ethers";
-import { TOKENS } from "@armory-sh/base";
 
 const API_URL = "https://api.example.com/protected-endpoint";
 const CHAIN_ID = 8453;
@@ -13,7 +13,7 @@ async function main() {
   console.log("Ethers Client - With Wallet Example");
   console.log("===================================\n");
 
-  let signer;
+  let signer: ethers.Signer;
 
   if (typeof window !== "undefined" && window.ethereum) {
     console.log("Browser wallet detected (MetaMask, etc.)");
@@ -26,9 +26,11 @@ async function main() {
     console.log("Connected address:", await signer.getAddress());
 
     try {
-      await provider.send("wallet_switchEthereumChain", [{
-        chainId: `0x${CHAIN_ID.toString(16)}`,
-      }]);
+      await provider.send("wallet_switchEthereumChain", [
+        {
+          chainId: `0x${CHAIN_ID.toString(16)}`,
+        },
+      ]);
       console.log("Switched to Base network");
     } catch {
       console.log("Note: Please switch to Base network manually");
@@ -36,7 +38,9 @@ async function main() {
   } else {
     console.log("No browser wallet detected, using private key");
 
-    const PRIVATE_KEY = process.env.PRIVATE_KEY ?? "0x0000000000000000000000000000000000000000000000000000000000000001";
+    const PRIVATE_KEY =
+      process.env.PRIVATE_KEY ??
+      "0x0000000000000000000000000000000000000000000000000000000000000001";
     const wallet = new ethers.Wallet(PRIVATE_KEY);
     console.log("Wallet address:", wallet.address);
     signer = wallet;
@@ -82,10 +86,16 @@ main().catch(console.error);
 declare global {
   interface Window {
     ethereum?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+      request: (args: {
+        method: string;
+        params?: unknown[];
+      }) => Promise<unknown>;
       send: (method: string, params?: unknown[]) => Promise<unknown>;
       on: (event: string, handler: (...args: unknown[]) => void) => void;
-      removeListener: (event: string, handler: (...args: unknown[]) => void) => void;
+      removeListener: (
+        event: string,
+        handler: (...args: unknown[]) => void,
+      ) => void;
       isMetaMask?: boolean;
     };
   }

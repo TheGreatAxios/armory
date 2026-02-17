@@ -4,11 +4,11 @@
  * Reusable test scenarios for end-to-end testing of x402 payment flows.
  */
 
-import { describe, test, type TestContext } from "bun:test";
+import { describe, test } from "bun:test";
 import type {
+  PaymentRequirementsV2,
   X402PaymentPayloadV1,
   X402PaymentPayloadV2,
-  PaymentRequirementsV2,
   X402PaymentRequirementsV1,
 } from "@armory-sh/base";
 
@@ -47,7 +47,9 @@ export interface MiddlewareTestContext {
 // Test Data Builders
 // ============================================================================
 
-export const buildV1Scenario = (overrides?: Partial<PaymentScenario>): PaymentScenario => ({
+export const buildV1Scenario = (
+  overrides?: Partial<PaymentScenario>,
+): PaymentScenario => ({
   name: "V1 Standard Payment",
   description: "Standard x402 V1 payment flow",
   version: 1,
@@ -56,14 +58,14 @@ export const buildV1Scenario = (overrides?: Partial<PaymentScenario>): PaymentSc
     scheme: "exact",
     network: "base-sepolia",
     payload: {
-      signature: "0x" + "a".repeat(130),
+      signature: `0x${"a".repeat(130)}`,
       authorization: {
         from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
         to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         value: "1000000",
         validAfter: Math.floor(Date.now() / 1000).toString(),
         validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
-        nonce: "0x" + "0".repeat(64),
+        nonce: `0x${"0".repeat(64)}`,
       },
     },
   },
@@ -82,7 +84,9 @@ export const buildV1Scenario = (overrides?: Partial<PaymentScenario>): PaymentSc
   ...overrides,
 });
 
-export const buildV2Scenario = (overrides?: Partial<PaymentScenario>): PaymentScenario => ({
+export const buildV2Scenario = (
+  overrides?: Partial<PaymentScenario>,
+): PaymentScenario => ({
   name: "V2 Standard Payment",
   description: "Standard x402 V2 payment flow",
   version: 2,
@@ -97,14 +101,14 @@ export const buildV2Scenario = (overrides?: Partial<PaymentScenario>): PaymentSc
       maxTimeoutSeconds: 300,
     },
     payload: {
-      signature: "0x" + "b".repeat(130),
+      signature: `0x${"b".repeat(130)}`,
       authorization: {
         from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
         to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
         value: "1000000",
         validAfter: Math.floor(Date.now() / 1000).toString(),
         validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
-        nonce: "0x" + "1".repeat(64),
+        nonce: `0x${"1".repeat(64)}`,
       },
     },
   },
@@ -145,14 +149,14 @@ export const errorScenarios = {
         maxTimeoutSeconds: 300,
       },
       payload: {
-        signature: "0x" + "b".repeat(130),
+        signature: `0x${"b".repeat(130)}`,
         authorization: {
           from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
           to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
           value: "1000000",
           validAfter: Math.floor(Date.now() / 1000 - 7200).toString(),
           validBefore: Math.floor(Date.now() / 1000 - 3600).toString(),
-          nonce: "0x" + "2".repeat(64),
+          nonce: `0x${"2".repeat(64)}`,
         },
       },
     },
@@ -173,14 +177,14 @@ export const errorScenarios = {
         maxTimeoutSeconds: 300,
       },
       payload: {
-        signature: "0x" + "b".repeat(130),
+        signature: `0x${"b".repeat(130)}`,
         authorization: {
           from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
           to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
           value: "500000",
           validAfter: Math.floor(Date.now() / 1000).toString(),
           validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
-          nonce: "0x" + "3".repeat(64),
+          nonce: `0x${"3".repeat(64)}`,
         },
       },
     },
@@ -201,14 +205,14 @@ export const errorScenarios = {
         maxTimeoutSeconds: 300,
       },
       payload: {
-        signature: "0x" + "b".repeat(130),
+        signature: `0x${"b".repeat(130)}`,
         authorization: {
           from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
           to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
           value: "1000000",
           validAfter: Math.floor(Date.now() / 1000).toString(),
           validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
-          nonce: "0x" + "4".repeat(64),
+          nonce: `0x${"4".repeat(64)}`,
         },
       },
     },
@@ -235,14 +239,14 @@ export const faremeterScenarios = {
       scheme: "exact",
       network: "base",
       payload: {
-        signature: "0x" + "c".repeat(130),
+        signature: `0x${"c".repeat(130)}`,
         authorization: {
           from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
           to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
           value: "1000000",
           validAfter: Math.floor(Date.now() / 1000).toString(),
           validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
-          nonce: "0x" + "5".repeat(64),
+          nonce: `0x${"5".repeat(64)}`,
         },
       },
     },
@@ -265,7 +269,7 @@ export const faremeterScenarios = {
 
 export function describePaymentScenarios(
   suiteName: string,
-  testFn: (scenario: PaymentScenario) => void | Promise<void>
+  testFn: (scenario: PaymentScenario) => void | Promise<void>,
 ) {
   const scenarios = [
     buildV1Scenario({ name: "V1 Standard Payment" }),
@@ -281,7 +285,10 @@ export function describePaymentScenarios(
 
 export function describeErrorScenarios(
   suiteName: string,
-  testFn: (scenario: PaymentScenario, errorType: string) => void | Promise<void>
+  testFn: (
+    scenario: PaymentScenario,
+    errorType: string,
+  ) => void | Promise<void>,
 ) {
   describe(suiteName, () => {
     for (const [errorType, scenario] of Object.entries(errorScenarios)) {
@@ -294,7 +301,7 @@ export function describeErrorScenarios(
 
 export function describeFaremeterScenarios(
   suiteName: string,
-  testFn: (scenario: PaymentScenario) => void | Promise<void>
+  testFn: (scenario: PaymentScenario) => void | Promise<void>,
 ) {
   describe(suiteName, () => {
     for (const [name, scenario] of Object.entries(faremeterScenarios)) {

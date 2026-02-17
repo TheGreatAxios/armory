@@ -1,12 +1,14 @@
 // Import shared error classes from @armory-sh/base
 import {
-  X402ClientError,
   SigningError as BaseSigningError,
-  PaymentException,
+  X402ClientError,
 } from "@armory-sh/base";
 
 // Re-export shared error classes
-export { X402ClientError, PaymentException as PaymentError } from "@armory-sh/base";
+export {
+  PaymentException as PaymentError,
+  X402ClientError,
+} from "@armory-sh/base";
 export { BaseSigningError as SigningError };
 
 // Ethers-specific error classes

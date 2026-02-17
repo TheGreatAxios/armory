@@ -1,7 +1,4 @@
-import type {
-  PaymentPayloadV2,
-  SettlementResponseV2,
-} from "./types/v2";
+import type { PaymentPayloadV2, SettlementResponseV2 } from "./types/v2";
 import { V2_HEADERS } from "./types/v2";
 import {
   decodeBase64ToUtf8,
@@ -34,15 +31,21 @@ function safeBase64Encode(str: string): string {
  */
 const jsonEncode = (data: unknown): string => JSON.stringify(data);
 
-const base64JsonEncode = (data: unknown): string => safeBase64Encode(JSON.stringify(data));
+const base64JsonEncode = (data: unknown): string =>
+  safeBase64Encode(JSON.stringify(data));
 
-const base64JsonDecode = <T>(encoded: string): T => JSON.parse(safeBase64Decode(encoded)) as T;
+const base64JsonDecode = <T>(encoded: string): T =>
+  JSON.parse(safeBase64Decode(encoded)) as T;
 
-export const encodePaymentV2 = (payload: PaymentPayloadV2): string => base64JsonEncode(payload);
-export const decodePaymentV2 = (encoded: string): PaymentPayloadV2 => base64JsonDecode(encoded);
+export const encodePaymentV2 = (payload: PaymentPayloadV2): string =>
+  base64JsonEncode(payload);
+export const decodePaymentV2 = (encoded: string): PaymentPayloadV2 =>
+  base64JsonDecode(encoded);
 
-export const encodeSettlementV2 = (response: SettlementResponseV2): string => base64JsonEncode(response);
-export const decodeSettlementV2 = (encoded: string): SettlementResponseV2 => base64JsonDecode(encoded);
+export const encodeSettlementV2 = (response: SettlementResponseV2): string =>
+  base64JsonEncode(response);
+export const decodeSettlementV2 = (encoded: string): SettlementResponseV2 =>
+  base64JsonDecode(encoded);
 
 /**
  * Always returns 2 for V2-only mode
@@ -76,7 +79,9 @@ export const decodeSettlement = (headers: Headers): SettlementResponse => {
 /**
  * Type guard for V2 payload
  */
-export const isPaymentV2 = (payload: PaymentPayload): payload is PaymentPayloadV2 =>
+export const isPaymentV2 = (
+  payload: PaymentPayload,
+): payload is PaymentPayloadV2 =>
   "x402Version" in payload &&
   (payload as PaymentPayloadV2).x402Version === 2 &&
   "accepted" in payload &&
@@ -85,7 +90,9 @@ export const isPaymentV2 = (payload: PaymentPayload): payload is PaymentPayloadV
 /**
  * Type guard for V2 settlement
  */
-export const isSettlementV2 = (response: SettlementResponse): response is SettlementResponseV2 =>
+export const isSettlementV2 = (
+  response: SettlementResponse,
+): response is SettlementResponseV2 =>
   "success" in response &&
   typeof (response as SettlementResponseV2).success === "boolean" &&
   "network" in response;

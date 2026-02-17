@@ -9,19 +9,20 @@
  * - Facilitator integration for payment verification
  */
 
-import express from "express";
 import type { PaymentRequirementsV2 } from "@armory/base";
-import { paymentMiddleware, type AugmentedRequest } from "@armory/middleware";
+import { type AugmentedRequest, paymentMiddleware } from "@armory/middleware";
+import express from "express";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const PORT = parseInt(process.env.PORT || "3000");
+const PORT = parseInt(process.env.PORT || "3000", 10);
 const FACILITATOR_URL = process.env.FACILITATOR_URL;
 
 // Payment recipient address (replace with your own)
-const PAYMENT_RECIPIENT = process.env.PAYMENT_RECIPIENT || "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb";
+const PAYMENT_RECIPIENT =
+  process.env.PAYMENT_RECIPIENT || "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb";
 
 // ============================================================================
 // Payment Requirements
@@ -122,7 +123,7 @@ app.get(
         timestamp: new Date().toISOString(),
       },
     });
-  }
+  },
 );
 
 /**
@@ -155,7 +156,7 @@ app.get(
         ],
       },
     });
-  }
+  },
 );
 
 /**
@@ -184,7 +185,7 @@ app.post(
         timestamp: new Date().toISOString(),
       },
     });
-  }
+  },
 );
 
 // ============================================================================

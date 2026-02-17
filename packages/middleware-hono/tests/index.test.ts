@@ -4,10 +4,10 @@
  * - 402 response when no payment header provided
  * - Error handling for invalid payloads
  */
-import { test, expect, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import type { PaymentRequirementsV2 } from "@armory-sh/base";
 import { Hono } from "hono";
 import { paymentMiddleware } from "../src/index";
-import type { PaymentRequirementsV2 } from "@armory-sh/base";
 
 const TEST_REQUIREMENTS: PaymentRequirementsV2 = {
   scheme: "exact",

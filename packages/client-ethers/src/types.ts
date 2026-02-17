@@ -1,17 +1,17 @@
-import type { Signer, Provider } from "ethers";
 import type { CustomToken } from "@armory-sh/base";
+import type { Provider, Signer } from "ethers";
 
 // Re-export ethers types
 export type { Signer, Provider };
 
 // Re-export errors from errors.ts
 export {
-  X402ClientError,
-  SigningError,
-  PaymentError,
-  SignerRequiredError,
   AuthorizationError,
+  PaymentError,
   ProviderRequiredError,
+  SignerRequiredError,
+  SigningError,
+  X402ClientError,
 } from "./errors";
 
 /** Token configuration - can use pre-configured tokens from @armory-sh/tokens */

@@ -1,39 +1,31 @@
 /**
  * X402 Client for Viem - Coinbase Compatible
- * 
- * This client generates payment payloads that are fully compatible with 
+ *
+ * This client generates payment payloads that are fully compatible with
  * the Coinbase x402 SDK and facilitator.
  */
 
-import type {
-  Account,
-  Address,
-  Hash,
-  TypedDataDomain,
-  WalletClient,
-} from "viem";
-import { hashTypedData } from "viem";
 // Import X402 types and utilities from base package
 import type {
+  ExactEvmAuthorization,
   X402PaymentPayload,
   X402PaymentRequirements,
-  ExactEvmAuthorization,
   X402SettlementResponse,
 } from "@armory-sh/base";
-
 import {
-  X402_VERSION,
   createEIP712Domain,
+  createNonce,
   EIP712_TYPES,
   encodePayment,
-  PAYMENT_SIGNATURE_HEADER,
-  PAYMENT_RESPONSE_HEADER,
   PAYMENT_REQUIRED_HEADER,
-  safeBase64Decode,
-  createNonce,
+  PAYMENT_RESPONSE_HEADER,
+  PAYMENT_SIGNATURE_HEADER,
   PaymentException as PaymentError,
   SigningError,
+  safeBase64Decode,
+  X402_VERSION,
 } from "@armory-sh/base";
+import type { Address, Hash, TypedDataDomain } from "viem";
 
 import type { X402Client, X402ClientConfig, X402Wallet } from "./types-x402";
 
@@ -41,26 +33,26 @@ const DEFAULT_EXPIRY = 3600;
 
 // Network name to chain ID mapping
 const NETWORK_TO_CHAIN_ID: Record<string, number> = {
-  "base": 8453,
+  base: 8453,
   "base-sepolia": 84532,
-  "ethereum": 1,
+  ethereum: 1,
   "ethereum-sepolia": 11155111,
-  "polygon": 137,
+  polygon: 137,
   "polygon-amoy": 80002,
-  "arbitrum": 42161,
+  arbitrum: 42161,
   "arbitrum-sepolia": 421614,
-  "optimism": 10,
+  optimism: 10,
   "optimism-sepolia": 11155420,
 };
 
 function getChainIdFromNetwork(network: string): number {
   const chainId = NETWORK_TO_CHAIN_ID[network];
   if (chainId) return chainId;
-  
+
   // Try to parse from CAIP-2 format
   const match = network.match(/^eip155:(\d+)$/);
   if (match) return parseInt(match[1], 10);
-  
+
   throw new Error(`Unknown network: ${network}`);
 }
 
@@ -85,11 +77,11 @@ function getWalletAddress(wallet: X402Wallet): Address {
 async function signTypedData(
   wallet: X402Wallet,
   domain: TypedDataDomain,
-  message: ExactEvmAuthorization
+  message: ExactEvmAuthorization,
 ): Promise<`0x${string}`> {
   // Convert hex nonce to bigint for viem
   const nonceBigInt = BigInt(message.nonce);
-  
+
   const params = {
     domain,
     types: EIP712_TYPES,
@@ -105,7 +97,7 @@ async function signTypedData(
   };
 
   let signature: Hash;
-  
+
   if (wallet.type === "account") {
     if (!wallet.account.signTypedData) {
       throw new SigningError("Account does not support signTypedData");
@@ -121,11 +113,15 @@ async function signTypedData(
   return parseSignatureToHex(signature);
 }
 
-function getNetworkFromRequirements(requirements: X402PaymentRequirements): string {
+function getNetworkFromRequirements(
+  requirements: X402PaymentRequirements,
+): string {
   return requirements.network;
 }
 
-function getAssetFromRequirements(requirements: X402PaymentRequirements): Address {
+function getAssetFromRequirements(
+  requirements: X402PaymentRequirements,
+): Address {
   return requirements.asset;
 }
 
@@ -133,7 +129,7 @@ async function createPaymentPayload(
   wallet: X402Wallet,
   requirements: X402PaymentRequirements,
   domainName?: string,
-  domainVersion?: string
+  domainVersion?: string,
 ): Promise<X402PaymentPayload> {
   const from = getWalletAddress(wallet);
   const network = getNetworkFromRequirements(requirements);
@@ -154,10 +150,7 @@ async function createPaymentPayload(
   };
 
   const chainId = getChainIdFromNetwork(network);
-  const domain = createEIP712Domain(
-    chainId,
-    asset
-  );
+  const domain = createEIP712Domain(chainId, asset);
 
   if (domainName || domainVersion) {
     domain.name = domainName ?? domain.name;
@@ -176,7 +169,9 @@ async function createPaymentPayload(
   };
 }
 
-function extractRequirementsFromResponse(response: Response): X402PaymentRequirements {
+function extractRequirementsFromResponse(
+  response: Response,
+): X402PaymentRequirements {
   const encoded = response.headers.get(PAYMENT_REQUIRED_HEADER);
   if (!encoded) {
     throw new PaymentError("No payment requirements found in 402 response");
@@ -185,11 +180,15 @@ function extractRequirementsFromResponse(response: Response): X402PaymentRequire
   try {
     const decoded = safeBase64Decode(encoded);
     const parsed = JSON.parse(decoded);
-    
-    if (parsed.accepts && Array.isArray(parsed.accepts) && parsed.accepts.length > 0) {
+
+    if (
+      parsed.accepts &&
+      Array.isArray(parsed.accepts) &&
+      parsed.accepts.length > 0
+    ) {
       return parsed.accepts[0] as X402PaymentRequirements;
     }
-    
+
     throw new PaymentError("Invalid payment requirements format");
   } catch (error) {
     throw new PaymentError(`Failed to parse payment requirements: ${error}`);
@@ -207,9 +206,11 @@ function checkSettlement(response: Response): void {
   try {
     const decoded = safeBase64Decode(encoded);
     const settlement = JSON.parse(decoded) as X402SettlementResponse;
-    
+
     if (!settlement.success) {
-      throw new PaymentError(settlement.errorReason || "Payment settlement failed");
+      throw new PaymentError(
+        settlement.errorReason || "Payment settlement failed",
+      );
     }
   } catch {
     // Ignore invalid settlement headers
@@ -218,13 +219,18 @@ function checkSettlement(response: Response): void {
 
 export function createX402Client(config: X402ClientConfig): X402Client {
   const { wallet, debug = false } = config;
-  
+
   async function fetchWithPayment(
     input: RequestInfo | URL,
-    init?: RequestInit
+    init?: RequestInit,
   ): Promise<Response> {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-    
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
+
     if (debug) {
       console.log(`[X402] Fetching: ${url}`);
     }
@@ -237,7 +243,7 @@ export function createX402Client(config: X402ClientConfig): X402Client {
       }
 
       const requirements = extractRequirementsFromResponse(response);
-      
+
       if (debug) {
         console.log(`[X402] Payment requirements:`, requirements);
       }
@@ -246,7 +252,7 @@ export function createX402Client(config: X402ClientConfig): X402Client {
         wallet,
         requirements,
         config.domainName,
-        config.domainVersion
+        config.domainVersion,
       );
 
       if (debug) {
@@ -270,14 +276,24 @@ export function createX402Client(config: X402ClientConfig): X402Client {
 
   return {
     fetch: fetchWithPayment,
-    
+
     getAddress: () => getWalletAddress(wallet),
-    
-    async createPayment(requirements: X402PaymentRequirements): Promise<X402PaymentPayload> {
-      return createPaymentPayload(wallet, requirements, config.domainName, config.domainVersion);
+
+    async createPayment(
+      requirements: X402PaymentRequirements,
+    ): Promise<X402PaymentPayload> {
+      return createPaymentPayload(
+        wallet,
+        requirements,
+        config.domainName,
+        config.domainVersion,
+      );
     },
-    
-    async signPayment(authorization: ExactEvmAuthorization, network?: string): Promise<string> {
+
+    async signPayment(
+      authorization: ExactEvmAuthorization,
+      network?: string,
+    ): Promise<string> {
       const networkName = network || "base";
       const chainId = getChainIdFromNetwork(networkName);
       const domain = createEIP712Domain(chainId, authorization.from);
@@ -290,7 +306,9 @@ export function createX402Client(config: X402ClientConfig): X402Client {
   };
 }
 
-export function createX402Transport(config: X402ClientConfig): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
+export function createX402Transport(
+  config: X402ClientConfig,
+): (input: RequestInfo | URL, init?: RequestInit) => Promise<Response> {
   const client = createX402Client(config);
   return client.fetch;
 }

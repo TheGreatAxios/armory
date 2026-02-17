@@ -62,7 +62,10 @@ interface FaremeterPaymentResponse {
 /**
  * Currency to network/asset mapping for faremeter
  */
-const CURRENCY_ASSET_MAP: Record<string, { chainId: number; usdcAddress: string }> = {
+const CURRENCY_ASSET_MAP: Record<
+  string,
+  { chainId: number; usdcAddress: string }
+> = {
   USD: {
     chainId: 8453, // Base
     usdcAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -77,57 +80,49 @@ const CURRENCY_ASSET_MAP: Record<string, { chainId: number; usdcAddress: string 
 // Faremeter to X-402 Adapter
 // ============================================================================
 
-/**
- * Adapter class to convert faremeter requests to X-402 format
- */
-class FaremeterAdapter {
-  /**
-   * Convert faremeter payment request to X-402 payment payload
-   */
-  static toX402PaymentPayload(request: FaremeterPaymentRequest): PaymentPayloadV2 {
-    const networkConfig = CURRENCY_ASSET_MAP[request.currency] ?? CURRENCY_ASSET_MAP.USD;
+function toX402PaymentPayload(
+  request: FaremeterPaymentRequest,
+): PaymentPayloadV2 {
+  const networkConfig =
+    CURRENCY_ASSET_MAP[request.currency] ?? CURRENCY_ASSET_MAP.USD;
 
-    return {
-      from: request.payer as `0x${string}`,
-      to: request.recipient as `0x${string}`,
-      amount: request.amount,
-      nonce: request.reference,
-      expiry: Math.floor(request.timestamp / 1000) + request.expires_in,
-      chainId: `eip155:${networkConfig.chainId}` as const,
-      assetId: `eip155:${networkConfig.chainId}/erc20:${networkConfig.usdcAddress}` as const,
-      signature: {
-        v: request.signature.v,
-        r: request.signature.r as `0x${string}`,
-        s: request.signature.s as `0x${string}`,
-      },
-    };
-  }
+  return {
+    from: request.payer as `0x${string}`,
+    to: request.recipient as `0x${string}`,
+    amount: request.amount,
+    nonce: request.reference,
+    expiry: Math.floor(request.timestamp / 1000) + request.expires_in,
+    chainId: `eip155:${networkConfig.chainId}` as const,
+    assetId:
+      `eip155:${networkConfig.chainId}/erc20:${networkConfig.usdcAddress}` as const,
+    signature: {
+      v: request.signature.v,
+      r: request.signature.r as `0x${string}`,
+      s: request.signature.s as `0x${string}`,
+    },
+  };
+}
 
-  /**
-   * Convert faremeter payment request to X-402 payment requirements
-   */
-  static toX402PaymentRequirements(request: FaremeterPaymentRequest): PaymentRequirementsV2 {
-    return {
-      to: request.recipient as `0x${string}`,
-      amount: request.amount,
-      expiry: Math.floor(request.timestamp / 1000) + request.expires_in,
-    };
-  }
+function toX402PaymentRequirements(
+  request: FaremeterPaymentRequest,
+): PaymentRequirementsV2 {
+  return {
+    to: request.recipient as `0x${string}`,
+    amount: request.amount,
+    expiry: Math.floor(request.timestamp / 1000) + request.expires_in,
+  };
+}
 
-  /**
-   * Convert X-402 settlement response to faremeter response format
-   */
-  static fromX402Response(x402Response: {
-    success: boolean;
-    txHash?: string;
-    error?: string;
-  }): FaremeterPaymentResponse {
-    return {
-      success: x402Response.success,
-      transaction_id: x402Response.txHash,
-      error: x402Response.error,
-    };
-  }
+function fromX402Response(x402Response: {
+  success: boolean;
+  txHash?: string;
+  error?: string;
+}): FaremeterPaymentResponse {
+  return {
+    success: x402Response.success,
+    transaction_id: x402Response.txHash,
+    error: x402Response.error,
+  };
 }
 
 // ============================================================================
@@ -139,7 +134,7 @@ function createFaremeterPaymentRequest(
   recipient: string,
   amount: string,
   currency: string,
-  signature: { r: string; s: string; v: number }
+  signature: { r: string; s: string; v: number },
 ): FaremeterPaymentRequest {
   return {
     payer,
@@ -158,11 +153,11 @@ function createFaremeterPaymentRequest(
 // ============================================================================
 
 async function verifyFaremeterPayment(
-  request: FaremeterPaymentRequest
+  request: FaremeterPaymentRequest,
 ): Promise<FaremeterPaymentResponse> {
   // Convert faremeter request to X-402 format
-  const paymentPayload = FaremeterAdapter.toX402PaymentPayload(request);
-  const paymentRequirements = FaremeterAdapter.toX402PaymentRequirements(request);
+  const paymentPayload = toX402PaymentPayload(request);
+  const paymentRequirements = toX402PaymentRequirements(request);
 
   // Send to X-402 facilitator
   const response = await fetch(`${FACILITATOR_URL}/verify`, {
@@ -179,7 +174,7 @@ async function verifyFaremeterPayment(
   const data = await response.json();
 
   // Convert response back to faremeter format
-  return FaremeterAdapter.fromX402Response({
+  return fromX402Response({
     success: data.success,
     error: data.error,
   });
@@ -190,11 +185,11 @@ async function verifyFaremeterPayment(
 // ============================================================================
 
 async function settleFaremeterPayment(
-  request: FaremeterPaymentRequest
+  request: FaremeterPaymentRequest,
 ): Promise<FaremeterPaymentResponse> {
   // Convert faremeter request to X-402 format
-  const paymentPayload = FaremeterAdapter.toX402PaymentPayload(request);
-  const paymentRequirements = FaremeterAdapter.toX402PaymentRequirements(request);
+  const paymentPayload = toX402PaymentPayload(request);
+  const paymentRequirements = toX402PaymentRequirements(request);
 
   // Send to X-402 facilitator
   const response = await fetch(`${FACILITATOR_URL}/settle`, {
@@ -210,7 +205,7 @@ async function settleFaremeterPayment(
   const data = await response.json();
 
   // Convert response back to faremeter format
-  return FaremeterAdapter.fromX402Response({
+  return fromX402Response({
     success: data.success,
     txHash: data.txHash,
     error: data.error,
@@ -223,8 +218,8 @@ async function settleFaremeterPayment(
 
 function createMockSignature(): { r: string; s: string; v: number } {
   return {
-    r: "0x" + "0".repeat(64),
-    s: "0x" + "0".repeat(64),
+    r: `0x${"0".repeat(64)}`,
+    s: `0x${"0".repeat(64)}`,
     v: 27,
   };
 }
@@ -243,7 +238,7 @@ async function main(): Promise<void> {
     "0x1234567890123456789012345678901234567890",
     "1000000", // 1 USDC
     "USD",
-    createMockSignature()
+    createMockSignature(),
   );
 
   console.log("Faremeter Request:");
@@ -257,8 +252,8 @@ async function main(): Promise<void> {
 
   // Convert to X-402 format
   console.log("2. Convert to X-402 Format");
-  const x402Payload = FaremeterAdapter.toX402PaymentPayload(faremeterRequest);
-  const x402Requirements = FaremeterAdapter.toX402PaymentRequirements(faremeterRequest);
+  const x402Payload = toX402PaymentPayload(faremeterRequest);
+  const x402Requirements = toX402PaymentRequirements(faremeterRequest);
 
   console.log("X-402 Payment Payload:");
   console.log("  From:", x402Payload.from);
@@ -295,4 +290,10 @@ if (import.meta.main) {
 }
 
 // Export adapter for use in other modules
-export { FaremeterAdapter, type FaremeterPaymentRequest, type FaremeterPaymentResponse };
+export {
+  fromX402Response,
+  toX402PaymentPayload,
+  toX402PaymentRequirements,
+  type FaremeterPaymentRequest,
+  type FaremeterPaymentResponse,
+};

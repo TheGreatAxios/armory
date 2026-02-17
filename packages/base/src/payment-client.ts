@@ -1,15 +1,17 @@
 import type {
   PaymentPayload,
   PaymentRequirements,
-  VerifyResponse,
   SettlementResponse,
+  VerifyResponse,
 } from "./types/x402";
-import { isPaymentPayload, isExactEvmPayload } from "./types/x402";
+import { isExactEvmPayload, isPaymentPayload } from "./types/x402";
 import { decodeBase64ToUtf8 } from "./utils/base64";
 
 export interface FacilitatorClientConfig {
   url: string;
-  createHeaders?: () => Record<string, string> | Promise<Record<string, string>>;
+  createHeaders?: () =>
+    | Record<string, string>
+    | Promise<Record<string, string>>;
 }
 
 const DEFAULT_FACILITATOR_URL = "https://facilitator.payai.network";
@@ -17,7 +19,9 @@ const DEFAULT_FACILITATOR_URL = "https://facilitator.payai.network";
 function toJsonSafe(data: object): object {
   function convert(value: unknown): unknown {
     if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-      return Object.fromEntries(Object.entries(value).map(([key, val]) => [key, convert(val)]));
+      return Object.fromEntries(
+        Object.entries(value).map(([key, val]) => [key, convert(val)]),
+      );
     }
     if (Array.isArray(value)) {
       return value.map(convert);
@@ -34,7 +38,9 @@ function resolveUrl(config?: FacilitatorClientConfig): string {
   return config?.url ?? DEFAULT_FACILITATOR_URL;
 }
 
-async function resolveHeaders(config?: FacilitatorClientConfig): Promise<Record<string, string>> {
+async function resolveHeaders(
+  config?: FacilitatorClientConfig,
+): Promise<Record<string, string>> {
   const base: Record<string, string> = { "Content-Type": "application/json" };
   if (!config?.createHeaders) return base;
   const extra = await config.createHeaders();
@@ -124,10 +130,16 @@ export async function getSupported(
   return (await response.json()) as SupportedResponse;
 }
 
-function isCompactV2Payload(payload: unknown): payload is { x402Version: number; payload: unknown } {
+function isCompactV2Payload(
+  payload: unknown,
+): payload is { x402Version: number; payload: unknown } {
   if (typeof payload !== "object" || payload === null) return false;
   const record = payload as Record<string, unknown>;
-  return typeof record.x402Version === "number" && "payload" in record && !("accepted" in record);
+  return (
+    typeof record.x402Version === "number" &&
+    "payload" in record &&
+    !("accepted" in record)
+  );
 }
 
 export function decodePayloadHeader(
@@ -140,7 +152,9 @@ export function decodePayloadHeader(
     if (isCompactV2Payload(parsed)) {
       const compact = parsed as { payload: PaymentPayload["payload"] };
       if (!defaults?.accepted) {
-        throw new Error("Invalid payment payload: missing 'accepted' field and no defaults provided");
+        throw new Error(
+          "Invalid payment payload: missing 'accepted' field and no defaults provided",
+        );
       }
       return {
         x402Version: 2,
@@ -162,7 +176,9 @@ export function decodePayloadHeader(
     if (isCompactV2Payload(decoded)) {
       const compact = decoded as { payload: PaymentPayload["payload"] };
       if (!defaults?.accepted) {
-        throw new Error("Invalid payment payload: missing 'accepted' field and no defaults provided");
+        throw new Error(
+          "Invalid payment payload: missing 'accepted' field and no defaults provided",
+        );
       }
       return {
         x402Version: 2,

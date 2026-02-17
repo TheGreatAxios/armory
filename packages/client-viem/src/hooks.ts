@@ -6,18 +6,17 @@
  */
 
 import type {
-  PaymentRequiredContext,
-  PaymentPayloadContext,
   HookConfig,
   HookRegistry,
+  PaymentPayloadContext,
 } from "@armory-sh/base";
 import type { X402Wallet } from "./protocol";
 
 export type {
-  PaymentRequiredContext,
-  PaymentPayloadContext,
   HookConfig,
   HookRegistry,
+  PaymentPayloadContext,
+  PaymentRequiredContext,
 } from "@armory-sh/base";
 
 export interface ViemPaymentPayloadContext extends PaymentPayloadContext {

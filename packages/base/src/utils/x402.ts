@@ -1,11 +1,11 @@
 /**
  * X402 Protocol Utilities - Coinbase Compatible
- * 
+ *
  * Helper functions for nonce generation, amount conversion, and other utilities.
  */
 
-import { randomBytes } from "crypto";
-import type { Hex, Address } from "../types/x402";
+import { randomBytes } from "node:crypto";
+import type { Address, Hex } from "../types/x402";
 
 /**
  * Generate a random 32-byte nonce as hex string
@@ -36,8 +36,11 @@ export function fromAtomicUnits(amount: string, decimals: number = 6): string {
   const value = BigInt(amount);
   const divisor = BigInt(10 ** decimals);
   const whole = (value / divisor).toString();
-  const fractional = (value % divisor).toString().padStart(decimals, "0").replace(/0+$/, "");
-  
+  const fractional = (value % divisor)
+    .toString()
+    .padStart(decimals, "0")
+    .replace(/0+$/, "");
+
   if (fractional.length === 0) {
     return whole;
   }
@@ -75,7 +78,7 @@ export function caip2ToNetwork(caip2Id: string): string {
   if (!match) {
     return caip2Id;
   }
-  
+
   const chainId = parseInt(match[1], 10);
   const chainIdToNetwork: Record<number, string> = {
     1: "ethereum",
@@ -88,7 +91,7 @@ export function caip2ToNetwork(caip2Id: string): string {
     11155420: "optimism-sepolia",
     11155111: "ethereum-sepolia",
   };
-  
+
   return chainIdToNetwork[chainId] || caip2Id;
 }
 
@@ -108,17 +111,17 @@ export function networkToCaip2(network: string): string {
     "optimism-sepolia": 11155420,
     "ethereum-sepolia": 11155111,
   };
-  
+
   const chainId = networkToChainId[network];
   if (chainId) {
     return `eip155:${chainId}`;
   }
-  
+
   // If already in CAIP-2 format, return as-is
   if (network.startsWith("eip155:")) {
     return network;
   }
-  
+
   return `eip155:0`;
 }
 

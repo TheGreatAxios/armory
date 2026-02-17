@@ -25,6 +25,6 @@ export interface PaymentWallet {
   signTypedData(
     domain: Record<string, unknown>,
     types: Record<string, unknown>,
-    value: Record<string, unknown>
+    value: Record<string, unknown>,
   ): Promise<string>;
 }

@@ -28,11 +28,12 @@ export interface SettlementResponse {
  */
 export function assertPaymentRequired(
   response: PaymentResponse,
-  version: 1 | 2
+  version: 1 | 2,
 ): void {
   expect(response.status).toBe(402);
 
-  const paymentHeader = version === 1 ? "X-PAYMENT-REQUIRED" : "PAYMENT-REQUIRED";
+  const paymentHeader =
+    version === 1 ? "X-PAYMENT-REQUIRED" : "PAYMENT-REQUIRED";
   expect(response.headers[paymentHeader]).toBeDefined();
 
   const requirements = JSON.parse(response.headers[paymentHeader]!);
@@ -46,12 +47,13 @@ export function assertPaymentRequired(
  */
 export function assertPaymentVerified(
   response: PaymentResponse,
-  version: 1 | 2
+  version: 1 | 2,
 ): void {
   expect(response.status).toBeGreaterThanOrEqual(200);
   expect(response.status).toBeLessThan(300);
 
-  const responseHeader = version === 1 ? "X-PAYMENT-RESPONSE" : "PAYMENT-RESPONSE";
+  const responseHeader =
+    version === 1 ? "X-PAYMENT-RESPONSE" : "PAYMENT-RESPONSE";
   expect(response.headers[responseHeader]).toBeDefined();
 
   const responseBody = JSON.parse(response.headers[responseHeader]!);
@@ -66,15 +68,16 @@ export function assertPaymentVerified(
  */
 export function assertPaymentError(
   response: PaymentResponse,
-  expectedErrorMessage: string
+  expectedErrorMessage: string,
 ): void {
   expect(response.status).toBeGreaterThanOrEqual(400);
   expect(response.status).toBeLessThan(500);
 
   if (response.body) {
-    const body = typeof response.body === "string"
-      ? JSON.parse(response.body)
-      : response.body;
+    const body =
+      typeof response.body === "string"
+        ? JSON.parse(response.body)
+        : response.body;
     expect(body).toHaveProperty("error");
     expect(body.error).toContain(expectedErrorMessage);
   }
@@ -83,9 +86,7 @@ export function assertPaymentError(
 /**
  * Assert settlement response format
  */
-export function assertSettlementResponse(
-  response: SettlementResponse
-): void {
+export function assertSettlementResponse(response: SettlementResponse): void {
   expect(response).toHaveProperty("success");
   if (response.success) {
     expect(response).toHaveProperty("transaction");
@@ -99,10 +100,7 @@ export function assertSettlementResponse(
 /**
  * Assert payment payload structure
  */
-export function assertPaymentPayload(
-  payload: unknown,
-  version: 1 | 2
-): void {
+export function assertPaymentPayload(payload: unknown, version: 1 | 2): void {
   expect(payload).toBeDefined();
   expect(typeof payload).toBe("object");
 
@@ -137,7 +135,7 @@ export function assertPaymentPayload(
  */
 export function assertPaymentRequirements(
   requirements: unknown,
-  version: 1 | 2
+  version: 1 | 2,
 ): void {
   expect(requirements).toBeDefined();
   expect(typeof requirements).toBe("object");
@@ -165,7 +163,7 @@ export function assertPaymentRequirements(
  */
 export function assertHeaders(
   headers: Record<string, string>,
-  expectedHeaders: Record<string, string>
+  expectedHeaders: Record<string, string>,
 ): void {
   for (const [key, value] of Object.entries(expectedHeaders)) {
     expect(headers[key]).toBeDefined();
@@ -178,7 +176,7 @@ export function assertHeaders(
  */
 export function assertVersionDetection(
   payload: unknown,
-  expectedVersion: 1 | 2
+  expectedVersion: 1 | 2,
 ): void {
   const p = payload as Record<string, unknown>;
   expect(p).toHaveProperty("x402Version", expectedVersion);
@@ -187,9 +185,7 @@ export function assertVersionDetection(
 /**
  * Helper to parse payment header
  */
-export function parsePaymentHeader(
-  headerValue: string
-): unknown {
+export function parsePaymentHeader(headerValue: string): unknown {
   // Try JSON first
   if (headerValue.startsWith("{")) {
     return JSON.parse(headerValue);

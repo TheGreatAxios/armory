@@ -5,8 +5,8 @@
  * These functions are protocol-level and don't depend on wallet libraries.
  */
 
-import { decodeBase64ToUtf8, normalizeBase64Url } from "./utils/base64";
 import { V2_HEADERS } from "./types/v2";
+import { decodeBase64ToUtf8, normalizeBase64Url } from "./utils/base64";
 
 /**
  * Parse JSON or Base64-encoded JSON

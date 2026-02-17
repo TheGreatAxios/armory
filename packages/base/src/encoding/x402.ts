@@ -5,15 +5,14 @@
  * Matches the Coinbase x402 v2 SDK format.
  */
 
+import { V2_HEADERS } from "../types/v2";
 import type {
   PaymentPayload,
-  X402Response,
   PaymentRequirements,
   SettlementResponse,
+  X402Response,
 } from "../types/x402";
-
 import { isPaymentPayload } from "../types/x402";
-import { V2_HEADERS } from "../types/v2";
 import {
   decodeBase64ToUtf8,
   encodeUtf8ToBase64,
@@ -43,12 +42,14 @@ export function encodePayment(payload: PaymentPayload): string {
     throw new Error("Invalid payment payload format");
   }
   // Convert any bigint values to strings for JSON serialization
-  const safePayload = JSON.parse(JSON.stringify(payload, (_, value) => {
-    if (typeof value === "bigint") {
-      return value.toString();
-    }
-    return value;
-  }));
+  const safePayload = JSON.parse(
+    JSON.stringify(payload, (_, value) => {
+      if (typeof value === "bigint") {
+        return value.toString();
+      }
+      return value;
+    }),
+  );
 
   return safeBase64Encode(JSON.stringify(safePayload));
 }
@@ -76,12 +77,14 @@ export function decodePayment(encoded: string): PaymentPayload {
  * Encode settlement response to JSON string
  */
 export function encodeSettlementResponse(response: SettlementResponse): string {
-  const safeResponse = JSON.parse(JSON.stringify(response, (_, value) => {
-    if (typeof value === "bigint") {
-      return value.toString();
-    }
-    return value;
-  }));
+  const safeResponse = JSON.parse(
+    JSON.stringify(response, (_, value) => {
+      if (typeof value === "bigint") {
+        return value.toString();
+      }
+      return value;
+    }),
+  );
 
   return safeBase64Encode(JSON.stringify(safeResponse));
 }
@@ -134,7 +137,9 @@ export function detectPaymentVersion(headers: Headers): number | null {
 /**
  * Extract payment from V2 headers
  */
-export function extractPaymentFromHeaders(headers: Headers): PaymentPayload | null {
+export function extractPaymentFromHeaders(
+  headers: Headers,
+): PaymentPayload | null {
   const encoded = headers.get("PAYMENT-SIGNATURE");
   if (!encoded) return null;
 
@@ -160,7 +165,7 @@ export interface PaymentRequiredOptions {
  */
 export function createPaymentRequiredHeaders(
   requirements: PaymentRequirements | PaymentRequirements[],
-  options?: PaymentRequiredOptions
+  options?: PaymentRequiredOptions,
 ): Record<string, string> {
   const accepts = Array.isArray(requirements) ? requirements : [requirements];
 
@@ -181,7 +186,7 @@ export function createPaymentRequiredHeaders(
  * Create settlement response headers (V2 format)
  */
 export function createSettlementHeaders(
-  settlement: SettlementResponse
+  settlement: SettlementResponse,
 ): Record<string, string> {
   return {
     [V2_HEADERS.PAYMENT_RESPONSE]: encodeSettlementResponse(settlement),

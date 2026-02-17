@@ -1,34 +1,29 @@
-import { Web3 } from "web3";
 import {
-  getNetworkConfig,
-  getNetworkByChainId,
-  encodePaymentV2,
-  isX402V2Requirements,
-  networkToCaip2,
   combineSignatureV2,
-  createNonce,
-  V2_HEADERS,
-  type PaymentPayloadV2,
+  encodePaymentV2,
+  getNetworkByChainId,
+  getNetworkConfig,
+  type NetworkConfig,
+  networkToCaip2,
   type PaymentRequirementsV2,
   type SettlementResponseV2,
-  type EIP3009Authorization,
-  type NetworkConfig,
+  V2_HEADERS,
 } from "@armory-sh/base";
-import type {
-  Web3Account,
-  Web3ClientConfig,
-  PaymentSignOptions,
-  PaymentSignatureResult,
-  Web3X402Client,
-  Web3EIP712Domain,
-} from "./types";
+import { Web3 } from "web3";
 import { createEIP712Domain, createTransferWithAuthorization } from "./eip3009";
 import {
   createX402V2Payment,
   detectX402Version,
   parsePaymentRequired,
-  type ParsedPaymentRequired,
 } from "./protocol";
+import type {
+  PaymentSignatureResult,
+  PaymentSignOptions,
+  Web3Account,
+  Web3ClientConfig,
+  Web3EIP712Domain,
+  Web3X402Client,
+} from "./types";
 
 const DEFAULT_EXPIRY_SECONDS = 3600;
 const DEFAULT_VALID_AFTER = 0;
@@ -49,9 +44,12 @@ const extractDomainConfig = (config: Web3ClientConfig) => {
 
 const createClientState = (config: Web3ClientConfig) => {
   const network = config.network
-    ? (typeof config.network === "string"
-        ? getNetworkConfig(config.network) ?? (() => { throw new Error(`Unknown network: ${config.network}`); })()
-        : config.network)
+    ? typeof config.network === "string"
+      ? (getNetworkConfig(config.network) ??
+        (() => {
+          throw new Error(`Unknown network: ${config.network}`);
+        })())
+      : config.network
     : undefined;
   const { domainName, domainVersion } = extractDomainConfig(config);
 
@@ -75,9 +73,12 @@ const getAddress = (account: Web3Account): string => {
   throw new Error("Unable to get address from account");
 };
 
-const parseSignature = (signature: string): { v: number; r: string; s: string } => {
+const parseSignature = (
+  signature: string,
+): { v: number; r: string; s: string } => {
   const hexSig = signature.startsWith("0x") ? signature.slice(2) : signature;
-  if (hexSig.length !== 130) throw new Error(`Invalid signature length: ${hexSig.length}`);
+  if (hexSig.length !== 130)
+    throw new Error(`Invalid signature length: ${hexSig.length}`);
   return {
     r: `0x${hexSig.slice(0, 64)}`,
     s: `0x${hexSig.slice(64, 128)}`,
@@ -87,13 +88,20 @@ const parseSignature = (signature: string): { v: number; r: string; s: string } 
 
 const signTypedDataWrapper = async (
   account: Web3Account,
-  domain: Record<string, string> | { [key: string]: string | number | boolean } | Web3EIP712Domain,
-  message: Record<string, string> | { [key: string]: string | number | boolean }
+  domain:
+    | Record<string, string>
+    | { [key: string]: string | number | boolean }
+    | Web3EIP712Domain,
+  message:
+    | Record<string, string>
+    | { [key: string]: string | number | boolean },
 ): Promise<{ v: number; r: string; s: string }> => {
   const acc = account as unknown as Record<string, unknown>;
 
   if (typeof acc.signTypedData === "function") {
-    const sig = await (acc.signTypedData as (d: unknown, m: unknown) => Promise<string>)(domain, message);
+    const sig = await (
+      acc.signTypedData as (d: unknown, m: unknown) => Promise<string>
+    )(domain, message);
     return parseSignature(sig);
   }
 
@@ -104,7 +112,12 @@ const signTypedDataWrapper = async (
   };
 
   if (typeof acc.request === "function") {
-    const sig = await (acc.request as (args: { method: string; params: unknown[] }) => Promise<string>)({
+    const sig = await (
+      acc.request as (args: {
+        method: string;
+        params: unknown[];
+      }) => Promise<string>
+    )({
       method: "eth_signTypedData_v4",
       params: [getAddressLocal(), JSON.stringify({ domain, message })],
     });
@@ -112,7 +125,9 @@ const signTypedDataWrapper = async (
   }
 
   if ("privateKey" in account && typeof account.privateKey === "string") {
-    throw new Error("Direct private key signing not implemented. Use wallet provider with signTypedData.");
+    throw new Error(
+      "Direct private key signing not implemented. Use wallet provider with signTypedData.",
+    );
   }
 
   throw new Error("Account does not support EIP-712 signing.");
@@ -132,7 +147,7 @@ const signPaymentV2 = async (
     nonce: string;
     expiry: number;
     accepted?: PaymentRequirementsV2;
-  }
+  },
 ): Promise<PaymentSignatureResult> => {
   const { from, to, amount, nonce, expiry, accepted } = params;
   const defaultAccepted: PaymentRequirementsV2 = accepted ?? {
@@ -147,19 +162,29 @@ const signPaymentV2 = async (
   const domainExtra = defaultAccepted.extra;
   const requirementDomainName =
     defaultAccepted.name ??
-    (domainExtra && typeof domainExtra === "object" && typeof domainExtra["name"] === "string"
-      ? domainExtra["name"]
+    (domainExtra &&
+    typeof domainExtra === "object" &&
+    typeof domainExtra.name === "string"
+      ? domainExtra.name
       : undefined);
   const requirementDomainVersion =
     defaultAccepted.version ??
-    (domainExtra && typeof domainExtra === "object" && typeof domainExtra["version"] === "string"
-      ? domainExtra["version"]
+    (domainExtra &&
+    typeof domainExtra === "object" &&
+    typeof domainExtra.version === "string"
+      ? domainExtra.version
       : undefined);
   const effectiveDomainName = state.domainName ?? requirementDomainName;
-  const effectiveDomainVersion = state.domainVersion ?? requirementDomainVersion;
+  const effectiveDomainVersion =
+    state.domainVersion ?? requirementDomainVersion;
 
   const chainId = parseInt(defaultAccepted.network.split(":")[1], 10);
-  const domain = createEIP712Domain(chainId, defaultAccepted.asset, effectiveDomainName, effectiveDomainVersion);
+  const domain = createEIP712Domain(
+    chainId,
+    defaultAccepted.asset,
+    effectiveDomainName,
+    effectiveDomainVersion,
+  );
   const nowSeconds = Math.floor(Date.now() / 1000);
   const validAfterHex = `0x${(nowSeconds - 600).toString(16)}`;
   const message = createTransferWithAuthorization({
@@ -196,7 +221,9 @@ const signPaymentV2 = async (
   };
 };
 
-const extractNetworkFromRequirements = (requirements: PaymentRequirementsV2): NetworkConfig => {
+const extractNetworkFromRequirements = (
+  requirements: PaymentRequirementsV2,
+): NetworkConfig => {
   const caip2Network = requirements.network;
   const match = caip2Network.match(/^eip155:(\d+)$/);
   if (!match) {
@@ -215,7 +242,10 @@ const extractNetworkFromRequirements = (requirements: PaymentRequirementsV2): Ne
 export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
   const state = createClientState(config);
 
-  const fetch = async (url: string | Request, init?: RequestInit): Promise<Response> => {
+  const fetch = async (
+    url: string | Request,
+    init?: RequestInit,
+  ): Promise<Response> => {
     let response = await fetch(url, init);
 
     if (response.status === 402) {
@@ -229,7 +259,10 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
 
       const from = getAddress(state.account);
       const req = selectedRequirements;
-      const to = typeof req.payTo === "string" ? req.payTo : "0x0000000000000000000000000000000000000000";
+      const to =
+        typeof req.payTo === "string"
+          ? req.payTo
+          : "0x0000000000000000000000000000000000000000";
 
       const network = extractNetworkFromRequirements(req);
 
@@ -243,7 +276,10 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
       });
 
       const paymentHeaders = new Headers(init?.headers);
-      paymentHeaders.set(V2_HEADERS.PAYMENT_SIGNATURE, encodePaymentV2(result.payload));
+      paymentHeaders.set(
+        V2_HEADERS.PAYMENT_SIGNATURE,
+        encodePaymentV2(result.payload),
+      );
 
       response = await fetch(url, { ...init, headers: paymentHeaders });
     }
@@ -257,36 +293,65 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
     getNetwork: () => state.network,
     getVersion: () => state.version,
 
-    signPayment: async (options: PaymentSignOptions): Promise<PaymentSignatureResult> => {
-      const network = state.network ?? (() => { throw new Error("Network must be configured for manual payment signing"); })();
+    signPayment: async (
+      options: PaymentSignOptions,
+    ): Promise<PaymentSignatureResult> => {
+      const network =
+        state.network ??
+        (() => {
+          throw new Error(
+            "Network must be configured for manual payment signing",
+          );
+        })();
       const from = getAddress(state.account);
       const to = options.to;
       const amount = options.amount.toString();
       const nonce = options.nonce ?? crypto.randomUUID();
-      const expiry = options.expiry ?? Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS;
+      const expiry =
+        options.expiry ??
+        Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS;
 
       return signPaymentV2(state, network, { from, to, amount, nonce, expiry });
     },
 
-    createPaymentHeaders: async (options: PaymentSignOptions): Promise<Headers> => {
-      const network = state.network ?? (() => { throw new Error("Network must be configured for manual payment signing"); })();
+    createPaymentHeaders: async (
+      options: PaymentSignOptions,
+    ): Promise<Headers> => {
+      const network =
+        state.network ??
+        (() => {
+          throw new Error(
+            "Network must be configured for manual payment signing",
+          );
+        })();
       const from = getAddress(state.account);
       const to = options.to;
       const amount = options.amount.toString();
       const nonce = options.nonce ?? crypto.randomUUID();
-      const expiry = options.expiry ?? Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS;
+      const expiry =
+        options.expiry ??
+        Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_SECONDS;
 
-      const result = await signPaymentV2(state, network, { from, to, amount, nonce, expiry });
+      const result = await signPaymentV2(state, network, {
+        from,
+        to,
+        amount,
+        nonce,
+        expiry,
+      });
       const headers = new Headers();
       headers.set("PAYMENT-SIGNATURE", encodePaymentV2(result.payload));
       return headers;
     },
 
     handlePaymentRequired: async (
-      requirements: PaymentRequirementsV2
+      requirements: PaymentRequirementsV2,
     ): Promise<PaymentSignatureResult> => {
       const from = getAddress(state.account);
-      const to = typeof requirements.payTo === "string" ? requirements.payTo : "0x0000000000000000000000000000000000000000";
+      const to =
+        typeof requirements.payTo === "string"
+          ? requirements.payTo
+          : "0x0000000000000000000000000000000000000000";
       const network = extractNetworkFromRequirements(requirements);
 
       return signPaymentV2(state, network, {

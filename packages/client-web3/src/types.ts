@@ -1,13 +1,15 @@
-import type { Web3BaseWallet, Web3BaseWalletAccount } from "web3-types";
 import type {
+  CustomToken,
+  NetworkConfig,
   PaymentPayloadV2,
   PaymentRequirementsV2,
   SettlementResponseV2,
-  NetworkConfig,
-  CustomToken,
 } from "@armory-sh/base";
+import type { Web3BaseWallet, Web3BaseWalletAccount } from "web3-types";
 
-export type Web3Account = Web3BaseWalletAccount | Web3BaseWallet<Web3BaseWalletAccount>;
+export type Web3Account =
+  | Web3BaseWalletAccount
+  | Web3BaseWallet<Web3BaseWalletAccount>;
 
 /** Token configuration - can use pre-configured tokens from @armory-sh/tokens */
 export type Token = CustomToken;
@@ -57,11 +59,9 @@ export interface Web3X402Client {
   signPayment(options: PaymentSignOptions): Promise<PaymentSignatureResult>;
   createPaymentHeaders(options: PaymentSignOptions): Promise<Headers>;
   handlePaymentRequired(
-    requirements: PaymentRequirementsV2
+    requirements: PaymentRequirementsV2,
   ): Promise<PaymentSignatureResult>;
-  verifySettlement(
-    response: SettlementResponseV2
-  ): boolean;
+  verifySettlement(response: SettlementResponseV2): boolean;
 }
 
 export interface Web3TransferWithAuthorization {

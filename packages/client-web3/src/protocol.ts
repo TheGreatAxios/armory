@@ -5,16 +5,15 @@
  */
 
 import {
-  V2_HEADERS,
-  isX402V2PaymentRequired,
-  type PaymentRequirementsV2,
-  type PaymentRequiredV2,
-  type X402PaymentPayloadV2,
-  type PaymentPayloadV2,
-  type EIP3009Authorization,
   decodeBase64ToUtf8,
-  encodeUtf8ToBase64,
+  type EIP3009Authorization,
+  encodePaymentV2,
+  isX402V2PaymentRequired,
   normalizeBase64Url,
+  type PaymentPayloadV2,
+  type PaymentRequiredV2,
+  type PaymentRequirementsV2,
+  V2_HEADERS,
 } from "@armory-sh/base";
 
 // ============================================================================
@@ -37,7 +36,10 @@ export interface ParsedPaymentRequired {
  * Detect x402 protocol version from response headers
  * Always returns V2 since we're v2-only
  */
-export const detectX402Version = (_response: Response, _fallbackVersion: X402Version = 2): X402Version => {
+export const detectX402Version = (
+  _response: Response,
+  _fallbackVersion: X402Version = 2,
+): X402Version => {
   return 2;
 };
 
@@ -59,7 +61,7 @@ export const detectVersionFromObject = (obj: unknown): X402Version | null => {
  */
 export const parsePaymentRequired = async (
   response: Response,
-  _version?: X402Version
+  _version?: X402Version,
 ): Promise<ParsedPaymentRequired> => {
   const v2Header = response.headers.get(V2_HEADERS.PAYMENT_REQUIRED);
   if (!v2Header) {
@@ -144,10 +146,9 @@ export const createX402V2Payment = (params: {
  */
 export const createPaymentHeader = (
   payload: PaymentPayloadV2,
-  _version: X402Version = 2
+  _version: X402Version = 2,
 ): string => {
-  const encoded = encodeUtf8ToBase64(JSON.stringify(payload));
-  return encoded;
+  return encodePaymentV2(payload);
 };
 
 /**

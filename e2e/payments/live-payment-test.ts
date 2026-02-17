@@ -13,17 +13,14 @@
  */
 
 import {
-  TEST_PRIVATE_KEY,
-  TEST_PAY_TO_ADDRESS,
-  TEST_AMOUNT,
-  TEST_NETWORK,
-  TEST_CHAIN_ID,
   FACILITATOR_URL,
+  TEST_AMOUNT,
+  TEST_CHAIN_ID,
+  TEST_NETWORK,
+  TEST_PAY_TO_ADDRESS,
+  TEST_PRIVATE_KEY,
 } from "../general/config";
-import {
-  createHonoServer,
-  createExpressServer,
-} from "../general/servers";
+import { createExpressServer, createHonoServer } from "../general/servers";
 
 // Import x402 client functions
 async function createX402Client(config: any) {
@@ -33,8 +30,11 @@ async function createX402Client(config: any) {
 
   const account = privateKeyToAccount(config.privateKey);
 
-  const client = new x402Client()
-    .register(`eip155:${config.chainId}`, new ExactEvmScheme(account), 2);
+  const client = new x402Client().register(
+    `eip155:${config.chainId}`,
+    new ExactEvmScheme(account),
+    2,
+  );
   const fetchWithPayment = wrapFetchWithPayment(fetch, client);
 
   return { fetch: fetchWithPayment };
@@ -81,7 +81,10 @@ async function runPaymentTest(
     console.log(`✓ Server started on ${server.url}`);
 
     // Create x402 client
-    const client = await createX402Client({ ...clientConfig, baseUrl: server.url });
+    const client = await createX402Client({
+      ...clientConfig,
+      baseUrl: server.url,
+    });
     console.log("✓ Client created");
 
     // Execute payment
@@ -93,7 +96,10 @@ async function runPaymentTest(
 
     console.log(`✅ ${name} - SUCCESS`);
   } catch (error) {
-    console.error(`❌ ${name} - FAILED:`, error instanceof Error ? error.message : error);
+    console.error(
+      `❌ ${name} - FAILED:`,
+      error instanceof Error ? error.message : error,
+    );
     throw error;
   } finally {
     // Always close the server, even if test failed
@@ -135,7 +141,9 @@ async function main() {
 
   // Summary
   console.log("\n╔════════════════════════════════════════════════════╗");
-  console.log("║                         Summary                             ║");
+  console.log(
+    "║                         Summary                             ║",
+  );
   console.log("╚════════════════════════════════════════════════════╝");
 
   const passed = results.filter((r) => r.success).length;
@@ -149,8 +157,10 @@ async function main() {
     }
   }
 
-  console.log("\n" + "─".repeat(50));
-  console.log(`Total: ${results.length} | Passed: ${passed} | Failed: ${failed}`);
+  console.log(`\n${"─".repeat(50)}`);
+  console.log(
+    `Total: ${results.length} | Passed: ${passed} | Failed: ${failed}`,
+  );
 
   if (failed > 0) {
     process.exit(1);

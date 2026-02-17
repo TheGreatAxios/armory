@@ -5,62 +5,24 @@
 
 export interface Extension<T = unknown> {
   info: T;
-  schema: JSONSchema;
-}
-
-export type JSONSchema = {
-  $schema?: string;
-  $id?: string;
-  title?: string;
-  description?: string;
-  type?: string | string[];
-  properties?: Record<string, JSONSchema>;
-  required?: Array<string | boolean>;
-  items?: JSONSchema;
-  additionalProperties?: boolean | JSONSchema;
-  allOf?: JSONSchema[];
-  anyOf?: JSONSchema[];
-  oneOf?: JSONSchema[];
-  not?: JSONSchema;
-  enum?: unknown[];
-  const?: unknown;
-  format?: string;
-  pattern?: string;
-  minLength?: number;
-  maxLength?: number;
-  minimum?: number;
-  maximum?: number;
-  exclusiveMinimum?: number | boolean;
-  exclusiveMaximum?: number | boolean;
-  multipleOf?: number;
-  minItems?: number;
-  maxItems?: number;
-  uniqueItems?: boolean;
-  minProperties?: number;
-  maxProperties?: number;
-  $ref?: string;
-  definitions?: Record<string, JSONSchema>;
-  dependencies?: Record<string, JSONSchema | string[]>;
-  patternProperties?: Record<string, JSONSchema>;
-  additionalItems?: boolean | JSONSchema;
 }
 
 export type BazaarExtensionInfo = {
   input?: unknown;
-  inputSchema?: JSONSchema;
+  inputSchema?: unknown;
   output?: {
     example?: unknown;
-    schema?: JSONSchema;
+    schema?: unknown;
   };
 };
 
 export type BazaarDiscoveryConfig = {
   input?: unknown;
-  inputSchema?: JSONSchema;
+  inputSchema?: unknown;
   bodyType?: "json" | "form-data" | "text";
   output?: {
     example?: unknown;
-    schema?: JSONSchema;
+    schema?: unknown;
   };
 };
 
@@ -102,25 +64,15 @@ export type SIWxPayload = {
 
 export type DiscoveredResource = {
   input?: unknown;
-  inputSchema?: JSONSchema;
+  inputSchema?: unknown;
   output?: {
     example?: unknown;
-    schema?: JSONSchema;
+    schema?: unknown;
   };
   network: string;
   token: string;
   amount: string;
   payTo: string;
-};
-
-export type BazaarDiscoveryConfig = {
-  input?: unknown;
-  inputSchema?: JSONSchema;
-  bodyType?: "json" | "form-data" | "text";
-  output?: {
-    example?: unknown;
-    schema?: JSONSchema;
-  };
 };
 
 export type SIWxExtensionConfig = {

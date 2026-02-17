@@ -43,7 +43,7 @@ export interface MockFacilitatorOptions {
 let nextPort = 9100;
 
 export const createMockFacilitator = async (
-  options: MockFacilitatorOptions = {}
+  options: MockFacilitatorOptions = {},
 ): Promise<{ url: string; close: () => Promise<void> }> => {
   const {
     port = nextPort++,
@@ -71,7 +71,10 @@ export const createMockFacilitator = async (
       }
 
       if (req.method !== "POST") {
-        return Response.json({ error: "Method not allowed" }, { status: 405, headers: corsHeaders });
+        return Response.json(
+          { error: "Method not allowed" },
+          { status: 405, headers: corsHeaders },
+        );
       }
 
       if (path === "/verify") {
@@ -106,7 +109,7 @@ export const createMockFacilitator = async (
         const result: FacilitatorSettleResponse = alwaysSettle
           ? {
               success: true,
-              txHash: "0x" + "a".repeat(64),
+              txHash: `0x${"a".repeat(64)}`,
             }
           : {
               success: false,
@@ -116,7 +119,10 @@ export const createMockFacilitator = async (
         return Response.json(result, { headers: corsHeaders });
       }
 
-      return Response.json({ error: "Not found" }, { status: 404, headers: corsHeaders });
+      return Response.json(
+        { error: "Not found" },
+        { status: 404, headers: corsHeaders },
+      );
     },
   });
 
@@ -140,11 +146,18 @@ function extractPayerAddress(payload: unknown): string {
     }
   }
 
-  if (typeof payload === "object" && payload !== null && "x402Version" in payload) {
+  if (
+    typeof payload === "object" &&
+    payload !== null &&
+    "x402Version" in payload
+  ) {
     const p = payload as Record<string, unknown>;
     if ("payload" in p && typeof p.payload === "object" && p.payload !== null) {
       const schemePayload = p.payload as Record<string, unknown>;
-      if ("authorization" in schemePayload && typeof schemePayload.authorization === "object") {
+      if (
+        "authorization" in schemePayload &&
+        typeof schemePayload.authorization === "object"
+      ) {
         const auth = schemePayload.authorization as Record<string, unknown>;
         if ("from" in auth && typeof auth.from === "string") {
           return auth.from;

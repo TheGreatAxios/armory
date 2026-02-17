@@ -11,12 +11,14 @@
  * ```
  */
 
+import { registerToken } from "@armory-sh/base";
 import { createX402Client, createX402Transport } from "@armory-sh/client-web3";
 import { Web3 } from "web3";
-import { registerToken } from "@armory-sh/base";
 
 // Configuration
-const PRIVATE_KEY = process.env.PRIVATE_KEY ?? "0x0000000000000000000000000000000000000000000000000000000000000001";
+const PRIVATE_KEY =
+  process.env.PRIVATE_KEY ??
+  "0x0000000000000000000000000000000000000000000000000000000000000001";
 const API_URL = "https://api.example.com/protected-endpoint";
 
 // Register a custom token (recommended approach)

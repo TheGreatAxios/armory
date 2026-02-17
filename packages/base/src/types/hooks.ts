@@ -8,7 +8,12 @@
  * Hooks allow extensibility without custom code in each client package.
  */
 
-import type { PaymentPayloadV2, PaymentRequirementsV2, Extensions, Address } from "./v2";
+import type {
+  Address,
+  Extensions,
+  PaymentPayloadV2,
+  PaymentRequirementsV2,
+} from "./v2";
 
 export interface PaymentRequiredContext {
   url: RequestInfo | URL;
@@ -30,11 +35,11 @@ export interface PaymentPayloadContext<TWallet = unknown> {
 export type HookResult = void | Promise<void>;
 
 export type OnPaymentRequiredHook<TWallet = unknown> = (
-  context: PaymentRequiredContext
+  context: PaymentRequiredContext,
 ) => HookResult;
 
 export type BeforePaymentHook<TWallet = unknown> = (
-  context: PaymentPayloadContext<TWallet>
+  context: PaymentPayloadContext<TWallet>,
 ) => HookResult;
 
 export type ExtensionHook<TWallet = unknown> =

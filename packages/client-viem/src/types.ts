@@ -2,11 +2,8 @@
  * X402 Client Types - V2 Only
  */
 
-import type { Address, Account, WalletClient, Transport } from "viem";
-import type {
-  PaymentPayloadV2,
-  CustomToken,
-} from "@armory-sh/base";
+import type { CustomToken, PaymentPayloadV2 } from "@armory-sh/base";
+import type { Account, Address, Transport, WalletClient } from "viem";
 import type { ViemHookRegistry } from "./hooks";
 
 export type X402Wallet =
@@ -42,11 +39,9 @@ export interface X402Client {
     to: Address,
     contractAddress: Address,
     chainId: number,
-    expiry?: number
+    expiry?: number,
   ): Promise<PaymentPayloadV2>;
-  signPayment(
-    payload: UnsignedPaymentPayload
-  ): Promise<PaymentPayloadV2>;
+  signPayment(payload: UnsignedPaymentPayload): Promise<PaymentPayloadV2>;
 }
 
 export interface X402TransportConfig {

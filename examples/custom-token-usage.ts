@@ -64,7 +64,7 @@ const payment = await client.createPayment(
   "0xRecipientAddress...", // recipient
   "0x1234567890123456789012345678901234567890" as const, // custom token contract
   1, // chainId
-  Math.floor(Date.now() / 1000) + 3600 // expiry (1 hour from now)
+  Math.floor(Date.now() / 1000) + 3600, // expiry (1 hour from now)
 );
 
 console.log("Payment created:", payment);
@@ -87,7 +87,7 @@ const result = await verifyPayment(
     // Optional: specify domain overrides if token isn't registered
     domainName: "My Custom Token",
     domainVersion: "1",
-  }
+  },
 );
 
 if (result.success) {
@@ -134,10 +134,10 @@ await ethersClient.fetch("https://api.example.com/protected");
 // ============================================================================
 
 import {
-  getCustomToken,
   getAllCustomTokens,
-  unregisterToken,
+  getCustomToken,
   isCustomToken,
+  unregisterToken,
 } from "@armory/base";
 
 // Check if a token is registered
@@ -187,5 +187,7 @@ const customTokens = [
 ];
 
 // Register all tokens
-customTokens.forEach((token) => registerToken(token));
+customTokens.forEach((token) => {
+  registerToken(token);
+});
 console.log(`Registered ${customTokens.length} custom tokens`);

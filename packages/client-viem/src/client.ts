@@ -2,45 +2,42 @@
  * X402 Client for Viem - V2 Only
  */
 
-import type { Address } from "viem";
 import type {
   PaymentPayloadV2,
   PaymentRequirementsV2,
   SettlementResponseV2,
 } from "@armory-sh/base";
 import {
-  V2_HEADERS,
   decodeSettlementV2,
-  getNetworkByChainId,
   encodePaymentV2,
+  getNetworkByChainId,
   PaymentException as PaymentError,
+  V2_HEADERS,
 } from "@armory-sh/base";
-
+import type {
+  PaymentRequiredContext,
+  ViemHookRegistry,
+  ViemPaymentPayloadContext,
+} from "./hooks";
+import { executeHooks } from "./hooks-engine";
+import {
+  createX402Payment,
+  getWalletAddress,
+  type X402Wallet as ProtocolWallet,
+  parsePaymentRequired,
+} from "./protocol";
 import type {
   X402Client,
   X402ClientConfig,
-  X402Wallet,
   X402TransportConfig,
-  PaymentResult,
-  UnsignedPaymentPayload,
+  X402Wallet,
 } from "./types";
-import {
-  detectX402Version,
-  parsePaymentRequired,
-  createX402Payment,
-  getWalletAddress,
-  getPaymentHeaderName,
-  type ParsedPaymentRequirements,
-  type X402Wallet as ProtocolWallet,
-} from "./protocol";
-import type { ViemHookRegistry, PaymentRequiredContext, PaymentPayloadContext } from "./hooks";
-import { executeHooks } from "./hooks-engine";
 
 const DEFAULT_EXPIRY = 3600;
-const DEFAULT_NONCE = (): `0x${string}` => `0x${Date.now().toString(16).padStart(64, "0")}`;
+const DEFAULT_NONCE = (): `0x${string}` =>
+  `0x${Date.now().toString(16).padStart(64, "0")}`;
 
-const toCaip2Id = (chainId: number): `eip155:${string}` =>
-  `eip155:${chainId}`;
+const toCaip2Id = (chainId: number): `eip155:${string}` => `eip155:${chainId}`;
 
 const toProtocolWallet = (wallet: X402Wallet): ProtocolWallet =>
   wallet.type === "account"
@@ -53,33 +50,38 @@ const generateNonce = (nonceGenerator?: () => string): `0x${string}` => {
     return nonce as `0x${string}`;
   }
   const numValue = parseInt(nonce, 10);
-  if (isNaN(numValue)) {
+  if (Number.isNaN(numValue)) {
     return `0x${nonce.padStart(64, "0")}`;
   }
   return `0x${numValue.toString(16).padStart(64, "0")}`;
 };
 
-const extractDomainConfig = (config: X402ClientConfig): { domainName?: string; domainVersion?: string } =>
+const extractDomainConfig = (
+  config: X402ClientConfig,
+): { domainName?: string; domainVersion?: string } =>
   config.token
     ? { domainName: config.token.name, domainVersion: config.token.version }
     : { domainName: config.domainName, domainVersion: config.domainVersion };
 
-const addPaymentHeader = (headers: Headers, payment: PaymentPayloadV2): void => {
+const addPaymentHeader = (
+  headers: Headers,
+  payment: PaymentPayloadV2,
+): void => {
   const encoded = encodePaymentV2(payment);
   headers.set(V2_HEADERS.PAYMENT_SIGNATURE, encoded);
 };
 
 const getRequirementDomainOverrides = (
-  requirements: PaymentRequirementsV2
+  requirements: PaymentRequirementsV2,
 ): { domainName?: string; domainVersion?: string } => {
   const extra = requirements.extra;
   const extraName =
-    extra && typeof extra === "object" && typeof extra["name"] === "string"
-      ? extra["name"]
+    extra && typeof extra === "object" && typeof extra.name === "string"
+      ? extra.name
       : undefined;
   const extraVersion =
-    extra && typeof extra === "object" && typeof extra["version"] === "string"
-      ? extra["version"]
+    extra && typeof extra === "object" && typeof extra.version === "string"
+      ? extra.version
       : undefined;
 
   return {
@@ -113,13 +115,23 @@ const createFetch = (
     domainName?: string;
     domainVersion?: string;
     hooks?: ViemHookRegistry;
-  }
+  },
 ) => {
   const protocolWallet = toProtocolWallet(wallet);
   const getAddress = () => getWalletAddress(protocolWallet);
-  const { defaultExpiry, nonceGenerator, debug, domainName, domainVersion, hooks } = config;
+  const {
+    defaultExpiry,
+    nonceGenerator,
+    debug,
+    domainName,
+    domainVersion,
+    hooks,
+  } = config;
 
-  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  return async (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ): Promise<Response> => {
     let response = await fetch(input, init);
 
     if (response.status === 402) {
@@ -135,7 +147,8 @@ const createFetch = (
 
       const fromAddress = getAddress();
       const nonce = generateNonce(nonceGenerator);
-      const validBefore = Math.floor(Date.now() / 1000) + parsed.maxTimeoutSeconds;
+      const validBefore =
+        Math.floor(Date.now() / 1000) + parsed.maxTimeoutSeconds;
       const requirementDomain = getRequirementDomainOverrides(parsed);
 
       const paymentRequiredContext: PaymentRequiredContext = {
@@ -159,7 +172,7 @@ const createFetch = (
         nonce,
         validBefore,
         domainName ?? requirementDomain.domainName,
-        domainVersion ?? requirementDomain.domainVersion
+        domainVersion ?? requirementDomain.domainVersion,
       );
 
       if (debug) {
@@ -167,7 +180,7 @@ const createFetch = (
       }
 
       if (hooks) {
-        const paymentPayloadContext: PaymentPayloadContext = {
+        const paymentPayloadContext: ViemPaymentPayloadContext = {
           payload: payment,
           requirements: parsed,
           wallet: protocolWallet,
@@ -193,7 +206,13 @@ const createFetch = (
 };
 
 export const createX402Client = (config: X402ClientConfig): X402Client => {
-  const { wallet, version = 2, defaultExpiry = DEFAULT_EXPIRY, nonceGenerator, hooks } = config;
+  const {
+    wallet,
+    version = 2,
+    defaultExpiry = DEFAULT_EXPIRY,
+    nonceGenerator,
+    hooks,
+  } = config;
   const { domainName, domainVersion } = extractDomainConfig(config);
   const protocolWallet = toProtocolWallet(wallet);
   const getAddress = () => getWalletAddress(protocolWallet);
@@ -214,10 +233,12 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
     async createPayment(amount, to, contractAddress, chainId, expiry) {
       const from = getAddress();
       const nonce = generateNonce(nonceGenerator);
-      const validBefore = expiry ?? Math.floor(Date.now() / 1000) + defaultExpiry;
+      const validBefore =
+        expiry ?? Math.floor(Date.now() / 1000) + defaultExpiry;
 
       const networkConfig = getNetworkByChainId(chainId);
-      const caip2Network = (networkConfig?.caip2Id ?? toCaip2Id(chainId)) as `eip155:${string}`;
+      const caip2Network = (networkConfig?.caip2Id ??
+        toCaip2Id(chainId)) as `eip155:${string}`;
 
       const requirements: PaymentRequirementsV2 = {
         scheme: "exact",
@@ -228,18 +249,27 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
         maxTimeoutSeconds: validBefore - Math.floor(Date.now() / 1000),
       };
 
-      return createX402Payment(protocolWallet, requirements, from, nonce, validBefore, domainName, domainVersion);
+      return createX402Payment(
+        protocolWallet,
+        requirements,
+        from,
+        nonce,
+        validBefore,
+        domainName,
+        domainVersion,
+      );
     },
 
     async signPayment(payload) {
       const from = getAddress();
       const nonce = payload.nonce.startsWith("0x")
         ? (payload.nonce as `0x${string}`)
-        : `0x${parseInt(payload.nonce, 10).toString(16).padStart(64, "0")}` as `0x${string}`;
+        : (`0x${parseInt(payload.nonce, 10).toString(16).padStart(64, "0")}` as `0x${string}`);
       const validBefore = payload.expiry;
 
       const networkConfig = getNetworkByChainId(payload.chainId);
-      const caip2Network = (networkConfig?.caip2Id ?? toCaip2Id(payload.chainId)) as `eip155:${string}`;
+      const caip2Network = (networkConfig?.caip2Id ??
+        toCaip2Id(payload.chainId)) as `eip155:${string}`;
 
       const requirements: PaymentRequirementsV2 = {
         scheme: "exact",
@@ -250,12 +280,22 @@ export const createX402Client = (config: X402ClientConfig): X402Client => {
         maxTimeoutSeconds: validBefore - Math.floor(Date.now() / 1000),
       };
 
-      return createX402Payment(protocolWallet, requirements, from, nonce, validBefore, domainName, domainVersion);
+      return createX402Payment(
+        protocolWallet,
+        requirements,
+        from,
+        nonce,
+        validBefore,
+        domainName,
+        domainVersion,
+      );
     },
   };
 };
 
-export const createX402Transport = (config: X402TransportConfig): ((input: RequestInfo | URL, init?: RequestInit) => Promise<Response>) => {
+export const createX402Transport = (
+  config: X402TransportConfig,
+): ((input: RequestInfo | URL, init?: RequestInit) => Promise<Response>) => {
   const client = createX402Client({
     wallet: config.wallet,
     version: config.version ?? 2,

@@ -5,12 +5,16 @@
  * Demonstrates protected routes that require payment for access.
  */
 
+import type { PaymentRequirementsV2 } from "@armory/base";
+import {
+  honoPaymentMiddleware,
+  type PaymentInfo,
+  type PaymentVariables,
+} from "@armory/middleware";
+import { USDC_BASE } from "@armory/tokens";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import type { Address } from "viem";
-import { honoPaymentMiddleware, type PaymentInfo, type PaymentVariables } from "@armory/middleware";
-import type { PaymentRequirementsV2 } from "@armory/base";
-import { USDC_BASE } from "@armory/tokens";
 
 // ============================================================================
 // Configuration
@@ -20,10 +24,14 @@ const PORT = Number.parseInt(process.env.PORT ?? "3002", 10);
 const HOST = process.env.HOST ?? "0.0.0.0";
 
 // Payment configuration
-const PAYMENT_TO: Address = (process.env.PAYMENT_TO_ADDRESS ?? "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb") as Address;
+const PAYMENT_TO: Address = (process.env.PAYMENT_TO_ADDRESS ??
+  "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb") as Address;
 const PAYMENT_AMOUNT = process.env.PAYMENT_AMOUNT ?? "1000000"; // 1 USDC
 const PAYMENT_NETWORK = process.env.PAYMENT_NETWORK ?? "base";
-const PAYMENT_EXPIRY = Number.parseInt(process.env.PAYMENT_EXPIRY ?? "3600", 10);
+const PAYMENT_EXPIRY = Number.parseInt(
+  process.env.PAYMENT_EXPIRY ?? "3600",
+  10,
+);
 
 // ============================================================================
 // Token Configuration (Recommended Approach)
@@ -97,8 +105,18 @@ app.get("/products", (c) => {
   return c.json({
     products: [
       { id: 1, name: "Basic Plan", price: "0", description: "Free tier" },
-      { id: 2, name: "Premium Plan", price: "1000000", description: "1 USDC - Premium features" },
-      { id: 3, name: "Enterprise Plan", price: "10000000", description: "10 USDC - Full access" },
+      {
+        id: 2,
+        name: "Premium Plan",
+        price: "1000000",
+        description: "1 USDC - Premium features",
+      },
+      {
+        id: 3,
+        name: "Enterprise Plan",
+        price: "10000000",
+        description: "10 USDC - Full access",
+      },
     ],
   });
 });
@@ -112,7 +130,9 @@ app.get("/products", (c) => {
  *
  * New approach (recommended): Use token object
  */
-function createPaymentRequirements(customAmount?: string): PaymentRequirementsV2 {
+function createPaymentRequirements(
+  customAmount?: string,
+): PaymentRequirementsV2 {
   return {
     to: PAYMENT_TO,
     amount: customAmount ?? PAYMENT_AMOUNT,
@@ -159,7 +179,7 @@ app.get(
         features: ["Ad-free experience", "Exclusive content", "Early access"],
       },
     });
-  }
+  },
 );
 
 /**
@@ -183,7 +203,7 @@ app.post(
       item: itemId ?? "premium_access",
       timestamp: new Date().toISOString(),
     });
-  }
+  },
 );
 
 /**
@@ -207,7 +227,7 @@ app.get(
         features: ["api_access", "premium_content", "priority_support"],
       },
     });
-  }
+  },
 );
 
 // ============================================================================
@@ -218,10 +238,13 @@ app.get(
  * 404 handler
  */
 app.notFound((c) => {
-  return c.json({
-    error: "Not found",
-    path: c.req.path,
-  }, 404);
+  return c.json(
+    {
+      error: "Not found",
+      path: c.req.path,
+    },
+    404,
+  );
 });
 
 /**
@@ -229,10 +252,13 @@ app.notFound((c) => {
  */
 app.onError((err, c) => {
   console.error("Error:", err);
-  return c.json({
-    error: "Internal server error",
-    message: err.message,
-  }, 500);
+  return c.json(
+    {
+      error: "Internal server error",
+      message: err.message,
+    },
+    500,
+  );
 });
 
 // ============================================================================
@@ -245,7 +271,7 @@ console.log(`
 ╠════════════════════════════════════════════════════════════╣
 ║  URL:         http://${HOST}:${String(PORT).padEnd(44)}║
 ║  Network:     ${PAYMENT_NETWORK.padEnd(47)}║
-║  Amount:      ${PAYMENT_AMOUNT} USDC (${(Number.parseInt(PAYMENT_AMOUNT) / 1_000_000).toFixed(2)} USDC)${String("").padEnd(15)}║
+║  Amount:      ${PAYMENT_AMOUNT} USDC (${(Number.parseInt(PAYMENT_AMOUNT, 10) / 1_000_000).toFixed(2)} USDC)${String("").padEnd(15)}║
 ╠════════════════════════════════════════════════════════════╣
 ║  Public Routes:                                           ║
 ║    GET  /               - Welcome & info                  ║

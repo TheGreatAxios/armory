@@ -1,62 +1,59 @@
 // Main client exports
-export { createX402Client, createX402Transport } from "./client";
-export {
-  type X402Client,
-  type X402ClientConfig,
-  type X402Wallet,
-  type X402ProtocolVersion,
-  type Token,
-  type PaymentResult,
-  type X402TransportConfig,
-} from "./types";
-
-// Hook system
-export {
-  type ViemPaymentPayloadContext,
-  type ViemHookConfig,
-  type ViemHookRegistry,
-} from "./hooks";
-export { executeHooks, mergeExtensions } from "./hooks-engine";
-
-// Protocol functions
-export {
-  detectX402Version,
-  parsePaymentRequired,
-  type ParsedPaymentRequirements,
-} from "./protocol";
-
-// Simple one-line API
-export {
-  armoryPay,
-  armoryGet,
-  armoryPost,
-  armoryPut,
-  armoryDelete,
-  armoryPatch,
-  getWalletAddress,
-  validateNetwork,
-  validateToken,
-  getNetworks,
-  getTokens,
-  normalizeWallet,
-  type SimpleWalletInput,
-  type NormalizedWallet,
-} from "./payment-api";
 
 // Armory API
 export {
-  createArmory,
   type ArmoryConfig,
   type ArmoryInstance,
-  type PaymentOptions,
+  createArmory,
   type HttpMethod,
+  type PaymentOptions,
 } from "./armory-api";
-
+export { createX402Client, createX402Transport } from "./client";
 // Extension support
 export {
-  parseExtensions,
-  extractExtension,
-  createSIWxProof,
   addExtensionsToPayload,
   type ClientExtensionContext,
+  createSIWxProof,
+  extractExtension,
+  parseExtensions,
 } from "./extensions";
+// Hook system
+export type {
+  ViemHookConfig,
+  ViemHookRegistry,
+  ViemPaymentPayloadContext,
+} from "./hooks";
+export { executeHooks, mergeExtensions } from "./hooks-engine";
+
+// Simple one-line API
+export {
+  armoryDelete,
+  armoryGet,
+  armoryPatch,
+  armoryPay,
+  armoryPost,
+  armoryPut,
+  getNetworks,
+  getTokens,
+  getWalletAddress,
+  type NormalizedWallet,
+  normalizeWallet,
+  type SimpleWalletInput,
+  validateNetwork,
+  validateToken,
+} from "./payment-api";
+// Protocol functions
+export {
+  detectX402Version,
+  type ParsedPaymentRequirements,
+  parsePaymentRequired,
+} from "./protocol";
+export type {
+  PaymentResult,
+  Token,
+  X402Client,
+  X402ClientConfig,
+  X402ProtocolVersion,
+  X402TransportConfig,
+  X402Wallet,
+} from "./types";

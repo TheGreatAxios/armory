@@ -1,17 +1,20 @@
-import type { Web3X402Client, X402Transport, X402TransportOptions } from "./types";
 import {
-  V2_HEADERS,
   encodePaymentV2,
-  isX402V2Requirements,
-  type PaymentRequirementsV2,
   type PaymentPayloadV2,
+  type PaymentRequirementsV2,
+  V2_HEADERS,
 } from "@armory-sh/base";
 import {
   detectX402Version,
-  parsePaymentRequired,
   isPaymentRequiredResponse,
+  parsePaymentRequired,
   type X402Version,
 } from "./protocol";
+import type {
+  Web3X402Client,
+  X402Transport,
+  X402TransportOptions,
+} from "./types";
 
 const DEFAULT_MAX_RETRIES = 3;
 
@@ -20,7 +23,7 @@ const DEFAULT_MAX_RETRIES = 3;
  */
 const createPaymentHeaders = (
   payload: PaymentPayloadV2,
-  _version: X402Version
+  _version: X402Version,
 ): Headers => {
   const headers = new Headers();
 
@@ -42,7 +45,7 @@ const isPaymentRelatedError = (error: Error): boolean =>
  * Exponential backoff with jitter
  */
 const backoff = (attempt: number): Promise<void> => {
-  const baseDelay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+  const baseDelay = Math.min(1000 * 2 ** (attempt - 1), 10000);
   const jitter = Math.random() * 100;
   return new Promise((resolve) => setTimeout(resolve, baseDelay + jitter));
 };
@@ -53,7 +56,7 @@ const backoff = (attempt: number): Promise<void> => {
  */
 const handlePaymentRequired = async (
   response: Response,
-  client: Web3X402Client
+  client: Web3X402Client,
 ): Promise<Headers> => {
   const version = detectX402Version(response, client.getVersion());
 
@@ -76,7 +79,7 @@ const handlePaymentRequired = async (
  */
 const mergePaymentHeaders = (
   init: RequestInit = {},
-  paymentHeaders: Headers
+  paymentHeaders: Headers,
 ): RequestInit => {
   const existingHeaders = new Headers(init.headers);
   for (const [key, value] of paymentHeaders.entries()) {
@@ -88,7 +91,9 @@ const mergePaymentHeaders = (
 /**
  * Create an x402 transport layer for handling payment-required responses
  */
-export const createX402Transport = (options: X402TransportOptions): X402Transport => {
+export const createX402Transport = (
+  options: X402TransportOptions,
+): X402Transport => {
   const client = options.client;
   const autoSign = options.autoSign ?? true;
   const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
@@ -96,7 +101,10 @@ export const createX402Transport = (options: X402TransportOptions): X402Transpor
   return {
     getClient: () => client,
 
-    fetch: async (url: string | Request, init?: RequestInit): Promise<Response> => {
+    fetch: async (
+      url: string | Request,
+      init?: RequestInit,
+    ): Promise<Response> => {
       let attempt = 0;
       let lastError: Error | undefined;
 
@@ -107,7 +115,10 @@ export const createX402Transport = (options: X402TransportOptions): X402Transpor
           const response = await fetch(url, init);
 
           if (isPaymentRequiredResponse(response) && autoSign) {
-            const paymentHeaders = await handlePaymentRequired(response, client);
+            const paymentHeaders = await handlePaymentRequired(
+              response,
+              client,
+            );
             const newInit = mergePaymentHeaders(init, paymentHeaders);
             return await fetch(url, newInit);
           }
@@ -134,7 +145,9 @@ export const createX402Transport = (options: X402TransportOptions): X402Transpor
 /**
  * Create a fetch function bound to an x402 transport
  */
-export const createFetchWithX402 = (
-  transport: X402Transport
-): (url: string | Request, init?: RequestInit) => Promise<Response> =>
-  (url: string | Request, init?: RequestInit) => transport.fetch(url, init);
+export const createFetchWithX402 =
+  (
+    transport: X402Transport,
+  ): ((url: string | Request, init?: RequestInit) => Promise<Response>) =>
+  (url: string | Request, init?: RequestInit) =>
+    transport.fetch(url, init);

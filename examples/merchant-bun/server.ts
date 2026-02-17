@@ -5,10 +5,13 @@
  * Demonstrates protected routes that require payment for access.
  */
 
-import type { Address } from "viem";
-import { createBunMiddleware, type BunMiddlewareConfig } from "@armory/middleware";
+import {
+  type BunMiddlewareConfig,
+  createBunMiddleware,
+} from "@armory/middleware";
 import { createPaymentRequirements } from "@armory/middleware/core";
 import { USDC_BASE } from "@armory/tokens";
+import type { Address } from "viem";
 
 // ============================================================================
 // Configuration
@@ -18,10 +21,14 @@ const PORT = Number.parseInt(process.env.PORT ?? "3003", 10);
 const HOST = process.env.HOST ?? "0.0.0.0";
 
 // Payment configuration
-const PAYMENT_TO: Address = (process.env.PAYMENT_TO_ADDRESS ?? "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb") as Address;
+const PAYMENT_TO: Address = (process.env.PAYMENT_TO_ADDRESS ??
+  "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb") as Address;
 const PAYMENT_AMOUNT = process.env.PAYMENT_AMOUNT ?? "1000000"; // 1 USDC
 const PAYMENT_NETWORK = process.env.PAYMENT_NETWORK ?? "base";
-const PAYMENT_EXPIRY = Number.parseInt(process.env.PAYMENT_EXPIRY ?? "3600", 10);
+const PAYMENT_EXPIRY = Number.parseInt(
+  process.env.PAYMENT_EXPIRY ?? "3600",
+  10,
+);
 const SETTLEMENT_MODE = process.env.SETTLEMENT_MODE ?? "verify";
 
 // Facilitator URL
@@ -97,15 +104,6 @@ function jsonResponse(data: unknown, status = 200): Response {
   });
 }
 
-function jsonResponse(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-}
-
 // ============================================================================
 // Request Router
 // ============================================================================
@@ -159,8 +157,18 @@ async function handleRequest(request: Request): Promise<Response> {
     return jsonResponse({
       products: [
         { id: 1, name: "Basic Plan", price: "0", description: "Free tier" },
-        { id: 2, name: "Premium Plan", price: "1000000", description: "1 USDC - Premium features" },
-        { id: 3, name: "Enterprise Plan", price: "10000000", description: "10 USDC - Full access" },
+        {
+          id: 2,
+          name: "Premium Plan",
+          price: "1000000",
+          description: "1 USDC - Premium features",
+        },
+        {
+          id: 3,
+          name: "Enterprise Plan",
+          price: "10000000",
+          description: "10 USDC - Full access",
+        },
       ],
     });
   }
@@ -180,7 +188,7 @@ async function handleRequest(request: Request): Promise<Response> {
     }
 
     // Parse the payment result
-    const paymentData = await paymentResult.json() as {
+    const paymentData = (await paymentResult.json()) as {
       verified: boolean;
       payerAddress: string;
       version: number;
@@ -208,7 +216,7 @@ async function handleRequest(request: Request): Promise<Response> {
     // POST /api/purchase - Purchase endpoint
     if (path === "/api/purchase" && method === "POST") {
       try {
-        const body = await request.json() as { itemId?: string };
+        const body = (await request.json()) as { itemId?: string };
         return jsonResponse({
           message: "Purchase successful!",
           orderId: `order_${Date.now()}`,
@@ -246,7 +254,7 @@ async function handleRequest(request: Request): Promise<Response> {
       path,
       method,
     },
-    404
+    404,
   );
 }
 
@@ -267,7 +275,7 @@ console.log(`
 ║  URL:           ${server.url.origin.padEnd(43)}║
 ║  Port:          ${String(server.port).padEnd(47)}║
 ║  Network:       ${PAYMENT_NETWORK.padEnd(47)}║
-║  Amount:        ${PAYMENT_AMOUNT} USDC (${(Number.parseInt(PAYMENT_AMOUNT) / 1_000_000).toFixed(2)} USDC)${String("").padEnd(12)}║
+║  Amount:        ${PAYMENT_AMOUNT} USDC (${(Number.parseInt(PAYMENT_AMOUNT, 10) / 1_000_000).toFixed(2)} USDC)${String("").padEnd(12)}║
 ║  Settlement:    ${SETTLEMENT_MODE.padEnd(47)}║
 ╠════════════════════════════════════════════════════════════╣
 ║  Public Routes:                                           ║

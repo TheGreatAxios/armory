@@ -5,31 +5,28 @@
  * and generating x402 V2 PAYMENT-SIGNATURE payloads
  */
 
-import type { Signer } from "ethers";
 import type {
+  Address,
+  EIP3009Authorization,
+  PaymentPayloadV2,
   // x402 V2 types
   PaymentRequirementsV2,
-  PaymentPayloadV2,
   SchemePayloadV2,
-  EIP3009Authorization,
-  Address,
 } from "@armory-sh/base";
 import {
-  V2_HEADERS,
-  isX402V2PaymentRequired,
+  createEIP712Domain,
+  decodeBase64ToUtf8,
   getNetworkByChainId,
   getNetworkConfig,
-  createEIP712Domain,
-  createTransferWithAuthorization,
-  EIP712_TYPES,
-  normalizeNetworkName,
-  type TransferWithAuthorization,
-  decodeBase64ToUtf8,
+  isX402V2PaymentRequired,
   normalizeBase64Url,
+  normalizeNetworkName,
+  V2_HEADERS,
 } from "@armory-sh/base";
-import type { TransferWithAuthorizationParams, EIP712Domain } from "./types";
+import type { Signer } from "ethers";
 import { signEIP3009 } from "./eip3009";
 import { PaymentError } from "./errors";
+import type { EIP712Domain, TransferWithAuthorizationParams } from "./types";
 
 // ============================================================================
 // Version Detection (V2 Only)
@@ -60,8 +57,7 @@ export interface ParsedPaymentRequirements {
 function parseJsonOrBase64(value: string): unknown {
   try {
     return JSON.parse(value);
-  } catch {
-  }
+  } catch {}
 
   const normalized = normalizeBase64Url(value);
   return JSON.parse(decodeBase64ToUtf8(normalized));
@@ -71,7 +67,9 @@ function parseJsonOrBase64(value: string): unknown {
  * Parse x402 PAYMENT-REQUIRED header from response
  * V2 only
  */
-export function parsePaymentRequired(response: Response): ParsedPaymentRequirements {
+export function parsePaymentRequired(
+  response: Response,
+): ParsedPaymentRequirements {
   const v2Header = response.headers.get(V2_HEADERS.PAYMENT_REQUIRED);
   if (!v2Header) {
     throw new PaymentError("No PAYMENT-REQUIRED header found in V2 response");
@@ -91,7 +89,9 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
     };
   } catch (error) {
     if (error instanceof PaymentError) throw error;
-    throw new PaymentError(`Failed to parse V2 PAYMENT-REQUIRED header: ${error}`);
+    throw new PaymentError(
+      `Failed to parse V2 PAYMENT-REQUIRED header: ${error}`,
+    );
   }
 }
 
@@ -149,16 +149,21 @@ export async function createX402V2Payment(
   nonce: `0x${string}`,
   validBefore: number,
   domainName?: string,
-  domainVersion?: string
+  domainVersion?: string,
 ): Promise<PaymentPayloadV2> {
   const contractAddress = requirements.asset;
   const chainId = extractChainId(requirements.network);
   const now = Math.floor(Date.now() / 1000);
 
   const domain = createEIP712Domain(chainId, contractAddress);
-  const customDomain: EIP712Domain = domainName || domainVersion
-    ? { ...domain, name: domainName ?? domain.name, version: domainVersion ?? domain.version }
-    : domain;
+  const customDomain: EIP712Domain =
+    domainName || domainVersion
+      ? {
+          ...domain,
+          name: domainName ?? domain.name,
+          version: domainVersion ?? domain.version,
+        }
+      : domain;
 
   const authorization: EIP3009Authorization = {
     from: fromAddress,
@@ -180,7 +185,8 @@ export async function createX402V2Payment(
 
   const signature = await signEIP3009(signer, authParams, customDomain);
 
-  const combinedSignature = `0x${signature.r.slice(2)}${signature.s.slice(2)}${signature.v.toString(16).padStart(2, "0")}` as `0x${string}`;
+  const combinedSignature =
+    `0x${signature.r.slice(2)}${signature.s.slice(2)}${signature.v.toString(16).padStart(2, "0")}` as `0x${string}`;
 
   const payload: SchemePayloadV2 = {
     signature: combinedSignature,
@@ -204,10 +210,11 @@ export async function createX402Payment(
   nonce?: `0x${string}`,
   validBefore?: number,
   domainName?: string,
-  domainVersion?: string
+  domainVersion?: string,
 ): Promise<PaymentPayloadV2> {
   const effectiveNonce = nonce ?? createNonce();
-  const effectiveValidBefore = validBefore ?? Math.floor(Date.now() / 1000) + 3600;
+  const effectiveValidBefore =
+    validBefore ?? Math.floor(Date.now() / 1000) + 3600;
 
   return createX402V2Payment(
     signer,
@@ -216,6 +223,6 @@ export async function createX402Payment(
     effectiveNonce,
     effectiveValidBefore,
     domainName,
-    domainVersion
+    domainVersion,
   );
 }

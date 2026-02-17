@@ -16,7 +16,8 @@ import { acceptPaymentsViaArmory } from "@armory/middleware";
 const PORT = Number.parseInt(process.env.PORT ?? "3003", 10);
 const HOST = process.env.HOST ?? "0.0.0.0";
 
-const PAYMENT_TO = process.env.PAYMENT_TO_ADDRESS ?? "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb";
+const PAYMENT_TO =
+  process.env.PAYMENT_TO_ADDRESS ?? "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb";
 const FACILITATOR_URL = process.env.FACILITATOR_URL ?? "http://localhost:3000";
 
 // ============================================================================
@@ -79,7 +80,8 @@ async function handleRequest(request: Request): Promise<Response> {
       quickstart: {
         install: "bun add @armory/middleware",
         client: "import { armoryPay } from '@armory/client-viem'",
-        merchant: "import { acceptPaymentsViaArmory } from '@armory/middleware'",
+        merchant:
+          "import { acceptPaymentsViaArmory } from '@armory/middleware'",
       },
       endpoints: {
         public: {
@@ -111,7 +113,7 @@ async function handleRequest(request: Request): Promise<Response> {
     }
 
     // Payment verified - parse result
-    const paymentData = await paymentResult.json() as {
+    const paymentData = (await paymentResult.json()) as {
       verified: boolean;
       payerAddress: string;
       version: number;

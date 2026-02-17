@@ -248,7 +248,7 @@ export function assetIdToAddress(assetId: CAIPAssetId): Address {
  */
 export function addressToAssetId(
   address: Address,
-  chainId: string | number
+  chainId: string | number,
 ): CAIPAssetId {
   const chain = typeof chainId === "number" ? `eip155:${chainId}` : chainId;
   if (!isCAIP2ChainId(chain)) throw new Error(`Invalid chain ID: ${chain}`);
@@ -270,7 +270,11 @@ export function parseSignature(signature: `0x${string}`): Signature {
 /**
  * Combine signature components into 65-byte hex string
  */
-export function combineSignature(v: number, r: string, s: string): `0x${string}` {
+export function combineSignature(
+  v: number,
+  r: string,
+  s: string,
+): `0x${string}` {
   const rClean = r.startsWith("0x") ? r.slice(2) : r;
   const sClean = s.startsWith("0x") ? s.slice(2) : s;
   const vHex = v.toString(16).padStart(2, "0");

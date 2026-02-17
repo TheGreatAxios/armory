@@ -3,19 +3,9 @@
  * Tests all input formats, cross-checks, and error messages
  */
 
-import { describe, test, expect, beforeEach } from "bun:test";
-import {
-  resolveNetwork,
-  resolveToken,
-  resolveFacilitator,
-  checkFacilitatorSupport,
-  validatePaymentConfig,
-  validateAcceptConfig,
-  getAvailableNetworks,
-  getAvailableTokens,
-  isValidationError,
-} from "../src/validation";
+import { beforeEach, describe, expect, test } from "bun:test";
 import { registerToken } from "../src/types/networks";
+import { getAvailableNetworks, getAvailableTokens } from "../src/validation";
 
 // Register test tokens before running tests
 const TEST_TOKENS = [

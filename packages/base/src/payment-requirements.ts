@@ -1,21 +1,18 @@
 import type {
-  PaymentRequirementsV2,
-  Address,
-} from "./types/v2";
-import type {
   NetworkId,
-  TokenId,
-  ValidationError,
   ResolvedNetwork,
   ResolvedToken,
+  TokenId,
+  ValidationError,
 } from "./types/api";
+import { getNetworkConfig } from "./types/networks";
+import type { Address, PaymentRequirementsV2 } from "./types/v2";
+import { toAtomicUnits } from "./utils/x402";
 import {
+  normalizeNetworkName,
   resolveNetwork,
   resolveToken,
-  normalizeNetworkName,
 } from "./validation";
-import { getNetworkConfig } from "./types/networks";
-import { toAtomicUnits } from "./utils/x402";
 
 export interface PaymentConfig {
   payTo: Address | string;
@@ -57,17 +54,24 @@ const isValidationError = (value: unknown): value is ValidationError => {
 function resolvePayTo(
   config: PaymentConfig,
   network: ResolvedNetwork,
-  token: ResolvedToken
+  token: ResolvedToken,
 ): Address | string {
   const chainId = network.config.chainId;
 
   if (config.payToByToken) {
     for (const [chainKey, tokenMap] of Object.entries(config.payToByToken)) {
       const resolvedChain = resolveNetwork(chainKey);
-      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+      if (
+        !isValidationError(resolvedChain) &&
+        resolvedChain.config.chainId === chainId
+      ) {
         for (const [tokenKey, address] of Object.entries(tokenMap)) {
           const resolvedToken = resolveToken(tokenKey, network);
-          if (!isValidationError(resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === token.config.contractAddress.toLowerCase()) {
+          if (
+            !isValidationError(resolvedToken) &&
+            resolvedToken.config.contractAddress.toLowerCase() ===
+              token.config.contractAddress.toLowerCase()
+          ) {
             return address;
           }
         }
@@ -78,7 +82,10 @@ function resolvePayTo(
   if (config.payToByChain) {
     for (const [chainKey, address] of Object.entries(config.payToByChain)) {
       const resolvedChain = resolveNetwork(chainKey);
-      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+      if (
+        !isValidationError(resolvedChain) &&
+        resolvedChain.config.chainId === chainId
+      ) {
         return address;
       }
     }
@@ -90,17 +97,26 @@ function resolvePayTo(
 function resolveFacilitatorUrl(
   config: PaymentConfig,
   network: ResolvedNetwork,
-  token: ResolvedToken
+  token: ResolvedToken,
 ): string | undefined {
   const chainId = network.config.chainId;
 
   if (config.facilitatorUrlByToken) {
-    for (const [chainKey, tokenMap] of Object.entries(config.facilitatorUrlByToken)) {
+    for (const [chainKey, tokenMap] of Object.entries(
+      config.facilitatorUrlByToken,
+    )) {
       const resolvedChain = resolveNetwork(chainKey);
-      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+      if (
+        !isValidationError(resolvedChain) &&
+        resolvedChain.config.chainId === chainId
+      ) {
         for (const [tokenKey, url] of Object.entries(tokenMap)) {
           const resolvedToken = resolveToken(tokenKey, network);
-          if (!isValidationError(resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === token.config.contractAddress.toLowerCase()) {
+          if (
+            !isValidationError(resolvedToken) &&
+            resolvedToken.config.contractAddress.toLowerCase() ===
+              token.config.contractAddress.toLowerCase()
+          ) {
             return url;
           }
         }
@@ -109,9 +125,14 @@ function resolveFacilitatorUrl(
   }
 
   if (config.facilitatorUrlByChain) {
-    for (const [chainKey, url] of Object.entries(config.facilitatorUrlByChain)) {
+    for (const [chainKey, url] of Object.entries(
+      config.facilitatorUrlByChain,
+    )) {
       const resolvedChain = resolveNetwork(chainKey);
-      if (!isValidationError(resolvedChain) && resolvedChain.config.chainId === chainId) {
+      if (
+        !isValidationError(resolvedChain) &&
+        resolvedChain.config.chainId === chainId
+      ) {
         return url;
       }
     }
@@ -120,9 +141,10 @@ function resolveFacilitatorUrl(
   return config.facilitatorUrl;
 }
 
-function resolveNetworks(
-  chainInputs: NetworkId[] | undefined
-): { networks: ResolvedNetwork[]; error?: ValidationError } {
+function resolveNetworks(chainInputs: NetworkId[] | undefined): {
+  networks: ResolvedNetwork[];
+  error?: ValidationError;
+} {
   const resolvedNetworks: ResolvedNetwork[] = [];
   const errors: string[] = [];
 
@@ -151,7 +173,7 @@ function resolveNetworks(
 }
 
 export function createPaymentRequirements(
-  config: PaymentConfig
+  config: PaymentConfig,
 ): ResolvedRequirementsConfig {
   const {
     payTo,
@@ -186,7 +208,11 @@ export function createPaymentRequirements(
       const tokenConfig = resolvedToken.config;
 
       const resolvedPayTo = resolvePayTo(config, network, resolvedToken);
-      const resolvedFacilitatorUrl = resolveFacilitatorUrl(config, network, resolvedToken);
+      const resolvedFacilitatorUrl = resolveFacilitatorUrl(
+        config,
+        network,
+        resolvedToken,
+      );
 
       const requirement: PaymentRequirementsV2 = {
         scheme: "exact",
@@ -220,7 +246,7 @@ export function createPaymentRequirements(
 
 export function findRequirementByNetwork(
   requirements: PaymentRequirementsV2[],
-  network: string
+  network: string,
 ): PaymentRequirementsV2 | undefined {
   const normalized = normalizeNetworkName(network);
   const netConfig = getNetworkConfig(normalized);

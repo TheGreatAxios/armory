@@ -2,23 +2,20 @@
  * @armory-sh/client-web3 Tests
  */
 
-import { test, expect, mock } from "bun:test";
+import { expect, mock, test } from "bun:test";
+import type { SettlementResponseV2 } from "@armory-sh/base";
 import {
-  createX402Client,
-  createX402Transport,
+  adjustVForChainId,
+  concatenateSignature,
   createEIP712Domain,
   createTransferWithAuthorization,
+  createX402Client,
+  createX402Transport,
   parseSignature,
-  concatenateSignature,
-  validateTransferWithAuthorization,
-  adjustVForChainId,
   signTypedData,
   signWithPrivateKey,
+  validateTransferWithAuthorization,
 } from "../src/index";
-import type {
-  PaymentRequirementsV2,
-  SettlementResponseV2,
-} from "@armory-sh/base";
 
 // ============================================================================
 // Test Utilities
@@ -27,7 +24,7 @@ import type {
 function createMockAccount(address: string) {
   return {
     address,
-    privateKey: "0x" + "a".repeat(64),
+    privateKey: `0x${"a".repeat(64)}`,
   };
 }
 
@@ -36,12 +33,17 @@ function createMockAccount(address: string) {
 // ============================================================================
 
 test("createEIP712Domain creates valid domain", () => {
-  const domain = createEIP712Domain(8453, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913");
+  const domain = createEIP712Domain(
+    8453,
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  );
 
   expect(domain.name).toBe("USD Coin");
   expect(domain.version).toBe("2");
   expect(domain.chainId).toBe("0x2105"); // 8453 in hex
-  expect(domain.verifyingContract).toBe("0x833589fcd6edb6e08f4c7c32d4f71b54bda02913");
+  expect(domain.verifyingContract).toBe(
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+  );
 });
 
 test("createTransferWithAuthorization creates valid message", () => {
@@ -76,7 +78,11 @@ test("parseSignature splits signature into components", () => {
 });
 
 test("concatenateSignature combines components", () => {
-  const signature = concatenateSignature(27, "0x" + "r".padStart(64, "0"), "0x" + "s".padStart(64, "0"));
+  const signature = concatenateSignature(
+    27,
+    `0x${"r".padStart(64, "0")}`,
+    `0x${"s".padStart(64, "0")}`,
+  );
 
   expect(signature).toHaveLength(132); // 0x + 130 hex chars
   expect(signature.startsWith("0x")).toBeTrue();
@@ -91,7 +97,11 @@ test("concatenateSignature handles inputs without 0x prefix", () => {
 });
 
 test("concatenateSignature pads v value", () => {
-  const signature = concatenateSignature(1, "0x" + "r".padStart(64, "0"), "0x" + "s".padStart(64, "0"));
+  const signature = concatenateSignature(
+    1,
+    `0x${"r".padStart(64, "0")}`,
+    `0x${"s".padStart(64, "0")}`,
+  );
 
   expect(signature).toEndWith("01");
 });
@@ -160,7 +170,9 @@ test("validateTransferWithAuthorization throws on invalid from address", () => {
     nonce: "0x123456",
   };
 
-  expect(() => validateTransferWithAuthorization(message)).toThrow('Invalid "from" address');
+  expect(() => validateTransferWithAuthorization(message)).toThrow(
+    'Invalid "from" address',
+  );
 });
 
 test("validateTransferWithAuthorization throws on invalid to address", () => {
@@ -173,7 +185,9 @@ test("validateTransferWithAuthorization throws on invalid to address", () => {
     nonce: "0x123456",
   };
 
-  expect(() => validateTransferWithAuthorization(message)).toThrow('Invalid "to" address');
+  expect(() => validateTransferWithAuthorization(message)).toThrow(
+    'Invalid "to" address',
+  );
 });
 
 test("validateTransferWithAuthorization throws on negative value", () => {
@@ -186,7 +200,9 @@ test("validateTransferWithAuthorization throws on negative value", () => {
     nonce: "0x123456",
   };
 
-  expect(() => validateTransferWithAuthorization(message)).toThrow('"value" must be non-negative');
+  expect(() => validateTransferWithAuthorization(message)).toThrow(
+    '"value" must be non-negative',
+  );
 });
 
 test("validateTransferWithAuthorization throws when validAfter >= validBefore", () => {
@@ -199,7 +215,9 @@ test("validateTransferWithAuthorization throws when validAfter >= validBefore", 
     nonce: "0x123456",
   };
 
-  expect(() => validateTransferWithAuthorization(message)).toThrow('must be before "validBefore"');
+  expect(() => validateTransferWithAuthorization(message)).toThrow(
+    'must be before "validBefore"',
+  );
 });
 
 test("validateTransferWithAuthorization throws on negative nonce", () => {
@@ -212,7 +230,9 @@ test("validateTransferWithAuthorization throws on negative nonce", () => {
     nonce: "-1",
   };
 
-  expect(() => validateTransferWithAuthorization(message)).toThrow('"nonce" must be non-negative');
+  expect(() => validateTransferWithAuthorization(message)).toThrow(
+    '"nonce" must be non-negative',
+  );
 });
 
 test("adjustVForChainId returns v for 27", () => {
@@ -232,7 +252,7 @@ test("adjustVForChainId adjusts chain-specific v", () => {
 });
 
 test("signTypedData throws error (not implemented)", async () => {
-  const domain = createEIP712Domain(1, "0x" + "a".repeat(40));
+  const domain = createEIP712Domain(1, `0x${"a".repeat(40)}`);
   const message = createTransferWithAuthorization({
     from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
     to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -242,11 +262,13 @@ test("signTypedData throws error (not implemented)", async () => {
     nonce: "0x123456",
   });
 
-  await expect(signTypedData({}, domain, message)).rejects.toThrow("EIP-712 signing requires web3-eth-personal");
+  await expect(signTypedData({}, domain, message)).rejects.toThrow(
+    "EIP-712 signing requires web3-eth-personal",
+  );
 });
 
 test("signWithPrivateKey throws error (not implemented)", async () => {
-  const domain = createEIP712Domain(1, "0x" + "a".repeat(40));
+  const domain = createEIP712Domain(1, `0x${"a".repeat(40)}`);
   const message = createTransferWithAuthorization({
     from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
     to: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
@@ -256,7 +278,9 @@ test("signWithPrivateKey throws error (not implemented)", async () => {
     nonce: "0x123456",
   });
 
-  await expect(signWithPrivateKey("0x" + "a".repeat(64), domain, message)).rejects.toThrow("Direct private key signing not implemented");
+  await expect(
+    signWithPrivateKey(`0x${"a".repeat(64)}`, domain, message),
+  ).rejects.toThrow("Direct private key signing not implemented");
 });
 
 // ============================================================================
@@ -264,7 +288,9 @@ test("signWithPrivateKey throws error (not implemented)", async () => {
 // ============================================================================
 
 test("createX402Client with custom rpcUrl", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const customRpcUrl = "https://custom-rpc.example.com";
   const client = createX402Client({
     account,
@@ -277,14 +303,16 @@ test("createX402Client with custom rpcUrl", () => {
 });
 
 test("createX402Client with network config object", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const networkConfig = {
     name: "Custom Network",
     chainId: 12345,
     rpcUrl: "https://custom.network",
-    usdcAddress: "0x" + "b".repeat(40),
+    usdcAddress: `0x${"b".repeat(40)}`,
     caip2Id: "eip155:12345" as const,
-    caipAssetId: "eip155:12345/erc20:0x" + "b".repeat(40) as const,
+    caipAssetId: `eip155:12345/erc20:0x${"b".repeat(40)}` as const,
   };
   const client = createX402Client({
     account,
@@ -296,7 +324,9 @@ test("createX402Client with network config object", () => {
 });
 
 test("createX402Client with custom domain name and version", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
     network: "base",
@@ -309,7 +339,9 @@ test("createX402Client with custom domain name and version", () => {
 });
 
 test("createX402Client returns account accessor", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
     network: "base",
@@ -319,7 +351,9 @@ test("createX402Client returns account accessor", () => {
 });
 
 test("createX402Client for ethereum mainnet", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
     network: "ethereum",
@@ -330,7 +364,9 @@ test("createX402Client for ethereum mainnet", () => {
 });
 
 test("createX402Client for multiple networks", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
 
   const baseClient = createX402Client({
     account,
@@ -350,13 +386,15 @@ test("createEIP712Domain with custom domain name and version", () => {
     8453,
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
     "Custom Token",
-    "3"
+    "3",
   );
 
   expect(domain.name).toBe("Custom Token");
   expect(domain.version).toBe("3");
   expect(domain.chainId).toBe("0x2105");
-  expect(domain.verifyingContract).toBe("0x833589fcd6edb6e08f4c7c32d4f71b54bda02913");
+  expect(domain.verifyingContract).toBe(
+    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+  );
 });
 
 test("createTransferWithAuthorization with bigint values", () => {
@@ -394,7 +432,9 @@ test("createTransferWithAuthorization normalizes addresses to lowercase", () => 
 // ============================================================================
 
 test("createX402Client creates v2 client by default", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
     network: "base",
@@ -406,7 +446,9 @@ test("createX402Client creates v2 client by default", () => {
 });
 
 test("createX402Client throws on unknown network", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
 
   expect(() => {
     createX402Client({
@@ -417,7 +459,9 @@ test("createX402Client throws on unknown network", () => {
 });
 
 test("createX402Client works without network config", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
   });
@@ -428,7 +472,9 @@ test("createX402Client works without network config", () => {
 });
 
 test("createX402Client requires network for manual payment signing", async () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
   });
@@ -438,7 +484,9 @@ test("createX402Client requires network for manual payment signing", async () =>
     to: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
   });
 
-  await expect(promise).rejects.toThrow("Network must be configured for manual payment signing");
+  await expect(promise).rejects.toThrow(
+    "Network must be configured for manual payment signing",
+  );
 });
 
 // ============================================================================
@@ -446,7 +494,9 @@ test("createX402Client requires network for manual payment signing", async () =>
 // ============================================================================
 
 test("client verifies successful v2 settlement", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
     network: "base",
@@ -462,7 +512,9 @@ test("client verifies successful v2 settlement", () => {
 });
 
 test("client verifies pending v2 settlement as unsuccessful", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
     network: "base",
@@ -482,7 +534,9 @@ test("client verifies pending v2 settlement as unsuccessful", () => {
 // ============================================================================
 
 test("createX402Transport creates transport with client", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
     network: "base",
@@ -494,7 +548,9 @@ test("createX402Transport creates transport with client", () => {
 });
 
 test("createX402Transport creates transport with custom options", () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
     network: "base",
@@ -514,7 +570,9 @@ test("createX402Transport creates transport with custom options", () => {
 // ============================================================================
 
 test("transport fetch returns response for successful request", async () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
     network: "base",
@@ -525,8 +583,8 @@ test("transport fetch returns response for successful request", async () => {
   // Mock global fetch
   const mockFetch = mock(() =>
     Promise.resolve(
-      new Response(JSON.stringify({ data: "test" }), { status: 200 })
-    )
+      new Response(JSON.stringify({ data: "test" }), { status: 200 }),
+    ),
   );
   globalThis.fetch = mockFetch;
 
@@ -537,7 +595,9 @@ test("transport fetch returns response for successful request", async () => {
 });
 
 test("transport fetch returns 402 when autoSign is false", async () => {
-  const account = createMockAccount("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb");
+  const account = createMockAccount(
+    "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  );
   const client = createX402Client({
     account,
     network: "base",
@@ -555,13 +615,14 @@ test("transport fetch returns 402 when autoSign is false", async () => {
             amount: "1000000",
             to: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
             chainId: "eip155:8453",
-            assetId: "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            assetId:
+              "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
             nonce: "test-nonce",
             expiry: Date.now() + 3600,
           }),
         },
-      })
-    )
+      }),
+    ),
   );
   globalThis.fetch = mockFetch;
 

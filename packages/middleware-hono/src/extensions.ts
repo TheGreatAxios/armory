@@ -51,7 +51,9 @@ type SIWxExtensionInfo = {
   }>;
 };
 
-const declareDiscoveryExtension = (config: BazaarDiscoveryConfig = {}): Extension<BazaarExtensionInfo> => {
+const declareDiscoveryExtension = (
+  config: BazaarDiscoveryConfig = {},
+): Extension<BazaarExtensionInfo> => {
   const info: BazaarExtensionInfo = {};
 
   if (config.input !== undefined) {
@@ -69,7 +71,9 @@ const declareDiscoveryExtension = (config: BazaarDiscoveryConfig = {}): Extensio
   return { info, schema: { type: "object" } };
 };
 
-const declareSIWxExtension = (config: SIWxExtensionConfig = {}): Extension<SIWxExtensionInfo> => {
+const declareSIWxExtension = (
+  config: SIWxExtensionConfig = {},
+): Extension<SIWxExtensionInfo> => {
   const info: SIWxExtensionInfo = {};
 
   if (config.domain !== undefined) {
@@ -124,7 +128,7 @@ export function buildExtensions(config: ExtensionConfig): Extensions {
 
 export function extractExtension<T>(
   extensions: Extensions | undefined,
-  key: string
+  key: string,
 ): Extension<T> | null {
   if (!extensions || typeof extensions !== "object") {
     return null;
@@ -137,4 +141,3 @@ export function extractExtension<T>(
 
   return extension as Extension<T>;
 }
-

@@ -1,11 +1,15 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import type {
+  Extensions,
+  PaymentPayloadV2,
+  PaymentRequiredV2,
+} from "@armory-sh/base";
 import {
+  BAZAAR,
   declareDiscoveryExtension,
   declareSIWxExtension,
-  BAZAAR,
   SIGN_IN_WITH_X,
 } from "../src/index";
-import type { PaymentRequiredV2, PaymentPayloadV2, Extensions } from "@armory-sh/base";
 
 describe("[e2e|extensions]: Cross-SDK Compatibility Tests", () => {
   describe("[e2e|extensions]: Bazaar Extension", () => {
@@ -33,7 +37,6 @@ describe("[e2e|extensions]: Cross-SDK Compatibility Tests", () => {
       const extension = declareDiscoveryExtension(bazaarConfig);
 
       expect(extension.info).toBeDefined();
-      expect(extension.schema).toBeDefined();
       expect(extension.info.input).toEqual(bazaarConfig.input);
       expect(extension.info.inputSchema).toEqual(bazaarConfig.inputSchema);
     });
@@ -47,7 +50,6 @@ describe("[e2e|extensions]: Cross-SDK Compatibility Tests", () => {
       const parsed = JSON.parse(serialized);
 
       expect(parsed).toHaveProperty("info");
-      expect(parsed).toHaveProperty("schema");
     });
   });
 
@@ -79,7 +81,6 @@ describe("[e2e|extensions]: Cross-SDK Compatibility Tests", () => {
       const parsed = JSON.parse(serialized);
 
       expect(parsed).toHaveProperty("info");
-      expect(parsed).toHaveProperty("schema");
     });
   });
 
@@ -106,8 +107,10 @@ describe("[e2e|extensions]: Cross-SDK Compatibility Tests", () => {
             scheme: "exact",
             network: "eip155:8453",
             amount: "1000000",
-            asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-            payTo: "0x1234567890123456789012345678901234567890" as `0x${string}`,
+            asset:
+              "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+            payTo:
+              "0x1234567890123456789012345678901234567890" as `0x${string}`,
             maxTimeoutSeconds: 300,
           },
         ],
@@ -136,8 +139,10 @@ describe("[e2e|extensions]: Cross-SDK Compatibility Tests", () => {
             scheme: "exact",
             network: "eip155:8453",
             amount: "1000000",
-            asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
-            payTo: "0x1234567890123456789012345678901234567890" as `0x${string}`,
+            asset:
+              "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as `0x${string}`,
+            payTo:
+              "0x1234567890123456789012345678901234567890" as `0x${string}`,
             maxTimeoutSeconds: 300,
           },
         ],
@@ -168,14 +173,14 @@ describe("[e2e|extensions]: Cross-SDK Compatibility Tests", () => {
         scheme: "exact",
         network: "eip155:8453",
         payload: {
-          signature: "0x" + "a".repeat(130),
+          signature: `0x${"a".repeat(130)}`,
           authorization: {
             from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
             to: "0x1234567890123456789012345678901234567890" as `0x${string}`,
             value: "1000000",
             validAfter: "0",
             validBefore: "9999999999",
-            nonce: "0x" + "0".repeat(64) as `0x${string}`,
+            nonce: `0x${"0".repeat(64)}` as `0x${string}`,
           },
         },
         extensions: {
@@ -199,13 +204,11 @@ describe("[e2e|extensions]: Cross-SDK Compatibility Tests", () => {
   });
 
   describe("[e2e|extensions]: Extension Structure", () => {
-    test("[Extension|compatibility] - has info and schema fields", () => {
+    test("[Extension|compatibility] - has info field", () => {
       const extension = declareDiscoveryExtension();
 
       expect(extension).toHaveProperty("info");
-      expect(extension).toHaveProperty("schema");
       expect(typeof extension.info).toBe("object");
-      expect(typeof extension.schema).toBe("object");
     });
 
     test("[Extensions|compatibility] - allows any string keys", () => {

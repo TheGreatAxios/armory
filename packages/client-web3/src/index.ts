@@ -1,44 +1,43 @@
 // Main client exports
-export { createX402Client } from "./client";
 
-// Transport exports
-export { createX402Transport } from "./transport";
+// Armory API
+export {
+  type ArmoryConfig,
+  type ArmoryInstance,
+  createArmory,
+  type HttpMethod,
+  type PaymentOptions,
+} from "./armory-api";
+export { createX402Client } from "./client";
 
 // EIP-3009 exports
 export {
+  adjustVForChainId,
+  concatenateSignature,
   createEIP712Domain,
   createTransferWithAuthorization,
   parseSignature,
-  concatenateSignature,
-  validateTransferWithAuthorization,
-  adjustVForChainId,
   signTypedData,
   signWithPrivateKey,
+  validateTransferWithAuthorization,
 } from "./eip3009";
 
 // Simple one-line API
 export {
-  armoryPay,
+  armoryDelete,
   armoryGet,
+  armoryPatch,
+  armoryPay,
   armoryPost,
   armoryPut,
-  armoryDelete,
-  armoryPatch,
-  getWalletAddress,
-  validateNetwork,
-  validateToken,
   getNetworks,
   getTokens,
+  getWalletAddress,
+  type NormalizedWallet,
   normalizeWallet,
   type SimpleWalletInput,
-  type NormalizedWallet,
+  validateNetwork,
+  validateToken,
 } from "./payment-api";
-
-// Armory API
-export {
-  createArmory,
-  type ArmoryConfig,
-  type ArmoryInstance,
-  type PaymentOptions,
-  type HttpMethod,
-} from "./armory-api";
+// Transport exports
+export { createX402Transport } from "./transport";
