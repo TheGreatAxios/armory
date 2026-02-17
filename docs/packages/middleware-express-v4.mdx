@@ -99,6 +99,43 @@ app.use(routeAwarePaymentMiddleware({
 }));
 ```
 
+## Advanced Mix-and-Match Example
+
+For fully custom combinations, define explicit requirements and route-specific facilitator URLs:
+
+```typescript
+import { routeAwarePaymentMiddleware } from "@armory-sh/middleware-express-v4";
+
+app.use(
+  routeAwarePaymentMiddleware({
+    "/api/basic": {
+      requirements: {
+        scheme: "exact",
+        network: "eip155:8453",
+        amount: "1000000",
+        asset: "0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913",
+        payTo: "0x1234567890123456789012345678901234567890",
+        maxTimeoutSeconds: 300,
+      },
+      facilitatorUrl: "https://payai.example",
+    },
+    "/api/skale-premium": {
+      requirements: {
+        scheme: "exact",
+        network: "eip155:1187947933",
+        amount: "2500000",
+        asset: "0x5f9beea3f6f22be1f4f8efc120f5095f58dbb8a2",
+        payTo: "0x1234567890123456789012345678901234567890",
+        maxTimeoutSeconds: 300,
+      },
+      facilitatorUrl: "https://kobaru.example",
+    },
+  }),
+);
+```
+
+For v4, the cleanest way to mix facilitator+amount by token/network is to define separate requirements per route, each with its own `facilitatorUrl`.
+
 ---
 
 ## Migration to Express v5

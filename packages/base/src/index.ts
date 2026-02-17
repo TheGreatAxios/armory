@@ -128,6 +128,8 @@ export type {
 } from "./payment-requirements";
 export {
   createPaymentRequirements,
+  enrichPaymentRequirement,
+  enrichPaymentRequirements,
   findRequirementByAccepted,
   findRequirementByNetwork,
   resolveFacilitatorUrlFromRequirement,

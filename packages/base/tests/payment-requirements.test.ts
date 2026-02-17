@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import {
   clearFacilitatorCapabilityCache,
+  createPaymentRequirements,
+  enrichPaymentRequirements,
   filterExtensionsForRequirements,
   findRequirementByAccepted,
   type PaymentRequirementsV2,
@@ -24,6 +26,46 @@ const SKALE_REQUIREMENT: PaymentRequirementsV2 = {
   payTo: "0x1234567890123456789012345678901234567890",
   maxTimeoutSeconds: 300,
 };
+
+describe(
+  "[unit|base] - [createPaymentRequirements|success] - includes top-level name/version metadata",
+  () => {
+    test("adds token metadata required by x402 signers", () => {
+      const result = createPaymentRequirements({
+        payTo: "0x1234567890123456789012345678901234567890",
+        chains: ["base-sepolia"],
+        tokens: ["usdc"],
+        amount: "0.001",
+      });
+
+      expect(result.error).toBeUndefined();
+      expect(result.requirements.length).toBe(1);
+      expect(typeof result.requirements[0]?.name).toBe("string");
+      expect(result.requirements[0]?.version).toBe("2");
+    });
+  },
+);
+
+describe(
+  "[unit|base] - [enrichPaymentRequirements|success] - hydrates name/version from network+asset",
+  () => {
+    test("fills missing token metadata for explicit requirements", () => {
+      const enriched = enrichPaymentRequirements([
+        {
+          scheme: "exact",
+          network: "eip155:324705682",
+          amount: "1000000",
+          asset: "0x2e08028E3C4c2356572E096d8EF835cD5C6030bD",
+          payTo: "0x1234567890123456789012345678901234567890",
+          maxTimeoutSeconds: 300,
+        },
+      ]);
+
+      expect(enriched[0]?.name).toBe("Bridged USDC (SKALE Bridge)");
+      expect(enriched[0]?.version).toBe("2");
+    });
+  },
+);
 
 describe(
   "[unit|base] - [findRequirementByAccepted|success] - matches non-primary requirement by accepted payload",

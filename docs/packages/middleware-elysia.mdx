@@ -77,6 +77,70 @@ The middleware plugin:
 
 Provide your verification backend configuration in middleware options for production deployments.
 
+### Advanced Mix-and-Match Config (Current API)
+
+```typescript
+import { Elysia } from "elysia";
+import { paymentMiddleware } from "@armory-sh/middleware-elysia";
+
+const app = new Elysia().use(
+  paymentMiddleware({
+    payTo: "0x1234567890123456789012345678901234567890",
+    chains: ["base", "skale-base"],
+    tokens: ["usdc", "usdt", "weth", "wbtc"],
+    amount: "1.0",
+    facilitatorUrl: "https://fallback-facilitator.example",
+    facilitatorUrlByChain: {
+      base: "https://payai.example",
+    },
+    facilitatorUrlByToken: {
+      base: { usdc: "https://payai.example" },
+      "skale-base": {
+        usdc: "https://payai.example",
+        usdt: "https://kobaru.example",
+        weth: "https://kobaru.example",
+        wbtc: "https://kobaru.example",
+      },
+    },
+    extensions: {
+      bazaar: { info: { input: { sku: "pro-plan" } }, schema: { type: "object" } },
+      "sign-in-with-x": { info: { domain: "api.example.com" }, schema: { type: "object" } },
+    },
+  }),
+);
+```
+
+For full custom amount-per-combination control, use explicit `requirements`:
+
+```typescript
+paymentMiddleware({
+  requirements: [
+    {
+      scheme: "exact",
+      network: "eip155:8453",
+      amount: "1000000",
+      asset: "0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913",
+      payTo: "0x1234567890123456789012345678901234567890",
+      maxTimeoutSeconds: 300,
+    },
+    {
+      scheme: "exact",
+      network: "eip155:1187947933",
+      amount: "2500000",
+      asset: "0x5f9beea3f6f22be1f4f8efc120f5095f58dbb8a2",
+      payTo: "0x1234567890123456789012345678901234567890",
+      maxTimeoutSeconds: 300,
+    },
+  ],
+  facilitatorUrlByToken: {
+    base: { usdc: "https://payai.example" },
+    "skale-base": { usdt: "https://kobaru.example" },
+  },
+});
+```
+
+`extensions` are fail-open filtered based on facilitator capability; unsupported keys are omitted from challenge headers automatically.
+
 ---
 
 ## Accessing Payment Info

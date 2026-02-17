@@ -6,6 +6,7 @@ import type {
   ValidationError,
 } from "./types/api";
 import { getNetworkConfig } from "./types/networks";
+import { getToken } from "./data/tokens";
 import type { Address, PaymentRequirementsV2 } from "./types/v2";
 import { toAtomicUnits } from "./utils/x402";
 import {
@@ -56,6 +57,78 @@ const DEFAULT_TOKENS: TokenId[] = ["usdc"];
 const isValidationError = (value: unknown): value is ValidationError => {
   return typeof value === "object" && value !== null && "code" in value;
 };
+
+const coerceMetadata = (
+  requirement: PaymentRequirementsV2,
+): { name?: string; version?: string } => {
+  if (typeof requirement.name === "string" && typeof requirement.version === "string") {
+    return { name: requirement.name, version: requirement.version };
+  }
+
+  const extraName =
+    requirement.extra &&
+    typeof requirement.extra === "object" &&
+    typeof requirement.extra.name === "string"
+      ? requirement.extra.name
+      : undefined;
+  const extraVersion =
+    requirement.extra &&
+    typeof requirement.extra === "object" &&
+    typeof requirement.extra.version === "string"
+      ? requirement.extra.version
+      : undefined;
+
+  return { name: extraName, version: extraVersion };
+};
+
+const resolveTokenMetadata = (
+  requirement: PaymentRequirementsV2,
+): { name?: string; version?: string } => {
+  const chainId = parseInt(requirement.network.split(":")[1] || "0", 10);
+  if (!Number.isFinite(chainId) || chainId <= 0) {
+    return {};
+  }
+
+  const token = getToken(chainId, requirement.asset);
+  if (!token) {
+    return {};
+  }
+
+  return {
+    name: token.name,
+    version: token.version,
+  };
+};
+
+export function enrichPaymentRequirement(
+  requirement: PaymentRequirementsV2,
+): PaymentRequirementsV2 {
+  const metadata = coerceMetadata(requirement);
+  const fallback = resolveTokenMetadata(requirement);
+  const name = metadata.name ?? fallback.name;
+  const version = metadata.version ?? fallback.version;
+
+  if (!name || !version) {
+    return requirement;
+  }
+
+  return {
+    ...requirement,
+    name,
+    version,
+    extra: {
+      ...(requirement.extra ?? {}),
+      name,
+      version,
+    },
+  };
+}
+
+export function enrichPaymentRequirements(
+  requirements: PaymentRequirementsV2[],
+): PaymentRequirementsV2[] {
+  return requirements.map(enrichPaymentRequirement);
+}
 
 function resolvePayTo(
   config: PaymentConfig,
@@ -275,6 +348,8 @@ export function createPaymentRequirements(
         asset: tokenConfig.contractAddress,
         payTo: resolvedPayTo as `0x${string}`,
         maxTimeoutSeconds,
+        name: tokenConfig.name,
+        version: tokenConfig.version,
         extra: {
           name: tokenConfig.name,
           version: tokenConfig.version,

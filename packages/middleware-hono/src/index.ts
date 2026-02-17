@@ -11,6 +11,7 @@ import {
   createPaymentRequiredHeaders,
   createSettlementHeaders,
   decodePayloadHeader,
+  enrichPaymentRequirements,
   findRequirementByAccepted,
   getSupported,
   isValidationError,
@@ -121,10 +122,11 @@ export function createPaymentRequirements(
   config: PaymentConfig,
 ): ResolvedRequirementsConfig {
   if (config.requirements) {
+    const requirements = Array.isArray(config.requirements)
+      ? config.requirements
+      : [config.requirements];
     return {
-      requirements: Array.isArray(config.requirements)
-        ? config.requirements
-        : [config.requirements],
+      requirements: enrichPaymentRequirements(requirements),
     };
   }
 

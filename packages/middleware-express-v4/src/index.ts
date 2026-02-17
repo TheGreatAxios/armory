@@ -1,13 +1,14 @@
 import type {
+  PaymentRequirementsV2,
   VerifyResponse,
   X402PaymentPayload,
-  X402PaymentRequirements,
   X402SettlementResponse,
 } from "@armory-sh/base";
 import {
   createPaymentRequiredHeaders,
   createSettlementHeaders,
   decodePayloadHeader,
+  enrichPaymentRequirement,
   PAYMENT_SIGNATURE_HEADER,
   settlePayment,
   verifyPayment,
@@ -15,7 +16,7 @@ import {
 import type { NextFunction, Request, Response } from "express";
 
 export interface PaymentMiddlewareConfig {
-  requirements: X402PaymentRequirements;
+  requirements: PaymentRequirementsV2;
   facilitatorUrl: string;
 }
 
@@ -94,7 +95,8 @@ const installSettlementHook = (
 };
 
 export const paymentMiddleware = (config: PaymentMiddlewareConfig) => {
-  const { requirements, facilitatorUrl } = config;
+  const requirements = enrichPaymentRequirement(config.requirements);
+  const { facilitatorUrl } = config;
 
   return async (
     req: AugmentedRequest,
