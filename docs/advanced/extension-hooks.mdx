@@ -12,10 +12,13 @@ when making payments to x402-protected APIs.
 Hooks are functions that execute at specific points during the payment flow:
 
 1. **onPaymentRequired** - After receiving a 402 response, before creating the payment
-2. **beforePayment** - After creating the payment, before sending to the server
+2. **selectRequirement** - Choose one requirement from `accepts[]`
+3. **beforeSignPayment** - After creating the payment payload, before signing/sending
+4. **afterPaymentResponse** - After settlement response is received
+5. **onError** - When a hook throws
 
 ```
-Client Request → 402 Response → [Hooks Execute] → Create Payment → [Hooks Execute] → Retry with Payment
+Client Request → 402 Response → onPaymentRequired/selectRequirement → Create Payment → beforeSignPayment → Retry with Payment → afterPaymentResponse
 ```
 
 ## Hook Context
@@ -38,27 +41,13 @@ interface PaymentPayloadContext {
 }
 ```
 
-## Priority-Based Execution
+## Execution Order
 
-Hooks execute in priority order (higher priority runs first):
-
-| Priority | Purpose |
-|----------|---------|
-| 100+ | Authentication (SIWX) |
-| 50-99 | Payment metadata |
-| 0-49 | Custom extensions |
-
-This ensures authentication happens before other extensions that might depend on it.
+Hooks execute in array order.
 
 ## Error Handling
 
-Hook failures are logged but don't stop the payment flow:
-
-```
-[X402] Hook "my-hook" failed: Error: Something went wrong
-```
-
-This makes extensions non-breaking - a failing hook won't prevent the payment.
+Hook failures are fail-closed by default. If a hook throws, payment flow throws.
 
 ## Creating Custom Hooks
 
@@ -81,7 +70,6 @@ const timestampHook = createCustomHook({
   priority: 10
 });
 
-This hook logs every time it attaches the timestamp extension so you can confirm the payload was updated during development.
 ```
 
 ### Conditional Hook
@@ -147,27 +135,27 @@ import {
 
 const client = createX402Client({
   wallet: { type: 'account', account },
-  hooks: {
+  hooks: [
     // Priority 100 - Authentication first
-    siwx: createSIWxHook({
+    createSIWxHook({
       domain: 'example.com'
     }),
 
-    // Priority 50 - Payment metadata
-    paymentId: createPaymentIdHook(),
+    // Payment metadata
+    createPaymentIdHook(),
 
-    // Priority 0 - Custom extension
-    custom: createCustomHook({
+    // Custom extension
+    createCustomHook({
       key: 'custom',
       handler: async (ctx) => { /* ... */ }
     })
-  }
+  ]
 });
 ```
 
 ## Best Practices
 
-1. **Use appropriate priorities** - Authentication should run first
+1. **Order hooks intentionally** - Hooks run in array order
 2. **Handle missing data** - Check if `context.payload` exists
 3. **Check server requirements** - Only add extensions the server needs
 4. **Keep hooks focused** - One hook per extension type
