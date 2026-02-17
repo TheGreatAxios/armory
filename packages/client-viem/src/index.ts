@@ -45,7 +45,7 @@ export {
 // Protocol functions
 export {
   detectX402Version,
-  type ParsedPaymentRequirements,
+  type ParsedPaymentRequired,
   parsePaymentRequired,
 } from "./protocol";
 export type {

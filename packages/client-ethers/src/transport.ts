@@ -4,6 +4,13 @@ import {
   type SettlementResponseV2,
   V2_HEADERS,
 } from "@armory-sh/base";
+import {
+  runAfterPaymentResponseHooks,
+  runBeforeSignPaymentHooks,
+  runOnPaymentRequiredHooks,
+  selectRequirementWithHooks,
+} from "@armory-sh/base/client-hooks-runtime";
+import type { PaymentRequiredContext } from "@armory-sh/base/types/hooks";
 import type { Signer } from "ethers";
 import { SignerRequiredError } from "./errors";
 import {
@@ -24,6 +31,7 @@ const defaultConfig: Required<X402TransportConfig> = {
   onPaymentRequired: () => true,
   onPaymentSuccess: () => {},
   onPaymentError: () => {},
+  hooks: [],
 };
 
 type TransportState = {
@@ -60,17 +68,21 @@ const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 const getRequirementDomainOverrides = (
-  parsed: ParsedPaymentRequirements,
+  _parsed: ParsedPaymentRequirements,
+  requirement: { extra?: unknown; name?: string; version?: string },
 ): { domainName?: string; domainVersion?: string } => {
-  const requirement = parsed.requirements;
   const extra = requirement.extra;
+  const extraRecord =
+    extra && typeof extra === "object"
+      ? (extra as Record<string, unknown>)
+      : undefined;
   const extraName =
-    extra && typeof extra === "object" && typeof extra.name === "string"
-      ? extra.name
+    extraRecord && typeof extraRecord.name === "string"
+      ? extraRecord.name
       : undefined;
   const extraVersion =
-    extra && typeof extra === "object" && typeof extra.version === "string"
-      ? extra.version
+    extraRecord && typeof extraRecord.version === "string"
+      ? extraRecord.version
       : undefined;
 
   return {
@@ -95,18 +107,48 @@ const handlePaymentRequired = async (
 
   try {
     const parsed = parsePaymentRequired(response);
+    const initialRequirement = parsed.accepts[0];
+    if (!initialRequirement) {
+      throw new Error("No payment requirements found in accepts array");
+    }
     const from = await state.signer.getAddress();
-    const requirementDomain = getRequirementDomainOverrides(parsed);
+    const paymentRequiredContext: PaymentRequiredContext = {
+      url: response.url,
+      requestInit: undefined,
+      accepts: parsed.accepts,
+      requirements: initialRequirement,
+      selectedRequirement: initialRequirement,
+      serverExtensions: undefined,
+      fromAddress: from as `0x${string}`,
+      nonce: `0x${Date.now().toString(16).padStart(64, "0")}`,
+      validBefore:
+        Math.floor(Date.now() / 1000) + initialRequirement.maxTimeoutSeconds,
+    };
+    await runOnPaymentRequiredHooks(state.config.hooks, paymentRequiredContext);
+    const selectedRequirement = await selectRequirementWithHooks(
+      state.config.hooks,
+      paymentRequiredContext,
+    );
+    const requirementDomain = getRequirementDomainOverrides(
+      parsed,
+      selectedRequirement,
+    );
 
     const payload = await createX402Payment(
       state.signer,
-      parsed,
+      selectedRequirement,
       from as `0x${string}`,
-      undefined,
-      Math.floor(Date.now() / 1000) + parsed.requirements.maxTimeoutSeconds,
+      paymentRequiredContext.nonce,
+      paymentRequiredContext.validBefore,
       requirementDomain.domainName,
       requirementDomain.domainVersion,
     );
+    await runBeforeSignPaymentHooks(state.config.hooks, {
+      payload,
+      requirements: selectedRequirement,
+      wallet: state.signer,
+      paymentContext: paymentRequiredContext,
+    });
     const encoded = encodePaymentV2(payload);
     const headerName = getPaymentHeaderName(parsed.version);
 
@@ -123,6 +165,13 @@ const handlePaymentRequired = async (
     const settlement = decodeSettlementV2(
       paymentResponse.headers.get(V2_HEADERS.PAYMENT_RESPONSE) || "",
     );
+    await runAfterPaymentResponseHooks(state.config.hooks, {
+      payload,
+      requirements: selectedRequirement,
+      wallet: state.signer,
+      paymentContext: paymentRequiredContext,
+      response: paymentResponse,
+    });
     return { success: true, settlement };
   } catch (error) {
     return {
@@ -138,7 +187,7 @@ const shouldRetryPayment = async (
 ): Promise<boolean> => {
   if (!state.config.autoPay) return false;
   const parsed = parsePaymentRequired(response);
-  return await state.config.onPaymentRequired(parsed.requirements);
+  return await state.config.onPaymentRequired(parsed.accepts[0]);
 };
 
 const x402Fetch = async (

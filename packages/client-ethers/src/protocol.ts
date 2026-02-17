@@ -51,7 +51,7 @@ export function getPaymentHeaderName(_version: 2): string {
 
 export interface ParsedPaymentRequirements {
   version: 2;
-  requirements: PaymentRequirementsV2;
+  accepts: PaymentRequirementsV2[];
 }
 
 function parseJsonOrBase64(value: string): unknown {
@@ -85,7 +85,7 @@ export function parsePaymentRequired(
     }
     return {
       version: 2,
-      requirements: parsed.accepts[0],
+      accepts: parsed.accepts,
     };
   } catch (error) {
     if (error instanceof PaymentError) throw error;
@@ -205,7 +205,7 @@ export async function createX402V2Payment(
  */
 export async function createX402Payment(
   signer: Signer,
-  parsed: ParsedPaymentRequirements,
+  requirement: PaymentRequirementsV2,
   fromAddress: Address,
   nonce?: `0x${string}`,
   validBefore?: number,
@@ -218,7 +218,7 @@ export async function createX402Payment(
 
   return createX402V2Payment(
     signer,
-    parsed.requirements,
+    requirement,
     fromAddress,
     effectiveNonce,
     effectiveValidBefore,

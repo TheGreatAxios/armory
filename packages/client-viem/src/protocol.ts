@@ -8,6 +8,7 @@
 import type {
   EIP3009Authorization,
   PaymentPayloadV2,
+  PaymentRequiredV2,
   PaymentRequirementsV2,
 } from "@armory-sh/base";
 import {
@@ -51,7 +52,10 @@ export function getWalletAddress(wallet: X402Wallet): Address {
     : wallet.walletClient.account.address;
 }
 
-export type ParsedPaymentRequirements = PaymentRequirementsV2;
+export interface ParsedPaymentRequired {
+  accepts: PaymentRequirementsV2[];
+  raw: PaymentRequiredV2;
+}
 
 function parseJsonOrBase64(value: string): unknown {
   try {
@@ -64,7 +68,7 @@ function parseJsonOrBase64(value: string): unknown {
 
 export function parsePaymentRequired(
   response: Response,
-): ParsedPaymentRequirements {
+): ParsedPaymentRequired {
   const v2Header = response.headers.get(V2_HEADERS.PAYMENT_REQUIRED);
 
   if (!v2Header) {
@@ -80,7 +84,7 @@ export function parsePaymentRequired(
     if (!parsed.accepts || parsed.accepts.length === 0) {
       throw new PaymentError("No payment requirements found in accepts array");
     }
-    return parsed.accepts[0];
+    return { accepts: parsed.accepts, raw: parsed };
   } catch (error) {
     if (error instanceof PaymentError) throw error;
     throw new PaymentError(

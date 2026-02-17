@@ -73,7 +73,9 @@ export function createX402Client(
 ): X402Client;
 
 export function createX402Client(config: ClientConfig): X402Client {
-  const transport = createX402Transport(undefined);
+  const transport = createX402Transport({
+    hooks: config.hooks,
+  });
 
   if ("signer" in config && config.signer) {
     transport.setSigner(config.signer);

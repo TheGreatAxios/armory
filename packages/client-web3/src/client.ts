@@ -9,6 +9,13 @@ import {
   type SettlementResponseV2,
   V2_HEADERS,
 } from "@armory-sh/base";
+import {
+  runAfterPaymentResponseHooks,
+  runBeforeSignPaymentHooks,
+  runOnPaymentRequiredHooks,
+  selectRequirementWithHooks,
+} from "@armory-sh/base/client-hooks-runtime";
+import type { PaymentRequiredContext } from "@armory-sh/base/types/hooks";
 import { Web3 } from "web3";
 import { createEIP712Domain, createTransferWithAuthorization } from "./eip3009";
 import {
@@ -241,6 +248,7 @@ const extractNetworkFromRequirements = (
 
 export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
   const state = createClientState(config);
+  const hooks = config.hooks;
 
   const fetch = async (
     url: string | Request,
@@ -258,7 +266,24 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
       }
 
       const from = getAddress(state.account);
-      const req = selectedRequirements;
+      const paymentRequiredContext: PaymentRequiredContext = {
+        url,
+        requestInit: init,
+        accepts: parsed.requirements,
+        requirements: selectedRequirements,
+        selectedRequirement: selectedRequirements,
+        serverExtensions: undefined,
+        fromAddress: from as `0x${string}`,
+        nonce: `0x${Date.now().toString(16).padStart(64, "0")}`,
+        validBefore:
+          Math.floor(Date.now() / 1000) +
+          selectedRequirements.maxTimeoutSeconds,
+      };
+      await runOnPaymentRequiredHooks(hooks, paymentRequiredContext);
+      const req = await selectRequirementWithHooks(
+        hooks,
+        paymentRequiredContext,
+      );
       const to =
         typeof req.payTo === "string"
           ? req.payTo
@@ -274,6 +299,12 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
         expiry: Math.floor(Date.now() / 1000) + req.maxTimeoutSeconds,
         accepted: req,
       });
+      await runBeforeSignPaymentHooks(hooks, {
+        payload: result.payload,
+        requirements: req,
+        wallet: state.account,
+        paymentContext: paymentRequiredContext,
+      });
 
       const paymentHeaders = new Headers(init?.headers);
       paymentHeaders.set(
@@ -282,6 +313,13 @@ export const createX402Client = (config: Web3ClientConfig): Web3X402Client => {
       );
 
       response = await fetch(url, { ...init, headers: paymentHeaders });
+      await runAfterPaymentResponseHooks(hooks, {
+        payload: result.payload,
+        requirements: req,
+        wallet: state.account,
+        paymentContext: paymentRequiredContext,
+        response,
+      });
     }
 
     return response;

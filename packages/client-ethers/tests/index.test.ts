@@ -56,7 +56,7 @@ describe("[client-ethers]: parsePaymentRequired", () => {
 
     const parsed = parsePaymentRequired(mockResponse);
     expect(parsed.version).toBe(2);
-    expect(parsed.requirements).toEqual(v2Reqs.accepts[0]);
+    expect(parsed.accepts[0]).toEqual(v2Reqs.accepts[0]);
   });
 
   test("throws error when no requirements found", () => {

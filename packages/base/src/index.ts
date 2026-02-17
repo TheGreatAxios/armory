@@ -16,6 +16,12 @@ export type {
 } from "./abi/erc20";
 export { ERC20_ABI } from "./abi/erc20";
 export {
+  runAfterPaymentResponseHooks,
+  runBeforeSignPaymentHooks,
+  runOnPaymentRequiredHooks,
+  selectRequirementWithHooks,
+} from "./client-hooks-runtime";
+export {
   EURC_BASE,
   getAllTokens,
   getEURCTokens,
@@ -156,6 +162,8 @@ export type {
 // ============================================
 export type {
   BeforePaymentHook,
+  ClientHook,
+  ClientHookErrorContext,
   ExtensionHook,
   HookConfig,
   HookRegistry,

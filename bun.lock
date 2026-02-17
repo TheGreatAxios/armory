@@ -76,6 +76,19 @@
         "typescript": "5.9.3",
       },
     },
+    "packages/client-hooks": {
+      "name": "@armory-sh/client-hooks",
+      "version": "0.1.0",
+      "dependencies": {
+        "@armory-sh/base": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/node": "^25.2.1",
+        "bun-types": "latest",
+        "tsup": "^8.0.0",
+        "typescript": "5.9.3",
+      },
+    },
     "packages/client-viem": {
       "name": "@armory-sh/client-viem",
       "version": "0.2.26",
@@ -220,6 +233,8 @@
     "@armory-sh/base": ["@armory-sh/base@workspace:packages/base"],
 
     "@armory-sh/client-ethers": ["@armory-sh/client-ethers@workspace:packages/client-ethers"],
+
+    "@armory-sh/client-hooks": ["@armory-sh/client-hooks@workspace:packages/client-hooks"],
 
     "@armory-sh/client-viem": ["@armory-sh/client-viem@workspace:packages/client-viem"],
 

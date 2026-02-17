@@ -5,6 +5,7 @@ import type {
   PaymentRequirementsV2,
   SettlementResponseV2,
 } from "@armory-sh/base";
+import type { ClientHook } from "@armory-sh/base/types/hooks";
 import type { Web3BaseWallet, Web3BaseWalletAccount } from "web3-types";
 
 export type Web3Account =
@@ -25,6 +26,7 @@ export interface Web3ClientConfig {
   domainName?: string;
   /** Override EIP-712 domain version for custom tokens */
   domainVersion?: string;
+  hooks?: ClientHook<Web3Account>[];
 }
 
 export interface PaymentSignatureResult {

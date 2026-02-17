@@ -14,12 +14,16 @@ import {
   PaymentException as PaymentError,
   V2_HEADERS,
 } from "@armory-sh/base";
+import {
+  runAfterPaymentResponseHooks,
+  runBeforeSignPaymentHooks,
+  runOnPaymentRequiredHooks,
+  selectRequirementWithHooks,
+} from "@armory-sh/base/client-hooks-runtime";
 import type {
+  ClientHook,
   PaymentRequiredContext,
-  ViemHookRegistry,
-  ViemPaymentPayloadContext,
-} from "./hooks";
-import { executeHooks } from "./hooks-engine";
+} from "@armory-sh/base/types/hooks";
 import {
   createX402Payment,
   getWalletAddress,
@@ -114,7 +118,7 @@ const createFetch = (
     debug?: boolean;
     domainName?: string;
     domainVersion?: string;
-    hooks?: ViemHookRegistry;
+    hooks?: ClientHook<X402Wallet>[];
   },
 ) => {
   const protocolWallet = toProtocolWallet(wallet);
@@ -147,27 +151,42 @@ const createFetch = (
 
       const fromAddress = getAddress();
       const nonce = generateNonce(nonceGenerator);
+      const requirements = parsed.accepts;
+      const selectedRequirement = requirements[0];
+      if (!selectedRequirement) {
+        throw new PaymentError(
+          "No payment requirements found in accepts array",
+        );
+      }
       const validBefore =
-        Math.floor(Date.now() / 1000) + parsed.maxTimeoutSeconds;
-      const requirementDomain = getRequirementDomainOverrides(parsed);
+        Math.floor(Date.now() / 1000) + selectedRequirement.maxTimeoutSeconds;
+      const requirementDomain =
+        getRequirementDomainOverrides(selectedRequirement);
 
       const paymentRequiredContext: PaymentRequiredContext = {
         url: input,
         requestInit: init,
-        requirements: parsed,
-        serverExtensions: parsed.extra,
+        accepts: requirements,
+        requirements: selectedRequirement,
+        selectedRequirement,
+        serverExtensions: undefined,
         fromAddress,
         nonce,
         validBefore,
       };
 
       if (hooks) {
-        await executeHooks(hooks, paymentRequiredContext);
+        await runOnPaymentRequiredHooks(hooks, paymentRequiredContext);
       }
+
+      const requirement = await selectRequirementWithHooks(
+        hooks,
+        paymentRequiredContext,
+      );
 
       const payment = await createX402Payment(
         protocolWallet,
-        parsed,
+        requirement,
         fromAddress,
         nonce,
         validBefore,
@@ -180,13 +199,13 @@ const createFetch = (
       }
 
       if (hooks) {
-        const paymentPayloadContext: ViemPaymentPayloadContext = {
+        const paymentPayloadContext = {
           payload: payment,
-          requirements: parsed,
+          requirements: requirement,
           wallet: protocolWallet,
           paymentContext: paymentRequiredContext,
         };
-        await executeHooks(hooks, paymentPayloadContext);
+        await runBeforeSignPaymentHooks(hooks, paymentPayloadContext);
       }
 
       const headers = new Headers(init?.headers);
@@ -196,6 +215,16 @@ const createFetch = (
 
       if (debug) {
         console.log(`[X402] Payment response status: ${response.status}`);
+      }
+
+      if (hooks) {
+        await runAfterPaymentResponseHooks(hooks, {
+          payload: payment,
+          requirements: requirement,
+          wallet: protocolWallet,
+          paymentContext: paymentRequiredContext,
+          response,
+        });
       }
 
       checkSettlement(response);
