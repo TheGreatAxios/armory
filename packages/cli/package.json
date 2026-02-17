@@ -1,6 +1,6 @@
 {
   "name": "armory-cli",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "Scaffold x402 payment-enabled apps",
   "type": "module",
   "license": "MIT",
