@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-elysia",
-  "version": "0.3.28",
+  "version": "0.3.29",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "keywords": [
