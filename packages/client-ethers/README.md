@@ -8,6 +8,7 @@ Armory x402 SDK — Payment client for ethers.js v6. Make payments from any ethe
 
 ```bash
 bun add @armory-sh/client-ethers
+bun add @armory-sh/client-hooks # optional preference/logger hooks
 ```
 
 ## Why Armory?
@@ -59,6 +60,25 @@ const client = createX402Client({ signer })
 const response = await client.fetch('https://api.example.com/protected')
 const data = await response.json()
 ```
+
+## Hook Pipeline
+
+```typescript
+import { createX402Client } from '@armory-sh/client-ethers'
+import { PaymentPreference, Logger } from '@armory-sh/client-hooks'
+
+const client = createX402Client({
+  signer,
+  hooks: [
+    PaymentPreference.chain(['base', 'polygon', 'skale']),
+    PaymentPreference.token(['USDT', 'USDC', 'WBTC']),
+    PaymentPreference.cheapest(),
+    Logger.console(),
+  ],
+})
+```
+
+`parsePaymentRequired` returns `accepts[]` (x402 v2 challenge options). Clients select from this list.
 
 ## Features
 

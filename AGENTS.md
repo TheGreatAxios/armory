@@ -90,7 +90,9 @@ function handler(state: string) { /* uses state param */ }
 ### Client Changes
 
 1. **Start in base** - All client logic should be implemented in `@armory-sh/base` first
-2. **Apply everywhere** - Once working in base, port to all client packages:
+2. **Hook runtime in base** - Shared hook lifecycle/types live in base and are reused by all clients
+3. **Reusable presets in client-hooks** - Keep reusable preference/logger hooks in `@armory-sh/client-hooks` (optional package)
+4. **Apply everywhere** - Once working in base, port to all client packages:
    - `@armory-sh/client-viem`
    - `@armory-sh/client-ethers`
    - `@armory-sh/client-walletconnect`
@@ -138,7 +140,7 @@ Only add framework-specific code directly in a package if:
 - Adapt base functions to wallet library patterns (viem, ethers, etc.)
 - Create payment requests
 - Handle x402 headers
-- Parse responses
+- Parse responses (`PAYMENT-REQUIRED` with `accepts[]`, then selection)
 
 ---
 
@@ -158,9 +160,9 @@ Only add framework-specific code directly in a package if:
 
 ### Headers
 
-| Payment Header | Response Header |
-|---------------|-----------------|
-| `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
+| Challenge Header | Payment Header | Settlement Header |
+|------------------|----------------|-------------------|
+| `PAYMENT-REQUIRED` | `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
 
 ### Supported Networks
 

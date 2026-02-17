@@ -8,6 +8,7 @@ Armory x402 SDK — Payment client for Web3.js. Make payments from any Web3.js w
 
 ```bash
 bun add @armory-sh/client-web3
+bun add @armory-sh/client-hooks # optional preference/logger hooks
 ```
 
 ## Why Armory?
@@ -59,6 +60,25 @@ const client = createX402Client({ account })
 const response = await client.fetch('https://api.example.com/protected')
 const data = await response.json()
 ```
+
+## Hook Pipeline
+
+```typescript
+import { createX402Client } from '@armory-sh/client-web3'
+import { PaymentPreference, Logger } from '@armory-sh/client-hooks'
+
+const client = createX402Client({
+  account,
+  hooks: [
+    PaymentPreference.chain(['base', 'polygon', 'skale']),
+    PaymentPreference.token(['USDT', 'USDC', 'WBTC']),
+    PaymentPreference.cheapest(),
+    Logger.console(),
+  ],
+})
+```
+
+`parsePaymentRequired` returns `accepts[]` (x402 v2 challenge options). Clients select from this list.
 
 ## Features
 

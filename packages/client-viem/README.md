@@ -126,21 +126,20 @@ const result = await armoryPay(
 )
 ```
 
-### With Extension Hooks
+### With Hook Pipeline
 
 ```typescript
 import { createX402Client } from '@armory-sh/client-viem'
-import { createSIWxHook, createPaymentIdHook } from '@armory-sh/extensions'
+import { PaymentPreference, Logger } from '@armory-sh/client-hooks'
 
 const client = createX402Client({
   wallet: { type: 'account', account },
-  hooks: {
-    siwx: createSIWxHook({
-      domain: 'example.com',
-      statement: 'Sign in to access premium content'
-    }),
-    paymentId: createPaymentIdHook()
-  }
+  hooks: [
+    PaymentPreference.chain(['base', 'polygon', 'skale']),
+    PaymentPreference.token(['USDT', 'USDC', 'WBTC']),
+    PaymentPreference.cheapest(),
+    Logger.console(),
+  ],
 })
 
 const response = await client.fetch('https://api.example.com/protected')
