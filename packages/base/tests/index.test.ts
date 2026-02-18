@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   createEIP712Domain,
   createTransferWithAuthorization,
+  decodeX402Response,
   EIP712_TYPES,
+  encodeX402Response,
   getNetworkByChainId,
   getNetworkConfig,
   isAddress,
@@ -14,6 +16,7 @@ import {
   type PaymentRequirementsV2,
   V2_HEADERS,
   validateTransferWithAuthorization,
+  type X402Response,
 } from "../src/index";
 
 const DEFAULT_REQUIREMENTS: PaymentRequirementsV2 = {
@@ -477,6 +480,48 @@ describe("[unit|base]: Base Package Tests", () => {
       expect(isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0 ")).toBe(
         false,
       );
+    });
+  });
+
+  describe("[unit|base]: X402Response Type", () => {
+    test("[encodeX402Response|success] - encodes response with resource and extensions", () => {
+      const response: X402Response = {
+        x402Version: 2,
+        error: "Payment required",
+        accepts: [DEFAULT_REQUIREMENTS],
+        resource: {
+          url: "https://example.com/api/test",
+          description: "Test resource",
+          mimeType: "application/json",
+        },
+        extensions: { customField: "value" },
+      };
+
+      const encoded = encodeX402Response(response);
+      const decoded = decodeX402Response(encoded);
+
+      expect(decoded.x402Version).toBe(2);
+      expect(decoded.error).toBe("Payment required");
+      expect(decoded.accepts).toHaveLength(1);
+      expect(decoded.resource?.url).toBe("https://example.com/api/test");
+      expect(decoded.resource?.description).toBe("Test resource");
+      expect(decoded.resource?.mimeType).toBe("application/json");
+      expect(decoded.extensions?.customField).toBe("value");
+    });
+
+    test("[encodeX402Response|success] - encodes response without optional fields", () => {
+      const response: X402Response = {
+        x402Version: 2,
+        accepts: [DEFAULT_REQUIREMENTS],
+      };
+
+      const encoded = encodeX402Response(response);
+      const decoded = decodeX402Response(encoded);
+
+      expect(decoded.x402Version).toBe(2);
+      expect(decoded.error).toBeUndefined();
+      expect(decoded.resource).toBeUndefined();
+      expect(decoded.extensions).toBeUndefined();
     });
   });
 });

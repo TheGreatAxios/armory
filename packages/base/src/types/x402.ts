@@ -125,7 +125,8 @@ export interface X402Response {
   x402Version: X402Version;
   error?: string;
   accepts?: PaymentRequirements[];
-  payer?: Address;
+  resource?: ResourceInfo;
+  extensions?: Record<string, unknown>;
 }
 
 /**
