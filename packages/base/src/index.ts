@@ -33,7 +33,6 @@ export {
   getUSDTTokens,
   getWBTCTokens,
   getWETHTokens,
-  SKL_SKALE_BASE,
   SKL_SKALE_BASE_SEPOLIA,
   TOKENS,
   USDC_BASE,
@@ -61,7 +60,6 @@ export {
   createEIP712Domain,
   createTransferWithAuthorization,
   EIP712_TYPES,
-  USDC_DOMAIN,
   validateTransferWithAuthorization,
 } from "./eip712";
 // ============================================

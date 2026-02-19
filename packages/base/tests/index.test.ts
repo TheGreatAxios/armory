@@ -10,6 +10,7 @@ import {
   isCAIPAssetId,
   isPaymentPayload,
   isPaymentPayloadV2,
+  registerToken,
   type PaymentPayloadV2,
   type PaymentRequirementsV2,
   V2_HEADERS,
@@ -175,7 +176,17 @@ describe("[unit|base]: Base Package Tests", () => {
   });
 
   describe("[unit|base]: EIP-712", () => {
-    test("[createEIP712Domain|success] - creates valid domain", () => {
+    test("[createEIP712Domain|success] - creates valid domain from registered token", async () => {
+      // Register mainnet USDC for this test
+      registerToken({
+        symbol: "USDC",
+        name: "USD Coin",
+        version: "2",
+        chainId: 1,
+        contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" as const,
+        decimals: 6,
+      });
+
       const domain = createEIP712Domain(
         1,
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -187,6 +198,15 @@ describe("[unit|base]: Base Package Tests", () => {
       expect(domain.verifyingContract).toBe(
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       );
+    });
+
+    test("[createEIP712Domain|error] - throws for unregistered token", () => {
+      expect(() => {
+        createEIP712Domain(
+          999,
+          "0x0000000000000000000000000000000000000001" as const,
+        );
+      }).toThrow();
     });
 
     test("[EIP712_TYPES|success] - types constant is correct", () => {

@@ -14,8 +14,10 @@ import {
   getAvailableNetworks,
   getAvailableTokens,
   isValidationError,
+  registerToken,
   resolveNetwork,
   resolveToken,
+  TOKENS,
   validatePaymentConfig,
 } from "@armory-sh/base";
 import type { Account, Address, WalletClient } from "viem";
@@ -112,6 +114,15 @@ export const armoryPay = async <T = unknown>(
   },
 ): Promise<ArmoryPaymentResult<T>> => {
   try {
+    // Ensure all standard tokens are registered before validation
+    Object.values(TOKENS).forEach((token) => {
+      try {
+        registerToken(token);
+      } catch {
+        // Token already registered, ignore
+      }
+    });
+
     const normalized = normalizeWallet(wallet);
     const x402Wallet: X402Wallet =
       normalized.type === "account"

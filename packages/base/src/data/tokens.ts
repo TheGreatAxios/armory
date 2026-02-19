@@ -40,16 +40,6 @@ export const USDC_SKALE_BASE: CustomToken = {
   decimals: 6,
 };
 
-export const SKL_SKALE_BASE: CustomToken = {
-  symbol: "SKL",
-  name: "SKALE",
-  version: "1",
-  contractAddress:
-    "0xE0595a049d02b7674572b0d59cd4880Db60EDC50" as `0x${string}`,
-  chainId: 1187947933,
-  decimals: 18,
-};
-
 export const USDT_SKALE_BASE: CustomToken = {
   symbol: "USDT",
   name: "Tether USD",
@@ -138,7 +128,6 @@ export const TOKENS = {
   USDT_SKALE_BASE,
   WBTC_SKALE_BASE,
   WETH_SKALE_BASE,
-  SKL_SKALE_BASE,
   SKL_SKALE_BASE_SEPOLIA,
   USDC_SKALE_BASE_SEPOLIA,
   USDT_SKALE_BASE_SEPOLIA,
