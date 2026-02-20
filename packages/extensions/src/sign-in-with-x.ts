@@ -3,66 +3,34 @@
  * CAIP-122 wallet authentication for repeat access
  */
 
+import { isAddress } from "@armory-sh/base";
+import { type } from "arktype";
 import type {
   Extension,
-  SIWxExtensionInfo,
   SIWxExtensionConfig,
+  SIWxExtensionInfo,
   SIWxPayload,
-  JSONSchema,
 } from "./types.js";
-import { createExtension, extractExtension } from "./validators.js";
-import type { Address } from "@armory-sh/base";
-import { isAddress } from "@armory-sh/base";
 import { SIGN_IN_WITH_X } from "./types.js";
+import { createExtension } from "./validators.js";
 
-const SIWX_SCHEMA: JSONSchema = {
-  type: "object",
-  properties: {
-    domain: {
-      type: "string",
-      description: "Domain requesting the sign-in",
-    },
-    resourceUri: {
-      type: "string",
-      description: "URI of the resource being accessed",
-    },
-    network: {
-      oneOf: [{ type: "string" }, { type: "array", items: { type: "string" } }],
-      description: "Blockchain network(s) for authentication",
-    },
-    statement: {
-      type: "string",
-      description: "Human-readable statement about the sign-in",
-    },
-    version: {
-      type: "string",
-      description: "SIWX message version",
-    },
-    expirationSeconds: {
-      type: "number",
-      description: "Seconds until the message expires",
-    },
-    supportedChains: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          chainId: { type: "string" },
-          type: { type: "string" },
-        },
-        required: ["chainId", "type"],
-      },
-    },
-  },
-};
+const SIWX_INFO_TYPE = type({
+  domain: "string",
+  resourceUri: "string",
+  network: "string | string[]",
+  statement: "string",
+  version: "string",
+  expirationSeconds: "number",
+  supportedChains: type({
+    chainId: "string",
+    type: "string",
+  }).array(),
+}).partial();
 
 const SIWX_HEADER_PATTERN = /^siwx-v1-(.+)$/;
 
 function base64UrlEncode(str: string): string {
-  return btoa(str)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 
 function base64UrlDecode(str: string): string {
@@ -74,7 +42,7 @@ function base64UrlDecode(str: string): string {
 }
 
 export function declareSIWxExtension(
-  config: SIWxExtensionConfig = {}
+  config: SIWxExtensionConfig = {},
 ): Extension<SIWxExtensionInfo> {
   const info: SIWxExtensionInfo = {};
 
@@ -102,7 +70,7 @@ export function declareSIWxExtension(
     info.expirationSeconds = config.expirationSeconds;
   }
 
-  return createExtension(info, SIWX_SCHEMA);
+  return createExtension(info);
 }
 
 export function parseSIWxHeader(header: string): SIWxPayload {
@@ -122,7 +90,7 @@ export function parseSIWxHeader(header: string): SIWxPayload {
 export function validateSIWxMessage(
   payload: SIWxPayload,
   resourceUri: string,
-  options: { maxAge?: number; checkNonce?: (nonce: string) => boolean } = {}
+  options: { maxAge?: number; checkNonce?: (nonce: string) => boolean } = {},
 ): { valid: boolean; error?: string } {
   if (!payload.domain) {
     return { valid: false, error: "Missing domain" };
@@ -165,8 +133,12 @@ export function validateSIWxMessage(
 export async function verifySIWxSignature(
   payload: SIWxPayload,
   options: {
-    evmVerifier?: (message: string, signature: string, address: string) => Promise<boolean>;
-  } = {}
+    evmVerifier?: (
+      message: string,
+      signature: string,
+      address: string,
+    ) => Promise<boolean>;
+  } = {},
 ): Promise<{ valid: boolean; address?: string; error?: string }> {
   if (!payload.signature) {
     return { valid: false, error: "Missing signature" };
@@ -178,7 +150,11 @@ export async function verifySIWxSignature(
 
   if (options.evmVerifier) {
     const message = createSIWxMessage(payload);
-    const valid = await options.evmVerifier(message, payload.signature, payload.address);
+    const valid = await options.evmVerifier(
+      message,
+      payload.signature,
+      payload.address,
+    );
     if (!valid) {
       return { valid: false, error: "Signature verification failed" };
     }
@@ -220,7 +196,9 @@ export function createSIWxMessage(payload: SIWxPayload): string {
   }
 
   if (payload.chainId) {
-    const chains = Array.isArray(payload.chainId) ? payload.chainId.join(", ") : payload.chainId;
+    const chains = Array.isArray(payload.chainId)
+      ? payload.chainId.join(", ")
+      : payload.chainId;
     lines.push(`Chain ID(s): ${chains}`);
   }
 
@@ -243,7 +221,7 @@ export function createSIWxPayload(
     nonce?: string;
     issuedAt?: string;
     expirationTime?: string;
-  } = {}
+  } = {},
 ): SIWxPayload {
   const getDefaultDomain = (): string => {
     if (typeof window !== "undefined" && window.location) {
@@ -284,7 +262,9 @@ export function createSIWxPayload(
   if (options.expirationTime) {
     payload.expirationTime = options.expirationTime;
   } else if (serverInfo.expirationSeconds) {
-    const expiration = new Date(Date.now() + serverInfo.expirationSeconds * 1000);
+    const expiration = new Date(
+      Date.now() + serverInfo.expirationSeconds * 1000,
+    );
     payload.expirationTime = expiration.toISOString();
   }
 
@@ -292,16 +272,16 @@ export function createSIWxPayload(
 }
 
 export function isSIWxExtension(
-  extension: unknown
+  extension: unknown,
 ): extension is Extension<SIWxExtensionInfo> {
   if (!extension || typeof extension !== "object") {
     return false;
   }
 
   const ext = extension as Record<string, unknown>;
-  return "info" in ext && "schema" in ext;
+  return "info" in ext;
 }
 
-export { SIGN_IN_WITH_X };
+export { SIGN_IN_WITH_X, SIWX_INFO_TYPE };
 
 export type { SIWxExtensionInfo, SIWxExtensionConfig, SIWxPayload };

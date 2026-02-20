@@ -8,12 +8,19 @@
  * Hooks allow extensibility without custom code in each client package.
  */
 
-import type { PaymentPayloadV2, PaymentRequirementsV2, Extensions, Address } from "./v2";
+import type {
+  Address,
+  Extensions,
+  PaymentPayloadV2,
+  PaymentRequirementsV2,
+} from "./v2";
 
 export interface PaymentRequiredContext {
   url: RequestInfo | URL;
   requestInit: RequestInit | undefined;
+  accepts: PaymentRequirementsV2[];
   requirements: PaymentRequirementsV2;
+  selectedRequirement?: PaymentRequirementsV2;
   serverExtensions: Extensions | undefined;
   fromAddress: Address;
   nonce: `0x${string}`;
@@ -30,11 +37,11 @@ export interface PaymentPayloadContext<TWallet = unknown> {
 export type HookResult = void | Promise<void>;
 
 export type OnPaymentRequiredHook<TWallet = unknown> = (
-  context: PaymentRequiredContext
+  context: PaymentRequiredContext,
 ) => HookResult;
 
 export type BeforePaymentHook<TWallet = unknown> = (
-  context: PaymentPayloadContext<TWallet>
+  context: PaymentPayloadContext<TWallet>,
 ) => HookResult;
 
 export type ExtensionHook<TWallet = unknown> =
@@ -51,3 +58,28 @@ export type HookRegistry<TWallet = unknown> = Record<
   string,
   HookConfig<TWallet>
 >;
+
+export interface ClientHookErrorContext {
+  error: unknown;
+  phase:
+    | "onPaymentRequired"
+    | "selectRequirement"
+    | "beforeSignPayment"
+    | "afterPaymentResponse";
+}
+
+export interface ClientHook<TWallet = unknown> {
+  name?: string;
+  onPaymentRequired?: (context: PaymentRequiredContext) => HookResult;
+  selectRequirement?: (
+    context: PaymentRequiredContext,
+  ) =>
+    | PaymentRequirementsV2
+    | undefined
+    | Promise<PaymentRequirementsV2 | undefined>;
+  beforeSignPayment?: (context: PaymentPayloadContext<TWallet>) => HookResult;
+  afterPaymentResponse?: (
+    context: PaymentPayloadContext<TWallet> & { response: Response },
+  ) => HookResult;
+  onError?: (context: ClientHookErrorContext) => HookResult;
+}

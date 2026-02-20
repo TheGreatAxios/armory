@@ -1,4 +1,4 @@
-import { defineConfig } from "tsup"
+import { defineConfig } from "tsup";
 
 export default defineConfig({
   entry: ["src/index.ts", "src/extensions.ts"],
@@ -10,4 +10,4 @@ export default defineConfig({
   splitting: true,
   treeshake: true,
   external: ["@armory-sh/base", "@armory-sh/extensions"],
-})
+});

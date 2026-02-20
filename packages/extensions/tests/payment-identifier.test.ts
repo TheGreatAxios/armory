@@ -1,13 +1,13 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import type { PaymentPayloadV2, PaymentRequirementsV2 } from "@armory-sh/base";
 import {
   declarePaymentIdentifierExtension,
   extractPaymentIdentifierInfo,
-  isValidPaymentId,
-  validatePaymentIdentifierExtension,
   isPaymentIdentifierExtension,
+  isValidPaymentId,
   PAYMENT_IDENTIFIER,
+  validatePaymentIdentifierExtension,
 } from "../src/payment-identifier";
-import type { PaymentPayloadV2, PaymentRequirementsV2 } from "@armory-sh/base";
 
 describe("[unit|extensions]: Payment Identifier Extension", () => {
   describe("[unit|extensions]: declarePaymentIdentifierExtension", () => {
@@ -16,9 +16,7 @@ describe("[unit|extensions]: Payment Identifier Extension", () => {
 
       expect(extension).toBeDefined();
       expect(extension.info).toBeDefined();
-      expect(extension.schema).toBeDefined();
       expect(typeof extension.info).toBe("object");
-      expect(typeof extension.schema).toBe("object");
     });
 
     test("[declarePaymentIdentifierExtension|success] - creates extension with paymentId", () => {
@@ -37,7 +35,6 @@ describe("[unit|extensions]: Payment Identifier Extension", () => {
 
       expect(extension.info.paymentId).toBeUndefined();
       expect(extension.info.required).toBe(true);
-      expect(extension.schema.properties?.paymentId?.required).toEqual([true]);
     });
 
     test("[declarePaymentIdentifierExtension|success] - creates extension with required: false", () => {
@@ -47,7 +44,6 @@ describe("[unit|extensions]: Payment Identifier Extension", () => {
 
       expect(extension.info.paymentId).toBeUndefined();
       expect(extension.info.required).toBe(false);
-      expect(extension.schema.properties?.paymentId?.required).toEqual([false]);
     });
 
     test("[validatePaymentIdentifierExtension|success] - validates correct extension", () => {
@@ -83,7 +79,9 @@ describe("[unit|extensions]: Payment Identifier Extension", () => {
       const result = validatePaymentIdentifierExtension(extension);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain("paymentId must be a string when defined");
+      expect(result.errors).toContain(
+        "paymentId must be a string when defined",
+      );
     });
 
     test("[validatePaymentIdentifierExtension|error] - rejects too long paymentId", () => {
@@ -105,7 +103,9 @@ describe("[unit|extensions]: Payment Identifier Extension", () => {
       const result = validatePaymentIdentifierExtension(extension);
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain("alphanumeric, hyphens, and underscores only");
+      expect(result.errors).toContain(
+        "alphanumeric, hyphens, and underscores only",
+      );
     });
 
     test("[validatePaymentIdentifierExtension|error] - rejects non-boolean required", () => {
@@ -157,14 +157,14 @@ describe("[unit|extensions]: Payment Identifier Extension", () => {
         scheme: "exact",
         network: "eip155:8453",
         payload: {
-          signature: "0x" + "a".repeat(130) as `0x${string}`,
+          signature: `0x${"a".repeat(130)}` as `0x${string}`,
           authorization: {
             from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
-            to: "0x123456789012345678901234567890",
+            to: "0x1234567890123456789012345678901234567890" as `0x${string}`,
             value: "1000000",
             validAfter: "0",
             validBefore: "9999999999",
-            nonce: "0x" + "0".repeat(64) as `0x${string}`,
+            nonce: `0x${"0".repeat(64)}` as `0x${string}`,
           },
         },
         extensions: {
@@ -192,14 +192,14 @@ describe("[unit|extensions]: Payment Identifier Extension", () => {
         scheme: "exact",
         network: "eip155:8453",
         payload: {
-          signature: "0x" + "a".repeat(130) as `0x${string}`,
+          signature: `0x${"a".repeat(130)}` as `0x${string}`,
           authorization: {
             from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as `0x${string}`,
-            to: "0x12345678901234567890",
+            to: "0x1234567890123456789012345678901234567890" as `0x${string}`,
             value: "1000000",
             validAfter: "0",
             validBefore: "9999999999",
-            nonce: "0x" + "0".repeat(64) as `0x${string}`,
+            nonce: `0x${"0".repeat(64)}` as `0x${string}`,
           },
         },
         extensions: {},

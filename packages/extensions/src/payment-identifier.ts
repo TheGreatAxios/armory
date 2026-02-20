@@ -5,14 +5,19 @@
  * Specification: https://docs.x402.org/extensions/payment-identifier
  */
 
+import type { PaymentPayloadV2 } from "@armory-sh/base";
+import { type } from "arktype";
 import type {
   Extension,
-  PaymentIdentifierExtensionInfo,
   PaymentIdentifierConfig,
-  JSONSchema,
+  PaymentIdentifierExtensionInfo,
 } from "./types.js";
 import { createExtension } from "./validators.js";
-import type { PaymentPayloadV2, PaymentRequirementsV2 } from "@armory-sh/base";
+
+const PAYMENT_IDENTIFIER_TYPE = type({
+  paymentId: "string",
+  required: "boolean",
+}).partial();
 
 const PAYMENT_ID_ALLOWED_CHARS = /^[a-z0-9_-]+$/;
 const PAYMENT_ID_MIN_LENGTH = 3;
@@ -30,7 +35,7 @@ export function generatePaymentId(): string {
 
 export function appendPaymentIdentifierToExtensions(
   extensions: Record<string, unknown> | undefined,
-  paymentId: string
+  paymentId: string,
 ): Record<string, unknown> {
   const existing = extensions || {};
   const extension: PaymentIdentifierExtensionInfo = {
@@ -44,7 +49,7 @@ export function appendPaymentIdentifierToExtensions(
 }
 
 export function extractPaymentIdentifierInfo(
-  paymentPayload: PaymentPayloadV2
+  paymentPayload: PaymentPayloadV2,
 ): string | null {
   const extensions = paymentPayload.extensions;
   if (!extensions || typeof extensions !== "object") {
@@ -76,9 +81,10 @@ export function isValidPaymentId(paymentId: string): boolean {
   return PAYMENT_ID_ALLOWED_CHARS.test(paymentId);
 }
 
-export function validatePaymentIdentifierExtension(
-  extension: unknown
-): { valid: boolean; errors?: string[] } {
+export function validatePaymentIdentifierExtension(extension: unknown): {
+  valid: boolean;
+  errors?: string[];
+} {
   if (!extension || typeof extension !== "object") {
     return { valid: false, errors: ["Extension must be an object"] };
   }
@@ -93,7 +99,10 @@ export function validatePaymentIdentifierExtension(
 
   if (info.paymentId !== undefined) {
     if (typeof info.paymentId !== "string") {
-      return { valid: false, errors: ["paymentId must be a string when defined"] };
+      return {
+        valid: false,
+        errors: ["paymentId must be a string when defined"],
+      };
     }
 
     if (info.paymentId.length > PAYMENT_ID_MAX_LENGTH) {
@@ -123,18 +132,18 @@ export function validatePaymentIdentifierExtension(
 }
 
 export function isPaymentIdentifierExtension(
-  extension: unknown
+  extension: unknown,
 ): extension is Extension<PaymentIdentifierExtensionInfo> {
   if (!extension || typeof extension !== "object") {
     return false;
   }
 
   const ext = extension as Record<string, unknown>;
-  return "info" in ext && "schema" in ext;
+  return "info" in ext;
 }
 
 export function declarePaymentIdentifierExtension(
-  config: PaymentIdentifierConfig = {}
+  config: PaymentIdentifierConfig = {},
 ): Extension<PaymentIdentifierExtensionInfo> {
   const info: PaymentIdentifierExtensionInfo = {};
 
@@ -146,31 +155,11 @@ export function declarePaymentIdentifierExtension(
     info.required = config.required;
   }
 
-  const paymentIdSchema: JSONSchema = {
-    type: "string",
-    minLength: PAYMENT_ID_MIN_LENGTH,
-    maxLength: PAYMENT_ID_MAX_LENGTH,
-    pattern: PAYMENT_ID_ALLOWED_CHARS.source,
-    description: "Unique payment identifier for idempotency",
-  };
-
-  if (info.required !== undefined) {
-    paymentIdSchema.required = [info.required];
-  }
-
-  return createExtension(info, {
-    type: "object",
-    properties: {
-      paymentId: paymentIdSchema,
-      required: {
-        type: "boolean",
-        description: "Whether payment identifier is required for this payment",
-      },
-    },
-    required: info.required ? ["paymentId"] : [],
-  });
+  return createExtension(info);
 }
 
 export const PAYMENT_IDENTIFIER = "payment-identifier";
 
 export type { PaymentIdentifierExtensionInfo, PaymentIdentifierConfig };
+
+export { PAYMENT_IDENTIFIER_TYPE };

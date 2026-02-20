@@ -1,0 +1,42 @@
+---
+title: Examples
+description: Practical Armory CLI workflows for payment setup and verification
+---
+
+# CLI Examples
+
+## Merchant API + Viem Buyer
+
+```bash
+armory create bun-server merchant-api
+cd merchant-api
+bun install
+bun run dev
+
+cd ..
+armory create viem-client buyer-app
+cd buyer-app
+bun install
+PRIVATE_KEY=0xYOUR_PRIVATE_KEY bun run dev
+```
+
+## Validate a Target Payment Pair
+
+```bash
+armory validate network base
+armory validate token usdc
+```
+
+## Inspect Endpoint Requirements
+
+```bash
+armory verify http://localhost:3000/api/premium
+```
+
+## Explore Supported Config
+
+```bash
+armory networks
+armory tokens
+armory extensions
+```

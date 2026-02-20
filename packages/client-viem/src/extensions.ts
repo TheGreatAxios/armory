@@ -4,11 +4,12 @@
  */
 
 import type {
+  Address,
+  Extensions,
   PaymentPayloadV2,
   PaymentRequiredV2,
-  Extensions,
-  Address,
 } from "@armory-sh/base";
+import { encodeUtf8ToBase64 } from "@armory-sh/base";
 import type {
   BazaarExtensionInfo,
   SIWxExtensionInfo,
@@ -16,7 +17,6 @@ import type {
 } from "@armory-sh/extensions";
 import type { X402Wallet } from "./protocol";
 import { getWalletAddress } from "./protocol";
-import { encodeUtf8ToBase64 } from "./bytes";
 
 export interface ClientExtensionContext {
   bazaar?: BazaarExtensionInfo;
@@ -24,7 +24,7 @@ export interface ClientExtensionContext {
 }
 
 export function parseExtensions(
-  paymentRequired: PaymentRequiredV2
+  paymentRequired: PaymentRequiredV2,
 ): ClientExtensionContext {
   const extensions = paymentRequired.extensions || {};
   const result: ClientExtensionContext = {};
@@ -48,7 +48,7 @@ export function parseExtensions(
 
 export function extractExtension<T>(
   extensions: Extensions | undefined,
-  key: string
+  key: string,
 ): T | null {
   if (!extensions || typeof extensions !== "object") {
     return null;
@@ -67,7 +67,7 @@ export async function createSIWxProof(
   challenge: SIWxExtensionInfo,
   wallet: X402Wallet,
   nonce: string,
-  expirationSeconds: number = 3600
+  expirationSeconds: number = 3600,
 ): Promise<{ header: string; address: Address }> {
   const getDefaultDomain = (): string => {
     if (typeof window !== "undefined" && window.location) {
@@ -154,7 +154,9 @@ function createSIWxMessage(payload: SIWxPayload): string {
   }
 
   if (payload.chainId) {
-    const chains = Array.isArray(payload.chainId) ? payload.chainId.join(", ") : payload.chainId;
+    const chains = Array.isArray(payload.chainId)
+      ? payload.chainId.join(", ")
+      : payload.chainId;
     lines.push(`Chain ID(s): ${chains}`);
   }
 
@@ -169,7 +171,7 @@ function encodeSIWxHeader(payload: SIWxPayload): string {
 
 export function addExtensionsToPayload(
   payload: PaymentPayloadV2,
-  extensions?: Extensions
+  extensions?: Extensions,
 ): PaymentPayloadV2 {
   if (!extensions || Object.keys(extensions).length === 0) {
     return payload;

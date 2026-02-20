@@ -1,16 +1,5 @@
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
-type BufferLike = {
-  from(data: Uint8Array): { toString(encoding: "base64"): string };
-  from(data: string, encoding: "base64"): Uint8Array;
-};
-
-function getNodeBuffer(): BufferLike | undefined {
-  if ("Buffer" in globalThis) {
-    return (globalThis as { Buffer?: BufferLike }).Buffer;
-  }
-  return undefined;
-}
 
 function toBase64(bytes: Uint8Array): string {
   if (typeof btoa === "function") {
@@ -19,11 +8,6 @@ function toBase64(bytes: Uint8Array): string {
       binary += String.fromCharCode(bytes[index]);
     }
     return btoa(binary);
-  }
-
-  const nodeBuffer = getNodeBuffer();
-  if (nodeBuffer) {
-    return nodeBuffer.from(bytes).toString("base64");
   }
 
   throw new Error("No base64 encoder available in this runtime");
@@ -39,11 +23,6 @@ function fromBase64(base64: string): Uint8Array {
     return bytes;
   }
 
-  const nodeBuffer = getNodeBuffer();
-  if (nodeBuffer) {
-    return Uint8Array.from(nodeBuffer.from(base64, "base64"));
-  }
-
   throw new Error("No base64 decoder available in this runtime");
 }
 
@@ -55,6 +34,10 @@ export function encodeUtf8ToBase64(value: string): string {
 export function decodeBase64ToUtf8(value: string): string {
   const bytes = fromBase64(value);
   return textDecoder.decode(bytes);
+}
+
+export function toBase64Url(base64: string): string {
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 
 export function normalizeBase64Url(value: string): string {

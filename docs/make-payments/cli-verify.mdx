@@ -1,0 +1,37 @@
+---
+title: Verify
+description: Inspect endpoint payment requirements and response headers
+---
+
+`armory verify` checks endpoint responses for payment headers and requirement metadata.
+
+## Usage
+
+```bash
+armory verify https://api.example.com/premium
+# alias
+armory inspect https://api.example.com/premium
+```
+
+## Local Debug Workflow
+
+```bash
+# terminal 1
+cd merchant-api
+bun run dev
+
+# terminal 2
+armory verify http://localhost:3000/api/premium
+```
+
+## Example Output Interpretation
+
+- `402` with `PAYMENT-REQUIRED`: endpoint is paywalled
+- `200`: endpoint is open or payment already satisfied
+- malformed/missing payment headers: check middleware wiring and route matching
+
+## Troubleshooting
+
+- Verify the route is protected in middleware config.
+- Validate `chainId` and `assetId` used by your requirement payload.
+- Confirm facilitator URL is reachable from your server runtime.

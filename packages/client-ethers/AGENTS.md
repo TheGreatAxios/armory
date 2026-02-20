@@ -4,6 +4,22 @@ x402 protocol client implementation for ethers.js v6.
 
 ---
 
+## Architecture
+
+**Import from base** for shared types and utilities:
+```ts
+import { TOKENS, V2_HEADERS, PaymentException as PaymentError } from "@armory-sh/base";
+```
+
+**Import from client-ethers** for ethers-specific integration:
+```ts
+import { createX402Client, createX402Transport } from "@armory-sh/client-ethers";
+```
+
+Client-ethers only contains ethers.js-specific wallet integration. All shared logic lives in `@armory-sh/base`.
+
+---
+
 ## Code Style
 
 - **TypeScript strict mode** - No `any`, use proper typing
@@ -24,7 +40,7 @@ This package provides an x402 client that works with ethers.js Signers and Provi
 
 - **Auto 402 Handling**: Automatically intercepts 402 responses and signs payments
 - **EIP-3009 Signing**: Full support for EIP-3009 TransferWithAuthorization
-- **V1 + V2 Protocol**: Supports both X-PAYMENT (v1) and PAYMENT-SIGNATURE (v2) headers
+- **V2 Protocol**: Supports PAYMENT-SIGNATURE headers
 - **Type Safety**: Full TypeScript types exported
 - **Flexible Configuration**: Configurable retries, timeouts, and callbacks
 
@@ -44,13 +60,12 @@ This package provides an x402 client that works with ethers.js Signers and Provi
 - `X402ClientConfig` - Configuration options
 - `X402TransportConfig` - Transport configuration options
 
-### Errors
+### Errors (ethers-specific + re-exported from base)
 
-- `X402ClientError` - Base error class
-- `SigningError` - Signing operation failures
-- `PaymentError` - Payment operation failures
-- `WalletNotConfiguredError` - Missing wallet configuration
-- `VersionDetectionError` - Cannot detect protocol version
+- `X402ClientError`, `SigningError`, `PaymentError` - from `@armory-sh/base`
+- `SignerRequiredError` - Ethers-specific: missing signer
+- `AuthorizationError` - Ethers-specific: authorization failed
+- `ProviderRequiredError` - Ethers-specific: missing provider
 
 ## Usage
 

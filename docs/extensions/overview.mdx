@@ -1,0 +1,28 @@
+---
+title: Overview
+description: What x402 extensions are and how Armory uses them
+---
+
+x402 extensions are protocol-level metadata attached to challenges and payment payloads via the `extensions` object.
+
+Use extensions when a server requires additional fields beyond core payment data, such as authentication, idempotency, or discovery metadata.
+
+## Built-in Extensions
+
+- Sign-In-With-X (`siwx`) for wallet-authenticated access
+- Payment Identifier (`paymentIdentifier`) for idempotency
+- Bazaar (`bazaar`) for discovery metadata
+
+## Extension Flow
+
+1. Server declares required extensions in `PAYMENT-REQUIRED`
+2. Client hooks inspect required extension metadata
+3. Client adds extension payload fields before signing
+4. Server verifies and processes extension data
+
+## Next Pages
+
+- [Sign-In-With-X](/extensions/siwx)
+- [Payment Identifier](/extensions/payment-identifier)
+- [Bazaar](/extensions/bazaar)
+- [Custom Extensions](/extensions/custom)

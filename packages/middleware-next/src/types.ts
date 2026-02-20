@@ -1,8 +1,12 @@
 import type { PaymentRequirementsV2 } from "@armory-sh/base";
 
 export interface HTTPFacilitatorClient {
-  verify(headers: Headers): Promise<{ success: boolean; payerAddress?: string; error?: string }>;
-  settle?(headers: Headers): Promise<{ success: boolean; txHash?: string; error?: string }>;
+  verify(
+    headers: Headers,
+  ): Promise<{ success: boolean; payerAddress?: string; error?: string }>;
+  settle?(
+    headers: Headers,
+  ): Promise<{ success: boolean; txHash?: string; error?: string }>;
 }
 
 export interface PaymentScheme {

@@ -6,7 +6,7 @@ export type TransferWithAuthorizationParams = readonly [
   expiry: bigint,
   v: number,
   r: `0x${string}`,
-  s: `0x${string}`
+  s: `0x${string}`,
 ];
 
 export type ReceiveWithAuthorizationParams = readonly [
@@ -17,7 +17,7 @@ export type ReceiveWithAuthorizationParams = readonly [
   expiry: bigint,
   v: number,
   r: `0x${string}`,
-  s: `0x${string}`
+  s: `0x${string}`,
 ];
 
 export type BalanceOfParams = readonly [account: `0x${string}`];

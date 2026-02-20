@@ -3,21 +3,19 @@
  * Provides a configurable object with method-based payment functions
  */
 
-import type {
-  NetworkId,
-  TokenId,
-  ArmoryPaymentResult,
-} from "@armory-sh/base";
-import type {
-  SimpleWalletInput,
-  NormalizedWallet,
-} from "./payment-api";
+import type { ArmoryPaymentResult, NetworkId, TokenId } from "@armory-sh/base";
+import type { NormalizedWallet, SimpleWalletInput } from "./payment-api";
 import { normalizeWallet } from "./payment-api";
-import type { Web3Account } from "./types";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
-const ALL_METHODS: Set<HttpMethod> = new Set(["GET", "POST", "PUT", "DELETE", "PATCH"]);
+const ALL_METHODS: Set<HttpMethod> = new Set([
+  "GET",
+  "POST",
+  "PUT",
+  "DELETE",
+  "PATCH",
+]);
 
 export interface ArmoryConfig {
   wallet: SimpleWalletInput;
@@ -46,7 +44,10 @@ export interface ArmoryInstance {
   put<T>(url: string, body?: unknown): Promise<ArmoryPaymentResult<T>>;
   delete<T>(url: string): Promise<ArmoryPaymentResult<T>>;
   patch<T>(url: string, body?: unknown): Promise<ArmoryPaymentResult<T>>;
-  pay<T>(url: string, options?: PaymentOptions): Promise<ArmoryPaymentResult<T>>;
+  pay<T>(
+    url: string,
+    options?: PaymentOptions,
+  ): Promise<ArmoryPaymentResult<T>>;
   call<T>(url: string): Promise<ArmoryPaymentResult<T>>;
 }
 
@@ -71,7 +72,7 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
   const makeRequest = async <T>(
     url: string,
     method: HttpMethod,
-    body?: unknown
+    body?: unknown,
   ): Promise<ArmoryPaymentResult<T>> => {
     try {
       const headers = new Headers();
@@ -90,7 +91,7 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
         };
       }
 
-      const data = await response.json() as T;
+      const data = (await response.json()) as T;
 
       const txHash = response.headers.get("PAYMENT-RESPONSE");
 
@@ -99,12 +100,12 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
         data,
         ...(txHash && { txHash }),
       };
-
     } catch (error) {
       return {
         success: false,
         code: "NETWORK_ERROR",
-        message: error instanceof Error ? error.message : "Unknown error occurred",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
         details: error,
       };
     }
@@ -115,7 +116,8 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
     post: <T>(url: string, body?: unknown) => makeRequest<T>(url, "POST", body),
     put: <T>(url: string, body?: unknown) => makeRequest<T>(url, "PUT", body),
     delete: <T>(url: string) => makeRequest<T>(url, "DELETE"),
-    patch: <T>(url: string, body?: unknown) => makeRequest<T>(url, "PATCH", body),
+    patch: <T>(url: string, body?: unknown) =>
+      makeRequest<T>(url, "PATCH", body),
     pay: <T>(url: string, options?: PaymentOptions) =>
       makeRequest<T>(url, options?.method ?? "GET", options?.body),
     call: <T>(url: string) => makeRequest<T>(url, "GET"),

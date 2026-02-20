@@ -2,10 +2,8 @@
  * Express Middleware - Payment Utils Tests
  */
 
-import { test, expect, describe } from "bun:test";
-import {
-  extractPayerAddress,
-} from "../src/payment-utils";
+import { describe, expect, test } from "bun:test";
+import { extractPayerAddress } from "../src/payment-utils";
 
 const TEST_PAYER_ADDRESS = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1";
 const TEST_PAY_TO_ADDRESS = "0x1234567890123456789012345678901234567890";
@@ -31,7 +29,8 @@ const createX402V2Payload = () => ({
       value: "1000000",
       validAfter: Math.floor(Date.now() / 1000).toString(),
       validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
-      nonce: `0x${Buffer.from("test_nonce").toString("hex").padStart(64, "0")}` as `0x${string}`,
+      nonce:
+        `0x${Buffer.from("test_nonce").toString("hex").padStart(64, "0")}` as `0x${string}`,
     },
   },
 });
@@ -45,6 +44,8 @@ describe("[middleware-express]: extractPayerAddress", () => {
 
   test("throws on invalid payload", () => {
     const invalid = { invalid: "payload" };
-    expect(() => extractPayerAddress(invalid as any)).toThrow("Unable to extract payer address from payload");
+    expect(() => extractPayerAddress(invalid as any)).toThrow(
+      "Unable to extract payer address from payload",
+    );
   });
 });

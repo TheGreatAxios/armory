@@ -3,11 +3,22 @@ description: Payment middleware for Hono
 title: "@armory-sh/middleware-hono"
 ---
 
+
 Accept crypto payments in your Hono API with a single middleware function.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-hono
+
+# yarn
+yarn add @armory-sh/middleware-hono
+
+# pnpm
+pnpm add @armory-sh/middleware-hono
+
+# bun
 bun add @armory-sh/middleware-hono
 ```
 
@@ -64,7 +75,6 @@ acceptPaymentsViaArmory({
   amount: string | bigint,                 // Amount to charge
   token?: string,                          // Token symbol (default: USDC)
   network?: string,                        // Network name (default: base)
-  facilitator?: string | FacilitatorConfig, // Facilitator URL/config
   defaultVersion?: 1 | 2                   // Payment version (default: 2)
 }
 ```
@@ -141,14 +151,77 @@ app.use('/api/*', acceptPaymentsViaArmory({
   amount: '1.0',
   accept: {
     networks: ['base', 'ethereum', 'polygon'],
-    tokens: ['usdc', 'usdt'],
-    facilitators: [
-      { url: 'https://facilitator1.com' },
-      { url: 'https://facilitator2.com' }
-    ]
+    tokens: ['usdc', 'usdt']
   }
 }));
 ```
+
+## Advanced Mix-and-Match Config (Current API)
+
+```typescript
+import { Hono } from "hono";
+import { paymentMiddleware } from "@armory-sh/middleware-hono";
+
+const app = new Hono();
+
+app.use(
+  "/api/*",
+  paymentMiddleware({
+    payTo: "0x1234567890123456789012345678901234567890",
+    chains: ["base", "skale-base"],
+    tokens: ["usdc", "usdt", "weth", "wbtc"],
+    amount: "1.0",
+    facilitatorUrl: "https://fallback-facilitator.example",
+    facilitatorUrlByChain: {
+      base: "https://payai.example",
+    },
+    facilitatorUrlByToken: {
+      base: { usdc: "https://payai.example" },
+      "skale-base": {
+        usdc: "https://payai.example",
+        usdt: "https://kobaru.example",
+        weth: "https://kobaru.example",
+        wbtc: "https://kobaru.example",
+      },
+    },
+    extensions: {
+      bazaar: { info: { input: { sku: "pro-plan" } }, schema: { type: "object" } },
+      "sign-in-with-x": { info: { domain: "api.example.com" }, schema: { type: "object" } },
+    },
+  }),
+);
+```
+
+If you need fully custom amount-per-requirement combinations, use explicit `requirements`:
+
+```typescript
+paymentMiddleware({
+  requirements: [
+    {
+      scheme: "exact",
+      network: "eip155:8453",
+      amount: "1000000",
+      asset: "0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913",
+      payTo: "0x1234567890123456789012345678901234567890",
+      maxTimeoutSeconds: 300,
+    },
+    {
+      scheme: "exact",
+      network: "eip155:1187947933",
+      amount: "2500000",
+      asset: "0x5f9beea3f6f22be1f4f8efc120f5095f58dbb8a2",
+      payTo: "0x1234567890123456789012345678901234567890",
+      maxTimeoutSeconds: 300,
+    },
+  ],
+  facilitatorUrlByToken: {
+    base: { usdc: "https://payai.example" },
+    "skale-base": { usdt: "https://kobaru.example" },
+  },
+});
+```
+
+Extension keys are fail-open filtered by facilitator capability: unsupported keys are automatically omitted from `PAYMENT-REQUIRED`.
 
 ---
 
@@ -165,4 +238,3 @@ Hono middleware applies to routes that match the path pattern. Use `/api/*` to p
 <Warning>
 The middleware will return 402 before your handler runs if payment is missing or invalid. Only verified requests reach your route handlers.
 </Warning>
-

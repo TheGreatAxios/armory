@@ -4,16 +4,22 @@
  * End-to-end tests for @armory-sh/client-viem
  */
 
-import { describe, test, expect, beforeAll } from "bun:test";
-import { createX402Client, createX402Transport, armoryPay, armoryGet, armoryPost } from "@armory-sh/client-viem";
+import { beforeAll, describe, expect, test } from "bun:test";
+import { registerToken, TOKENS } from "@armory-sh/base";
+import {
+  armoryGet,
+  armoryPay,
+  armoryPost,
+  createX402Client,
+  createX402Transport,
+} from "@armory-sh/client-viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { TOKENS, registerToken } from "@armory-sh/base";
 
 // ============================================================================
 // Setup
 // ============================================================================
 
-const TEST_PRIVATE_KEY = "0x" + "a".repeat(64);
+const TEST_PRIVATE_KEY = `0x${"a".repeat(64)}`;
 
 describe("Client-Viem E2E", () => {
   beforeAll(async () => {
@@ -63,7 +69,10 @@ describe("Client-Viem E2E", () => {
   describe("X402 Transport", () => {
     test("creates transport wrapper", () => {
       const transport = createX402Transport({
-        wallet: { type: "account", account: privateKeyToAccount(TEST_PRIVATE_KEY as `0x${string}`) },
+        wallet: {
+          type: "account",
+          account: privateKeyToAccount(TEST_PRIVATE_KEY as `0x${string}`),
+        },
       });
 
       expect(transport).toBeDefined();
@@ -106,7 +115,9 @@ describe("Client-Viem E2E", () => {
       expect(TOKENS.USDC_BASE.chainId).toBe(8453);
       expect(TOKENS.USDC_BASE.decimals).toBe(6);
 
-      expect(TOKENS.USDC_BASE_SEPOLIA.contractAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
+      expect(TOKENS.USDC_BASE_SEPOLIA.contractAddress).toMatch(
+        /^0x[a-fA-F0-9]{40}$/,
+      );
       expect(TOKENS.USDC_BASE_SEPOLIA.chainId).toBe(84532);
       expect(TOKENS.USDC_BASE_SEPOLIA.decimals).toBe(6);
     });

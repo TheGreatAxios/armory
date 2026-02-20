@@ -7,10 +7,8 @@
  * - Automatic error handling
  */
 
-import { armoryPay, armoryGet, armoryPost } from "@armory/client-viem";
+import { armoryGet, armoryPay, armoryPost } from "@armory/client-viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { createWalletClient, http } from "viem";
-import { base } from "viem/chains";
 
 // ============================================================================
 // Setup
@@ -35,8 +33,8 @@ async function basicPayment() {
   const result = await armoryPay(
     wallet,
     "https://api.example.com/data",
-    "base",    // Network name
-    "usdc"     // Token symbol
+    "base", // Network name
+    "usdc", // Token symbol
   );
 
   if (result.success) {
@@ -55,9 +53,9 @@ async function differentNetworkFormats() {
   const url = "https://api.example.com/data";
 
   // All of these are equivalent:
-  await armoryPay(wallet, url, "base", "usdc");              // name
-  await armoryPay(wallet, url, 8453, "usdc");                // chain ID
-  await armoryPay(wallet, url, "eip155:8453", "usdc");       // CAIP-2
+  await armoryPay(wallet, url, "base", "usdc"); // name
+  await armoryPay(wallet, url, 8453, "usdc"); // chain ID
+  await armoryPay(wallet, url, "eip155:8453", "usdc"); // CAIP-2
 }
 
 /**
@@ -67,10 +65,20 @@ async function differentTokenFormats() {
   const url = "https://api.example.com/data";
 
   // All of these are equivalent:
-  await armoryPay(wallet, url, "base", "usdc");                                     // symbol
-  await armoryPay(wallet, url, "base", "USDC");                                     // case-insensitive
-  await armoryPay(wallet, url, "base", "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"); // address
-  await armoryPay(wallet, url, "base", "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"); // CAIP Asset ID
+  await armoryPay(wallet, url, "base", "usdc"); // symbol
+  await armoryPay(wallet, url, "base", "USDC"); // case-insensitive
+  await armoryPay(
+    wallet,
+    url,
+    "base",
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  ); // address
+  await armoryPay(
+    wallet,
+    url,
+    "base",
+    "eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  ); // CAIP Asset ID
 }
 
 /**
@@ -82,7 +90,7 @@ async function postRequest() {
     "https://api.example.com/purchase",
     "base",
     "usdc",
-    { itemId: "premium_plan" } // Request body
+    { itemId: "premium_plan" }, // Request body
   );
 
   if (result.success) {
@@ -98,7 +106,7 @@ async function getRequest() {
     wallet,
     "https://api.example.com/user/profile",
     "base",
-    "usdc"
+    "usdc",
   );
 
   if (result.success) {
@@ -121,7 +129,7 @@ async function withOptions() {
       headers: { "X-Custom-Header": "value" },
       version: 2, // Force v2 protocol
       debug: true, // Enable debug logging
-    }
+    },
   );
 
   if (result.success) {
@@ -138,7 +146,7 @@ async function errorHandling() {
     wallet,
     "https://api.example.com/data",
     "ethereum", // Wrong network for this USDC
-    "usdc"
+    "usdc",
   );
 
   if (!result.success) {
@@ -163,7 +171,8 @@ async function errorHandling() {
  */
 async function utilityFunctions() {
   // Validate a network without making a request
-  const { validateNetwork, validateToken, getNetworks, getTokens } = await import("@armory/client-viem");
+  const { validateNetwork, validateToken, getNetworks, getTokens } =
+    await import("@armory/client-viem");
 
   // Check if a network is supported
   const networkCheck = validateNetwork("base");

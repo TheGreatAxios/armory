@@ -4,16 +4,20 @@
  * Validates that the PaymentPayload format matches the x402 v2 specification.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import {
+  encodePayment,
+  isPaymentPayload,
+  isPaymentPayloadV2,
+} from "@armory-sh/base";
 import { paymentMiddleware } from "@armory-sh/middleware-express";
-import { encodePayment, isPaymentPayload, isPaymentPayloadV2 } from "@armory-sh/base";
 import { createX402V2Payload } from "./fixtures/payloads";
 import {
-  mockFacilitator,
   createMockExpressRequest,
   createMockExpressResponse,
-  TEST_REQUIREMENTS,
   MOCK_FACILITATOR_URL,
+  mockFacilitator,
+  TEST_REQUIREMENTS,
 } from "./mocks";
 
 describe("[e2e|v2-spec]: PaymentPayload Format Compliance", () => {

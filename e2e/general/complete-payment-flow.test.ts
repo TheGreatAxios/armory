@@ -5,16 +5,16 @@
  * with mocked facilitator calls. No HTTP servers required.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { paymentMiddleware } from "@armory-sh/middleware-express";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { encodePayment } from "@armory-sh/base";
+import { paymentMiddleware } from "@armory-sh/middleware-express";
 import { createX402V2Payload } from "./fixtures/payloads";
 import {
-  mockFacilitator,
   createMockExpressRequest,
   createMockExpressResponse,
-  TEST_REQUIREMENTS,
   MOCK_FACILITATOR_URL,
+  mockFacilitator,
+  TEST_REQUIREMENTS,
 } from "./mocks";
 
 describe("[e2e|payment-flow]: Complete Payment Flow", () => {

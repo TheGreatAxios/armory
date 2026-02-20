@@ -1,0 +1,37 @@
+---
+title: Tokens
+description: Query supported tokens by network and identifier
+---
+
+`armory tokens` lists supported payment tokens and addresses.
+
+## Common Usage
+
+```bash
+# all tokens
+armory tokens
+
+# by chain name
+armory tokens base
+
+# by chain id
+armory tokens 8453
+```
+
+## Example: Pick a Valid Token Contract
+
+```bash
+armory tokens base
+armory validate token usdc
+armory validate token 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+```
+
+## Example: Gate CI on Required Token Availability
+
+```bash
+if armory tokens base | rg -q "USDC"; then
+  echo "USDC on Base available"
+else
+  echo "USDC on Base missing" && exit 1
+fi
+```

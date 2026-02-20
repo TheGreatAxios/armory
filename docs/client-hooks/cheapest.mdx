@@ -1,0 +1,12 @@
+---
+title: Cheapest Hook
+description: Select the lowest-amount compatible payment option
+---
+
+```typescript
+import { PaymentPreference } from '@armory-sh/client-hooks';
+
+const hook = PaymentPreference.cheapest();
+```
+
+This hook refines selection within the already-selected chain and token scope.

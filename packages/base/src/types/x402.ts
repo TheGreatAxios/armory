@@ -1,6 +1,6 @@
 /**
  * X402 Protocol Types - Coinbase Compatible Format
- * 
+ *
  * This module provides types that match the official Coinbase x402 SDK format
  * for full interoperability with their facilitator and extensions.
  */
@@ -17,10 +17,10 @@ export const SCHEMES = ["exact"] as const;
 export type Scheme = (typeof SCHEMES)[number];
 
 // Supported networks (CAIP-2 format)
-export type Network = 
-  | "base" 
-  | "base-sepolia" 
-  | "ethereum" 
+export type Network =
+  | "base"
+  | "base-sepolia"
+  | "ethereum"
   | "ethereum-sepolia"
   | "polygon"
   | "polygon-amoy"
@@ -36,17 +36,17 @@ export type Network =
 export interface ExactEvmAuthorization {
   from: Address;
   to: Address;
-  value: string;        // Atomic units (e.g., "1500000" for 1.5 USDC)
-  validAfter: string;   // Unix timestamp as string
-  validBefore: string;  // Unix timestamp as string (expiry)
-  nonce: Hex;           // 32-byte hex string (bytes32)
+  value: string; // Atomic units (e.g., "1500000" for 1.5 USDC)
+  validAfter: string; // Unix timestamp as string
+  validBefore: string; // Unix timestamp as string (expiry)
+  nonce: Hex; // 32-byte hex string (bytes32)
 }
 
 /**
  * Exact EVM payment payload structure
  */
 export interface ExactEvmPayload {
-  signature: Hex;       // Full hex signature (0x + r + s + v)
+  signature: Hex; // Full hex signature (0x + r + s + v)
   authorization: ExactEvmAuthorization;
 }
 
@@ -89,13 +89,13 @@ export interface UnsignedPaymentPayload {
 export interface PaymentRequirements {
   scheme: Scheme;
   network: Network;
-  amount: string;                  // Atomic units (x402 V2 spec)
+  amount: string; // Atomic units (x402 V2 spec)
   payTo: Address;
   maxTimeoutSeconds: number;
-  asset: Address;                  // Token contract address
-  name?: string;                    // EIP-712 domain parameter
-  version?: string;                 // EIP-712 domain parameter
-  extra?: Record<string, unknown>;  // Additional extensions
+  asset: Address; // Token contract address
+  name?: string; // EIP-712 domain parameter
+  version?: string; // EIP-712 domain parameter
+  extra?: Record<string, unknown>; // Additional extensions
 }
 
 /**
@@ -105,7 +105,7 @@ export interface SettlementResponse {
   success: boolean;
   errorReason?: string;
   payer?: Address;
-  transaction: string;    // Transaction hash
+  transaction: string; // Transaction hash
   network: Network;
 }
 

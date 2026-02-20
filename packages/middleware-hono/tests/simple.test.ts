@@ -2,9 +2,13 @@
  * Simple Middleware API Tests
  * Tests the simplified payment middleware with chain/token string support
  */
-import { test, expect, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { Hono } from "hono";
-import { paymentMiddleware, createPaymentRequirements, resolveFacilitatorUrlFromRequirement } from "../src/simple";
+import {
+  createPaymentRequirements,
+  paymentMiddleware,
+  resolveFacilitatorUrlFromRequirement,
+} from "../src/index";
 
 describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
   test("[resolvePayTo|success] - resolves global payTo when no overrides exist", () => {
@@ -15,7 +19,9 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     });
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].payTo).toBe("0x1111111111111111111111111111111111111111");
+    expect(result.requirements[0].payTo).toBe(
+      "0x1111111111111111111111111111111111111111",
+    );
   });
 
   test("[resolvePayTo|success] - resolves per-chain payTo override", () => {
@@ -29,7 +35,9 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     });
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].payTo).toBe("0x2222222222222222222222222222222222222222");
+    expect(result.requirements[0].payTo).toBe(
+      "0x2222222222222222222222222222222222222222",
+    );
   });
 
   test("[resolvePayTo|success] - resolves per-token-per-chain payTo override", () => {
@@ -45,7 +53,9 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     });
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].payTo).toBe("0x3333333333333333333333333333333333333333");
+    expect(result.requirements[0].payTo).toBe(
+      "0x3333333333333333333333333333333333333333",
+    );
   });
 
   test("[resolvePayTo|success] - falls back to per-chain when token-specific not found", () => {
@@ -64,7 +74,9 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     });
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].payTo).toBe("0x2222222222222222222222222222222222222222");
+    expect(result.requirements[0].payTo).toBe(
+      "0x2222222222222222222222222222222222222222",
+    );
   });
 
   test("[resolvePayTo|success] - falls back to global when chain-specific not found", () => {
@@ -78,7 +90,9 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     });
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].payTo).toBe("0x1111111111111111111111111111111111111111");
+    expect(result.requirements[0].payTo).toBe(
+      "0x1111111111111111111111111111111111111111",
+    );
   });
 
   test("[resolvePayTo|success] - handles multiple chains with different payTo addresses", () => {
@@ -103,8 +117,12 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     expect(baseResult.error).toBeUndefined();
     expect(skaleResult.error).toBeUndefined();
 
-    expect(baseResult.requirements[0].payTo).toBe("0x2222222222222222222222222222222222222222");
-    expect(skaleResult.requirements[0].payTo).toBe("0x3333333333333333333333333333333333333333");
+    expect(baseResult.requirements[0].payTo).toBe(
+      "0x2222222222222222222222222222222222222222",
+    );
+    expect(skaleResult.requirements[0].payTo).toBe(
+      "0x3333333333333333333333333333333333333333",
+    );
   });
 
   test("[resolveFacilitatorUrl|success] - does NOT expose facilitatorUrl in requirements", () => {
@@ -119,7 +137,10 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     expect(result.error).toBeUndefined();
     expect(result.requirements[0].extra?.facilitatorUrl).toBeUndefined();
 
-    const resolvedUrl = resolveFacilitatorUrlFromRequirement(config, result.requirements[0]);
+    const resolvedUrl = resolveFacilitatorUrlFromRequirement(
+      config,
+      result.requirements[0],
+    );
     expect(resolvedUrl).toBe("https://global.facilitator.com");
   });
 
@@ -137,7 +158,10 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     expect(result.error).toBeUndefined();
     expect(result.requirements[0].extra?.facilitatorUrl).toBeUndefined();
 
-    const resolvedUrl = resolveFacilitatorUrlFromRequirement(config, result.requirements[0]);
+    const resolvedUrl = resolveFacilitatorUrlFromRequirement(
+      config,
+      result.requirements[0],
+    );
     expect(resolvedUrl).toBe("https://base.facilitator.com");
   });
 
@@ -157,7 +181,10 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     expect(result.error).toBeUndefined();
     expect(result.requirements[0].extra?.facilitatorUrl).toBeUndefined();
 
-    const resolvedUrl = resolveFacilitatorUrlFromRequirement(config, result.requirements[0]);
+    const resolvedUrl = resolveFacilitatorUrlFromRequirement(
+      config,
+      result.requirements[0],
+    );
     expect(resolvedUrl).toBe("https://base-usdc.facilitator.com");
   });
 
@@ -178,10 +205,15 @@ describe("[unit|middleware-hono]: PaymentConfig Resolution", () => {
     const result = createPaymentRequirements(config);
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].payTo).toBe("0x2222222222222222222222222222222222222222");
+    expect(result.requirements[0].payTo).toBe(
+      "0x2222222222222222222222222222222222222222",
+    );
     expect(result.requirements[0].extra?.facilitatorUrl).toBeUndefined();
 
-    const resolvedUrl = resolveFacilitatorUrlFromRequirement(config, result.requirements[0]);
+    const resolvedUrl = resolveFacilitatorUrlFromRequirement(
+      config,
+      result.requirements[0],
+    );
     expect(resolvedUrl).toBe("https://base-usdc.facilitator.com");
   });
 });
@@ -234,13 +266,36 @@ describe("[unit|middleware-hono]: Simple Middleware API", () => {
     expect(result.requirements.length).toBeGreaterThanOrEqual(1);
   });
 
+  test("supports per-chain amount overrides with amounts map", () => {
+    const result = createPaymentRequirements({
+      payTo: "0x1234567890123456789012345678901234567890",
+      chains: ["base-sepolia", "skale-base-sepolia"],
+      tokens: ["usdc"],
+      amounts: {
+        default: "0.001",
+        "skale-base-sepolia": "0.0005",
+      },
+    });
+
+    expect(result.error).toBeUndefined();
+    const base = result.requirements.find((r) => r.network === "eip155:84532");
+    const skale = result.requirements.find(
+      (r) => r.network === "eip155:324705682",
+    );
+    expect(base && BigInt(base.amount)).toBe(1000n);
+    expect(skale && BigInt(skale.amount)).toBe(500n);
+  });
+
   test("middleware returns 402 when no payment header", async () => {
     const app = new Hono();
-    app.use("/*", paymentMiddleware({
-      payTo: "0x1234567890123456789012345678901234567890",
-      chain: "base",
-      token: "usdc",
-    }));
+    app.use(
+      "/*",
+      paymentMiddleware({
+        payTo: "0x1234567890123456789012345678901234567890",
+        chain: "base",
+        token: "usdc",
+      }),
+    );
     app.get("/api/test", (c) => c.json({ success: true }));
 
     const req = new Request(new URL("http://localhost/api/test"));
@@ -261,6 +316,25 @@ describe("[unit|middleware-hono]: Simple Middleware API", () => {
     });
 
     expect(result.error).toBeUndefined();
-    expect(result.requirements[0].amount).toBe("1000000");
+    expect(BigInt(result.requirements[0].amount)).toBe(10000n);
+  });
+
+  test("enriches explicit requirements with top-level eip712 metadata", () => {
+    const result = createPaymentRequirements({
+      requirements: {
+        scheme: "exact",
+        network: "eip155:84532",
+        amount: "1000",
+        asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        payTo: "0x1234567890123456789012345678901234567890",
+        maxTimeoutSeconds: 300,
+      },
+      facilitatorUrl: "https://facilitator.payai.network",
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.requirements).toHaveLength(1);
+    expect(result.requirements[0].name).toBe("USDC");
+    expect(result.requirements[0].version).toBe("2");
   });
 });

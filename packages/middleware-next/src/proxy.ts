@@ -1,15 +1,10 @@
-import type { NextRequest } from "next/server";
-import type {
-  PaymentRequirementsV2,
-  PaymentRequiredV2,
-  ResourceInfo,
-} from "@armory-sh/base";
+import type { PaymentRequiredV2, ResourceInfo } from "@armory-sh/base";
 import {
-  createPaymentRequiredHeaders,
+  findMatchingRoute,
   safeBase64Encode,
   V2_HEADERS,
-  findMatchingRoute,
 } from "@armory-sh/base";
+import type { NextRequest } from "next/server";
 import type { x402ResourceServer } from "./resource-server";
 import type { RoutePaymentConfig } from "./types";
 
@@ -21,16 +16,16 @@ interface RouteConfig {
 type UpstreamHandler = (
   request: NextRequest,
   route: RouteConfig,
-  verify: { success: boolean; payerAddress?: string; error?: string }
+  verify: { success: boolean; payerAddress?: string; error?: string },
 ) => Promise<Response>;
 
 export function paymentProxy(
   routes: Record<string, RoutePaymentConfig>,
   resourceServer: x402ResourceServer,
-  upstream?: UpstreamHandler
+  upstream?: UpstreamHandler,
 ): (request: NextRequest) => Promise<Response> {
   const routeConfigs: RouteConfig[] = Object.entries(routes).map(
-    ([pattern, config]) => ({ pattern, config })
+    ([pattern, config]) => ({ pattern, config }),
   );
 
   return async (request: NextRequest): Promise<Response> => {
@@ -38,10 +33,10 @@ export function paymentProxy(
     const matchedRoute = findMatchingRoute(routeConfigs, path);
 
     if (!matchedRoute) {
-      return new Response(
-        JSON.stringify({ error: "Route not found" }),
-        { status: 404, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Route not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const paymentHeader = request.headers.get(V2_HEADERS.PAYMENT_SIGNATURE);
@@ -81,10 +76,10 @@ export function paymentProxy(
           headers: {
             "Content-Type": "application/json",
             [V2_HEADERS.PAYMENT_REQUIRED]: safeBase64Encode(
-              JSON.stringify(paymentRequired)
+              JSON.stringify(paymentRequired),
             ),
           },
-        }
+        },
       );
     }
 
@@ -97,18 +92,20 @@ export function paymentProxy(
           error: "Payment verification failed",
           details: verifyResult.error,
         }),
-        { status: 402, headers: { "Content-Type": "application/json" } }
+        { status: 402, headers: { "Content-Type": "application/json" } },
       );
     }
 
-    const handler = upstream ?? (async () =>
-      new Response(
-        JSON.stringify({
-          verified: true,
-          payerAddress: verifyResult.payerAddress,
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      ));
+    const handler =
+      upstream ??
+      (async () =>
+        new Response(
+          JSON.stringify({
+            verified: true,
+            payerAddress: verifyResult.payerAddress,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ));
     const upstreamResponse = await handler(request, matchedRoute, verifyResult);
 
     if (upstreamResponse.status >= 400) {
@@ -126,7 +123,7 @@ export function paymentProxy(
           error: "Settlement failed",
           details: settleResult.error,
         }),
-        { status: 502, headers: { "Content-Type": "application/json" } }
+        { status: 502, headers: { "Content-Type": "application/json" } },
       );
     }
 
@@ -137,8 +134,8 @@ export function paymentProxy(
         JSON.stringify({
           success: true,
           transaction: settleResult.txHash || "",
-        })
-      )
+        }),
+      ),
     );
 
     return new Response(upstreamResponse.body, {

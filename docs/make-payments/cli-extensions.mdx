@@ -1,0 +1,31 @@
+---
+title: Extensions
+description: Inspect supported x402 extensions
+---
+
+`armory extensions` prints the known extension set from the Armory ecosystem.
+
+## Usage
+
+```bash
+armory extensions
+# shorthand
+armory ext
+```
+
+## Example: Check for Required Extension in CI
+
+```bash
+REQUIRED=payment-identifier
+if armory extensions | rg -q "$REQUIRED"; then
+  echo "extension available"
+else
+  echo "missing extension: $REQUIRED" && exit 1
+fi
+```
+
+## Next
+
+See extension implementation guides:
+- [Extensions Overview](/extensions)
+- [Payment Identifier](/extensions/payment-identifier)

@@ -8,12 +8,12 @@
  * For Node.js environments, use the ethers or viem examples instead.
  */
 
-import CoinbaseWalletSDK from "@coinbase/wallet-sdk";
 import type { PaymentPayloadV2 } from "@armory/base";
 import {
   createEIP712Domain,
   createTransferWithAuthorization,
 } from "@armory/base";
+import CoinbaseWalletSDK from "@coinbase/wallet-sdk";
 
 const FACILITATOR_URL = process.env.FACILITATOR_URL ?? "http://localhost:3000";
 
@@ -37,7 +37,7 @@ function initializeCoinbaseWallet() {
   // Create a provider for Base network
   const provider = sdk.makeWeb3Provider(
     `https://mainnet.base.org`, // Base RPC URL
-    CHAIN_ID
+    CHAIN_ID,
   );
 
   return { sdk, provider };
@@ -47,7 +47,9 @@ function initializeCoinbaseWallet() {
 // Connect Wallet
 // ============================================================================
 
-async function connectWallet(provider: ReturnType<CoinbaseWalletSDK["makeWeb3Provider"]>) {
+async function connectWallet(
+  provider: ReturnType<CoinbaseWalletSDK["makeWeb3Provider"]>,
+) {
   try {
     const accounts = await provider.request({
       method: "eth_requestAccounts",
@@ -74,7 +76,7 @@ async function signTransferWithAuthorization(
   to: string,
   amount: bigint,
   validBefore: number,
-  nonce: string
+  nonce: string,
 ): Promise<{ r: `0x${string}`; s: `0x${string}`; v: number }> {
   // Create the EIP-712 domain
   const domain = createEIP712Domain(CHAIN_ID, USDC_ADDRESS);
@@ -131,8 +133,8 @@ async function signTransferWithAuthorization(
   });
 
   // Parse signature into components
-  const r = ("0x" + signature.slice(2, 66)) as `0x${string}`;
-  const s = ("0x" + signature.slice(66, 130)) as `0x${string}`;
+  const r = `0x${signature.slice(2, 66)}` as `0x${string}`;
+  const s = `0x${signature.slice(66, 130)}` as `0x${string}`;
   const v = parseInt(signature.slice(130, 132), 16);
 
   return { r, s, v };
@@ -146,7 +148,7 @@ async function createPaymentPayloadFromCoinbaseWallet(
   provider: ReturnType<CoinbaseWalletSDK["makeWeb3Provider"]>,
   fromAddress: `0x${string}`,
   to: string,
-  amount: bigint
+  amount: bigint,
 ): Promise<PaymentPayloadV2> {
   const nonce = Date.now().toString();
   const validBefore = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
@@ -158,7 +160,7 @@ async function createPaymentPayloadFromCoinbaseWallet(
     to,
     amount,
     validBefore,
-    nonce
+    nonce,
   );
 
   return {
@@ -184,7 +186,7 @@ async function createPaymentPayloadFromCoinbaseWallet(
 async function sendPaymentRequest(
   paymentPayload: PaymentPayloadV2,
   recipientAddress: string,
-  requiredAmount: string
+  requiredAmount: string,
 ): Promise<void> {
   const paymentRequirements = {
     to: recipientAddress as `0x${string}`,
@@ -223,7 +225,7 @@ async function sendPaymentRequest(
 async function settlePayment(
   paymentPayload: PaymentPayloadV2,
   recipientAddress: string,
-  requiredAmount: string
+  requiredAmount: string,
 ): Promise<void> {
   const paymentRequirements = {
     to: recipientAddress as `0x${string}`,
@@ -290,7 +292,7 @@ async function main(): Promise<void> {
       provider,
       walletAddress,
       recipientAddress,
-      amount
+      amount,
     );
 
     console.log("Payment Payload:");
@@ -299,7 +301,10 @@ async function main(): Promise<void> {
     console.log("  Amount:", paymentPayload.amount);
     console.log("  Nonce:", paymentPayload.nonce);
     console.log("  Expiry:", paymentPayload.expiry);
-    console.log("  Signature:", `${paymentPayload.signature.r.slice(0, 10)}...`);
+    console.log(
+      "  Signature:",
+      `${paymentPayload.signature.r.slice(0, 10)}...`,
+    );
     console.log("");
 
     console.log("4. Verify Payment");
@@ -311,20 +316,30 @@ async function main(): Promise<void> {
     console.log("");
   } catch (error) {
     console.error("Error:", error);
-    console.log("\nNote: This example requires a browser environment with Coinbase Wallet installed.");
-    console.log("For Node.js environments, use the ethers or viem examples instead.");
+    console.log(
+      "\nNote: This example requires a browser environment with Coinbase Wallet installed.",
+    );
+    console.log(
+      "For Node.js environments, use the ethers or viem examples instead.",
+    );
   }
 }
 
 // Export for use in browser or testing
-export { main, initializeCoinbaseWallet, connectWallet, createPaymentPayloadFromCoinbaseWallet };
+export {
+  main,
+  initializeCoinbaseWallet,
+  connectWallet,
+  createPaymentPayloadFromCoinbaseWallet,
+};
 
 // Auto-run if in browser environment
 if (typeof window !== "undefined" && import.meta.main) {
   // Add a button to trigger the payment flow
   const button = document.createElement("button");
   button.textContent = "Initiate X-402 Payment";
-  button.style.cssText = "padding: 12px 24px; font-size: 16px; cursor: pointer;";
+  button.style.cssText =
+    "padding: 12px 24px; font-size: 16px; cursor: pointer;";
   button.onclick = main;
   document.body.appendChild(button);
 }

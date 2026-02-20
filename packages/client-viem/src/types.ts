@@ -2,12 +2,9 @@
  * X402 Client Types - V2 Only
  */
 
-import type { Address, Account, WalletClient, Transport } from "viem";
-import type {
-  PaymentPayloadV2,
-  CustomToken,
-} from "@armory-sh/base";
-import type { ViemHookRegistry } from "./hooks";
+import type { CustomToken, PaymentPayloadV2 } from "@armory-sh/base";
+import type { ClientHook } from "@armory-sh/base/types/hooks";
+import type { Account, Address, Transport, WalletClient } from "viem";
 
 export type X402Wallet =
   | { type: "account"; account: Account }
@@ -30,8 +27,7 @@ export interface X402ClientConfig {
   domainName?: string;
   /** Override EIP-712 domain version for custom tokens */
   domainVersion?: string;
-  /** Extension hooks for handling protocol extensions */
-  hooks?: ViemHookRegistry;
+  hooks?: ClientHook<X402Wallet>[];
 }
 
 export interface X402Client {
@@ -42,11 +38,9 @@ export interface X402Client {
     to: Address,
     contractAddress: Address,
     chainId: number,
-    expiry?: number
+    expiry?: number,
   ): Promise<PaymentPayloadV2>;
-  signPayment(
-    payload: UnsignedPaymentPayload
-  ): Promise<PaymentPayloadV2>;
+  signPayment(payload: UnsignedPaymentPayload): Promise<PaymentPayloadV2>;
 }
 
 export interface X402TransportConfig {
@@ -62,8 +56,7 @@ export interface X402TransportConfig {
   domainName?: string;
   /** Override EIP-712 domain version */
   domainVersion?: string;
-  /** Extension hooks for handling protocol extensions */
-  hooks?: ViemHookRegistry;
+  hooks?: ClientHook<X402Wallet>[];
 }
 
 export interface PaymentResult {

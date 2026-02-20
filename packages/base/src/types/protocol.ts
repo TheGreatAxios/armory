@@ -5,11 +5,11 @@
  */
 
 import type {
+  Address,
   PaymentPayloadV2,
+  PaymentRequiredV2,
   PaymentRequirementsV2,
   SettlementResponseV2,
-  PaymentRequiredV2,
-  Address,
 } from "./v2";
 
 // ============================================================================
@@ -94,7 +94,9 @@ export function isX402V2Payload(obj: unknown): obj is PaymentPayloadV2 {
 /**
  * Check if requirements is x402 V2 format
  */
-export function isX402V2Requirements(obj: unknown): obj is PaymentRequirementsV2 {
+export function isX402V2Requirements(
+  obj: unknown,
+): obj is PaymentRequirementsV2 {
   return (
     typeof obj === "object" &&
     obj !== null &&
@@ -128,7 +130,9 @@ export function isX402V2Settlement(obj: unknown): obj is SettlementResponseV2 {
 /**
  * Check if payment required is x402 V2 format
  */
-export function isX402V2PaymentRequired(obj: unknown): obj is PaymentRequiredV2 {
+export function isX402V2PaymentRequired(
+  obj: unknown,
+): obj is PaymentRequiredV2 {
   return (
     typeof obj === "object" &&
     obj !== null &&

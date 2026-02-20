@@ -4,16 +4,16 @@
  */
 
 import type {
+  ArmoryPaymentResult,
   NetworkId,
   TokenId,
-  ArmoryPaymentResult,
   ValidationError,
 } from "@armory-sh/base";
 import {
+  isValidationError,
   resolveNetwork,
   resolveToken,
   validatePaymentConfig,
-  isValidationError,
 } from "@armory-sh/base";
 import { createX402Client } from "./client";
 import type { Web3Account } from "./types";
@@ -25,9 +25,7 @@ import type { Web3Account } from "./types";
 /**
  * Simple wallet input - accepts wallet directly or wrapped for backward compatibility
  */
-export type SimpleWalletInput =
-  | Web3Account
-  | { account: Web3Account };
+export type SimpleWalletInput = Web3Account | { account: Web3Account };
 
 /**
  * Normalized wallet (internal use)
@@ -37,7 +35,9 @@ export type NormalizedWallet = Web3Account;
 /**
  * Normalize wallet input to internal format
  */
-export const normalizeWallet = (wallet: SimpleWalletInput): NormalizedWallet => {
+export const normalizeWallet = (
+  wallet: SimpleWalletInput,
+): NormalizedWallet => {
   if (typeof wallet === "object" && wallet !== null && "account" in wallet) {
     return wallet.account as NormalizedWallet;
   }
@@ -67,7 +67,7 @@ export const armoryPay = async <T = unknown>(
     version?: 2;
     /** Payment amount in token units (default: from 402 header) */
     amount?: string;
-  }
+  },
 ): Promise<ArmoryPaymentResult<T>> => {
   try {
     const account = normalizeWallet(wallet);
@@ -120,7 +120,7 @@ export const armoryPay = async <T = unknown>(
       };
     }
 
-    const data = await response.json() as T;
+    const data = (await response.json()) as T;
 
     const txHash = response.headers.get("PAYMENT-RESPONSE");
 
@@ -129,12 +129,12 @@ export const armoryPay = async <T = unknown>(
       data,
       ...(txHash && { txHash }),
     };
-
   } catch (error) {
     return {
       success: false,
       code: "NETWORK_ERROR",
-      message: error instanceof Error ? error.message : "Unknown error occurred",
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
       details: error,
     };
   }
@@ -148,9 +148,12 @@ export const armoryGet = <T = unknown>(
   url: string,
   network: NetworkId,
   token: TokenId,
-  options?: Omit<Parameters<typeof armoryPay>[4], "method">
+  options?: Omit<Parameters<typeof armoryPay>[4], "method">,
 ): Promise<ArmoryPaymentResult<T>> => {
-  return armoryPay<T>(wallet, url, network, token, { ...options, method: "GET" });
+  return armoryPay<T>(wallet, url, network, token, {
+    ...options,
+    method: "GET",
+  });
 };
 
 /**
@@ -162,9 +165,13 @@ export const armoryPost = <T = unknown>(
   network: NetworkId,
   token: TokenId,
   body?: unknown,
-  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">
+  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">,
 ): Promise<ArmoryPaymentResult<T>> => {
-  return armoryPay<T>(wallet, url, network, token, { ...options, method: "POST", body });
+  return armoryPay<T>(wallet, url, network, token, {
+    ...options,
+    method: "POST",
+    body,
+  });
 };
 
 /**
@@ -176,9 +183,13 @@ export const armoryPut = <T = unknown>(
   network: NetworkId,
   token: TokenId,
   body?: unknown,
-  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">
+  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">,
 ): Promise<ArmoryPaymentResult<T>> => {
-  return armoryPay<T>(wallet, url, network, token, { ...options, method: "PUT", body });
+  return armoryPay<T>(wallet, url, network, token, {
+    ...options,
+    method: "PUT",
+    body,
+  });
 };
 
 /**
@@ -189,9 +200,12 @@ export const armoryDelete = <T = unknown>(
   url: string,
   network: NetworkId,
   token: TokenId,
-  options?: Omit<Parameters<typeof armoryPay>[4], "method">
+  options?: Omit<Parameters<typeof armoryPay>[4], "method">,
 ): Promise<ArmoryPaymentResult<T>> => {
-  return armoryPay<T>(wallet, url, network, token, { ...options, method: "DELETE" });
+  return armoryPay<T>(wallet, url, network, token, {
+    ...options,
+    method: "DELETE",
+  });
 };
 
 /**
@@ -203,9 +217,13 @@ export const armoryPatch = <T = unknown>(
   network: NetworkId,
   token: TokenId,
   body?: unknown,
-  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">
+  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">,
 ): Promise<ArmoryPaymentResult<T>> => {
-  return armoryPay<T>(wallet, url, network, token, { ...options, method: "PATCH", body });
+  return armoryPay<T>(wallet, url, network, token, {
+    ...options,
+    method: "PATCH",
+    body,
+  });
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -225,7 +243,9 @@ export const getWalletAddress = (wallet: SimpleWalletInput): string => {
 /**
  * Validate a network identifier without making a request
  */
-export const validateNetwork = (network: NetworkId): ValidationError | { success: true; network: string } => {
+export const validateNetwork = (
+  network: NetworkId,
+): ValidationError | { success: true; network: string } => {
   const resolved = resolveNetwork(network);
   if (isValidationError(resolved)) {
     return resolved;
@@ -238,9 +258,9 @@ export const validateNetwork = (network: NetworkId): ValidationError | { success
  */
 export const validateToken = (
   token: TokenId,
-  network?: NetworkId
+  network?: NetworkId,
 ): ValidationError | { success: true; token: string; network: string } => {
-  let resolvedNetwork = undefined;
+  let resolvedNetwork;
   if (network) {
     const networkResult = resolveNetwork(network);
     if (isValidationError(networkResult)) {

@@ -2,16 +2,18 @@
  * Extension Hook Creators Tests
  */
 
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import type {
+  PaymentPayloadContext,
+  PaymentPayloadV2,
+  PaymentRequiredContext,
+  PaymentRequirementsV2,
+} from "@armory-sh/base";
 import {
-  createSIWxHook,
-  createPaymentIdHook,
   createCustomHook,
-  type SIWxHookConfig,
-  type PaymentIdHookConfig,
+  createPaymentIdHook,
+  createSIWxHook,
 } from "../src/hooks";
-import type { PaymentPayloadContext, PaymentRequiredContext } from "@armory-sh/base";
-import type { PaymentPayloadV2, PaymentRequirementsV2 } from "@armory-sh/base";
 
 describe("[unit|extensions]: Hook Creators", () => {
   const mockRequirements: PaymentRequirementsV2 = {

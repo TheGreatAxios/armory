@@ -1,6 +1,6 @@
-import { test, expect, describe } from "bun:test";
-import { createBunMiddleware } from "../src/index";
+import { describe, expect, test } from "bun:test";
 import { encodePayment } from "@armory-sh/base";
+import { createBunMiddleware } from "../src/index";
 
 const TEST_PAYER_ADDRESS = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1";
 const TEST_PAY_TO_ADDRESS = "0x1234567890123456789012345678901234567890";
@@ -26,7 +26,8 @@ const createX402V2Payload = () => ({
       value: "1000000",
       validAfter: Math.floor(Date.now() / 1000).toString(),
       validBefore: (Math.floor(Date.now() / 1000) + 3600).toString(),
-      nonce: `0x${Buffer.from("test_nonce").toString("hex").padStart(64, "0")}` as `0x${string}`,
+      nonce:
+        `0x${Buffer.from("test_nonce").toString("hex").padStart(64, "0")}` as `0x${string}`,
     },
   },
 });
@@ -37,12 +38,19 @@ describe("[unit|middleware-bun]: Wrapped Flow", () => {
     globalThis.fetch = (async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith("/verify")) {
-        return new Response(JSON.stringify({ isValid: true, payer: "0x123" }), { status: 200 });
+        return new Response(JSON.stringify({ isValid: true, payer: "0x123" }), {
+          status: 200,
+        });
       }
       if (url.endsWith("/settle")) {
-        return new Response(JSON.stringify({ success: true, transaction: "0xabc" }), { status: 200 });
+        return new Response(
+          JSON.stringify({ success: true, transaction: "0xabc" }),
+          { status: 200 },
+        );
       }
-      return new Response(JSON.stringify({ error: "unexpected" }), { status: 500 });
+      return new Response(JSON.stringify({ error: "unexpected" }), {
+        status: 500,
+      });
     }) as typeof fetch;
 
     try {
@@ -53,7 +61,11 @@ describe("[unit|middleware-bun]: Wrapped Flow", () => {
           amount: "1",
           facilitator: { url: "http://facilitator.local" },
         },
-        async () => new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "Content-Type": "application/json" } })
+        async () =>
+          new Response(JSON.stringify({ ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
       ) as (request: Request) => Promise<Response>;
 
       const payload = createX402V2Payload();
@@ -68,7 +80,9 @@ describe("[unit|middleware-bun]: Wrapped Flow", () => {
       expect(response.status).toBe(200);
       const settlementHeader = response.headers.get("PAYMENT-RESPONSE");
       expect(settlementHeader).toBeDefined();
-      const settlement = JSON.parse(Buffer.from(settlementHeader!, "base64").toString("utf-8"));
+      const settlement = JSON.parse(
+        Buffer.from(settlementHeader!, "base64").toString("utf-8"),
+      );
       expect(settlement.success).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
@@ -81,13 +95,20 @@ describe("[unit|middleware-bun]: Wrapped Flow", () => {
     globalThis.fetch = (async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.endsWith("/verify")) {
-        return new Response(JSON.stringify({ isValid: true, payer: "0x123" }), { status: 200 });
+        return new Response(JSON.stringify({ isValid: true, payer: "0x123" }), {
+          status: 200,
+        });
       }
       if (url.endsWith("/settle")) {
         settleCalled = true;
-        return new Response(JSON.stringify({ success: false, errorReason: "should-not-run" }), { status: 400 });
+        return new Response(
+          JSON.stringify({ success: false, errorReason: "should-not-run" }),
+          { status: 400 },
+        );
       }
-      return new Response(JSON.stringify({ error: "unexpected" }), { status: 500 });
+      return new Response(JSON.stringify({ error: "unexpected" }), {
+        status: 500,
+      });
     }) as typeof fetch;
 
     try {
@@ -98,7 +119,11 @@ describe("[unit|middleware-bun]: Wrapped Flow", () => {
           amount: "1",
           facilitator: { url: "http://facilitator.local" },
         },
-        async () => new Response(JSON.stringify({ ok: false }), { status: 500, headers: { "Content-Type": "application/json" } })
+        async () =>
+          new Response(JSON.stringify({ ok: false }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }),
       ) as (request: Request) => Promise<Response>;
 
       const payload = createX402V2Payload();

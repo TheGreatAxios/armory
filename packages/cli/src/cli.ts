@@ -1,19 +1,20 @@
 #!/usr/bin/env node
-import { join } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
-import prompts from "prompts";
+import { join } from "node:path";
 import {
+  type CustomToken,
+  getAllTokens,
   getMainnets,
   getTestnets,
-  getAllTokens,
   getTokensByChain,
-  resolveNetwork,
-  resolveToken,
   isResolvedNetwork,
   isResolvedToken,
   type NetworkConfig,
-  type CustomToken,
+  resolveNetwork,
+  resolveToken,
 } from "@armory-sh/base";
+import prompts from "prompts";
+
 const GITIGNORE = `node_modules
 dist
 .env
@@ -27,7 +28,11 @@ const EXTENSIONS_INFO = [
     name: "bazaar",
     description: "Resource discovery - let clients discover your API resources",
     package: "@armory-sh/extensions",
-    hooks: ["declareDiscoveryExtension", "extractDiscoveryInfo", "validateDiscoveryExtension"],
+    hooks: [
+      "declareDiscoveryExtension",
+      "extractDiscoveryInfo",
+      "validateDiscoveryExtension",
+    ],
   },
   {
     name: "siwx",
@@ -43,7 +48,10 @@ const EXTENSIONS_INFO = [
   },
 ];
 
-function getTemplateFiles(template: string, projectName: string): Record<string, string> {
+function getTemplateFiles(
+  template: string,
+  projectName: string,
+): Record<string, string> {
   switch (template) {
     case "facilitator":
       return {
@@ -474,7 +482,9 @@ function printHelp() {
   console.log("Usage:");
   console.log("  armory <command> [options]");
   console.log("Templates:");
-  console.log("  bun-server, express-server, hono-server, elysia-server, next-server");
+  console.log(
+    "  bun-server, express-server, hono-server, elysia-server, next-server",
+  );
   console.log("  viem-client, ethers-client, web3-client, facilitator");
   console.log("Examples:");
   console.log("  armory create bun-server my-api");
@@ -533,22 +543,36 @@ function printHelp() {
 }
 
 function formatNetworkTable(networks: NetworkConfig[]): void {
-  console.log("\n┌─────────────────────┬──────────┬────────────────────────────────────┐");
-  console.log("│ Name                │ Chain ID │ RPC URL                            │");
-  console.log("├─────────────────────┼──────────┼────────────────────────────────────┤");
+  console.log(
+    "\n┌─────────────────────┬──────────┬────────────────────────────────────┐",
+  );
+  console.log(
+    "│ Name                │ Chain ID │ RPC URL                            │",
+  );
+  console.log(
+    "├─────────────────────┼──────────┼────────────────────────────────────┤",
+  );
   for (const network of networks) {
     const name = network.name.padEnd(19);
     const chainId = String(network.chainId).padEnd(8);
     const rpc = network.rpcUrl.substring(0, 34).padEnd(34);
     console.log(`│ ${name} │ ${chainId} │ ${rpc} │`);
   }
-  console.log("└─────────────────────┴──────────┴────────────────────────────────────┘\n");
+  console.log(
+    "└─────────────────────┴──────────┴────────────────────────────────────┘\n",
+  );
 }
 
 function formatTokenTable(tokens: CustomToken[]): void {
-  console.log("\n┌─────────┬─────────────────┬──────────┬──────────────────────────────────────────┐");
-  console.log("│ Symbol  │ Name            │ Chain ID │ Address                                  │");
-  console.log("├─────────┼─────────────────┼──────────┼──────────────────────────────────────────┤");
+  console.log(
+    "\n┌─────────┬─────────────────┬──────────┬──────────────────────────────────────────┐",
+  );
+  console.log(
+    "│ Symbol  │ Name            │ Chain ID │ Address                                  │",
+  );
+  console.log(
+    "├─────────┼─────────────────┼──────────┼──────────────────────────────────────────┤",
+  );
   for (const token of tokens) {
     const symbol = token.symbol.padEnd(7);
     const name = token.name.substring(0, 15).padEnd(15);
@@ -556,7 +580,9 @@ function formatTokenTable(tokens: CustomToken[]): void {
     const address = token.contractAddress.padEnd(40);
     console.log(`│ ${symbol} │ ${name} │ ${chainId} │ ${address} │`);
   }
-  console.log("└─────────┴─────────────────┴──────────┴──────────────────────────────────────────┘\n");
+  console.log(
+    "└─────────┴─────────────────┴──────────┴──────────────────────────────────────────┘\n",
+  );
 }
 
 function networksCommand(args: string[]): void {
@@ -592,7 +618,9 @@ function tokensCommand(args: string[]): void {
     if (tokens.length === 0) {
       console.log(`No tokens configured for ${resolved.name}`);
     } else {
-      console.log(`\n💰 Tokens on ${resolved.name} (Chain ID: ${resolved.chainId}):\n`);
+      console.log(
+        `\n💰 Tokens on ${resolved.name} (Chain ID: ${resolved.chainId}):\n`,
+      );
       formatTokenTable(tokens);
     }
   } else {
@@ -644,9 +672,15 @@ function validateCommand(args: string[]): void {
 
 function extensionsCommand(): void {
   console.log("\n🔌 Available x402 Extensions:\n");
-  console.log("┌───────────────┬─────────────────────────────────────────────────────┐");
-  console.log("│ Extension     │ Description                                         │");
-  console.log("├───────────────┼─────────────────────────────────────────────────────┤");
+  console.log(
+    "┌───────────────┬─────────────────────────────────────────────────────┐",
+  );
+  console.log(
+    "│ Extension     │ Description                                         │",
+  );
+  console.log(
+    "├───────────────┼─────────────────────────────────────────────────────┤",
+  );
 
   for (const ext of EXTENSIONS_INFO) {
     const name = ext.name.padEnd(13);
@@ -654,10 +688,14 @@ function extensionsCommand(): void {
     console.log(`│ ${name} │ ${desc} │`);
   }
 
-  console.log("└───────────────┴─────────────────────────────────────────────────────┘\n");
+  console.log(
+    "└───────────────┴─────────────────────────────────────────────────────┘\n",
+  );
 
   console.log("Usage:");
-  console.log("  import { createSIWxHook, createPaymentIdHook } from '@armory-sh/extensions';\n");
+  console.log(
+    "  import { createSIWxHook, createPaymentIdHook } from '@armory-sh/extensions';\n",
+  );
 
   console.log("Extension Hooks:");
   for (const ext of EXTENSIONS_INFO) {
@@ -693,7 +731,9 @@ async function verifyCommand(args: string[]): Promise<void> {
       console.log("\nℹ️ No payment required for this endpoint");
     }
   } catch (error) {
-    console.error(`\n❌ Failed to fetch: ${error instanceof Error ? error.message : "Unknown error"}`);
+    console.error(
+      `\n❌ Failed to fetch: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
     process.exit(1);
   }
 }
@@ -722,14 +762,35 @@ async function createCommand(args: string[]): Promise<void> {
     const result = await p.select({
       message: "What do you want to create?",
       choices: [
-        { title: "Bun Server - Simple x402 payment server", value: "bun-server" },
-        { title: "Express Server - Express v5 with x402 middleware", value: "express-server" },
-        { title: "Hono Server - Hono with extensions support", value: "hono-server" },
-        { title: "Elysia Server - Elysia/Bun x402 server", value: "elysia-server" },
-        { title: "Next.js Middleware - Next.js payment middleware", value: "next-server" },
+        {
+          title: "Bun Server - Simple x402 payment server",
+          value: "bun-server",
+        },
+        {
+          title: "Express Server - Express v5 with x402 middleware",
+          value: "express-server",
+        },
+        {
+          title: "Hono Server - Hono with extensions support",
+          value: "hono-server",
+        },
+        {
+          title: "Elysia Server - Elysia/Bun x402 server",
+          value: "elysia-server",
+        },
+        {
+          title: "Next.js Middleware - Next.js payment middleware",
+          value: "next-server",
+        },
         { title: "Viem Client - x402 client with Viem", value: "viem-client" },
-        { title: "Ethers Client - x402 client with Ethers.js", value: "ethers-client" },
-        { title: "Web3 Client - x402 client with Web3.js", value: "web3-client" },
+        {
+          title: "Ethers Client - x402 client with Ethers.js",
+          value: "ethers-client",
+        },
+        {
+          title: "Web3 Client - x402 client with Web3.js",
+          value: "web3-client",
+        },
       ],
     });
     template = result;
@@ -745,7 +806,8 @@ async function createCommand(args: string[]): Promise<void> {
     projectName = await p.text({
       message: "Project name?",
       default: `my-${template.replace("-server", "").replace("-client", "")}`,
-      validate: (n: string) => /^[a-z0-9-]+$/.test(n) || "Use lowercase, numbers, dashes only",
+      validate: (n: string) =>
+        /^[a-z0-9-]+$/.test(n) || "Use lowercase, numbers, dashes only",
     });
   }
 

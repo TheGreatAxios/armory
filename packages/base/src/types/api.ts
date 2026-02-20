@@ -3,8 +3,8 @@
  * Focuses on DX/UX - "everything just magically works"
  */
 
+import type { CustomToken, NetworkConfig } from "./networks";
 import type { Address, CAIPAssetId } from "./v2";
-import type { NetworkConfig, CustomToken } from "./networks";
 
 // ═══════════════════════════════════════════════════════════════
 // Simple API Types

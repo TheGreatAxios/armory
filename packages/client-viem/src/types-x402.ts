@@ -2,12 +2,12 @@
  * X402 Client Types - Coinbase Compatible
  */
 
-import type { Address, Account, WalletClient } from "viem";
 import type {
+  ExactEvmAuthorization,
   X402PaymentPayload,
   X402PaymentRequirements,
-  ExactEvmAuthorization,
 } from "@armory-sh/base";
+import type { Account, Address, WalletClient } from "viem";
 
 export type X402Wallet =
   | { type: "account"; account: Account }
@@ -25,8 +25,13 @@ export interface X402ClientConfig {
 export interface X402Client {
   fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   getAddress(): Address;
-  createPayment(requirements: X402PaymentRequirements): Promise<X402PaymentPayload>;
-  signPayment(authorization: ExactEvmAuthorization, network?: string): Promise<string>;
+  createPayment(
+    requirements: X402PaymentRequirements,
+  ): Promise<X402PaymentPayload>;
+  signPayment(
+    authorization: ExactEvmAuthorization,
+    network?: string,
+  ): Promise<string>;
 }
 
 export interface X402PaymentResult {

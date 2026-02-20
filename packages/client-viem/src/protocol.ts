@@ -4,6 +4,24 @@
  * Handles parsing x402 V2 PAYMENT-REQUIRED headers
  * and generating x402 V2 PAYMENT-SIGNATURE payloads
  */
+
+import type {
+  EIP3009Authorization,
+  PaymentPayloadV2,
+  PaymentRequiredV2,
+  PaymentRequirementsV2,
+} from "@armory-sh/base";
+import {
+  createEIP712Domain,
+  decodeBase64ToUtf8,
+  EIP712_TYPES,
+  getNetworkByChainId,
+  isX402V2PaymentRequired,
+  normalizeBase64Url,
+  PaymentException as PaymentError,
+  SigningError,
+  V2_HEADERS,
+} from "@armory-sh/base";
 import type {
   Account,
   Address,
@@ -11,22 +29,6 @@ import type {
   TypedDataDomain,
   WalletClient,
 } from "viem";
-import { PaymentError, SigningError } from "./errors";
-import type {
-  PaymentPayloadV2,
-  PaymentRequirementsV2,
-  EIP3009Authorization,
-} from "@armory-sh/base";
-import {
-  V2_HEADERS,
-  isX402V2PaymentRequired,
-  encodePaymentV2,
-  networkToCaip2,
-  EIP712_TYPES,
-  getNetworkByChainId,
-} from "@armory-sh/base";
-import { createEIP712Domain, createTransferWithAuthorization } from "@armory-sh/base";
-import { decodeBase64ToUtf8, encodeUtf8ToBase64, normalizeBase64Url } from "./bytes";
 
 export type X402Wallet =
   | { type: "account"; account: Account }
@@ -50,19 +52,23 @@ export function getWalletAddress(wallet: X402Wallet): Address {
     : wallet.walletClient.account.address;
 }
 
-export type ParsedPaymentRequirements = PaymentRequirementsV2;
+export interface ParsedPaymentRequired {
+  accepts: PaymentRequirementsV2[];
+  raw: PaymentRequiredV2;
+}
 
 function parseJsonOrBase64(value: string): unknown {
   try {
     return JSON.parse(value);
-  } catch {
-  }
+  } catch {}
 
   const normalized = normalizeBase64Url(value);
   return JSON.parse(decodeBase64ToUtf8(normalized));
 }
 
-export function parsePaymentRequired(response: Response): ParsedPaymentRequirements {
+export function parsePaymentRequired(
+  response: Response,
+): ParsedPaymentRequired {
   const v2Header = response.headers.get(V2_HEADERS.PAYMENT_REQUIRED);
 
   if (!v2Header) {
@@ -78,10 +84,12 @@ export function parsePaymentRequired(response: Response): ParsedPaymentRequireme
     if (!parsed.accepts || parsed.accepts.length === 0) {
       throw new PaymentError("No payment requirements found in accepts array");
     }
-    return parsed.accepts[0];
+    return { accepts: parsed.accepts, raw: parsed };
   } catch (error) {
     if (error instanceof PaymentError) throw error;
-    throw new PaymentError(`Failed to parse V2 PAYMENT-REQUIRED header: ${error}`);
+    throw new PaymentError(
+      `Failed to parse V2 PAYMENT-REQUIRED header: ${error}`,
+    );
   }
 }
 
@@ -89,14 +97,10 @@ export function getPaymentHeaderName(_version: X402Version): string {
   return V2_HEADERS.PAYMENT_SIGNATURE;
 }
 
-export function encodeX402Payment(payload: PaymentPayloadV2): string {
-  return encodeUtf8ToBase64(JSON.stringify(payload));
-}
-
 async function signTypedData(
   wallet: X402Wallet,
   domain: TypedDataDomain,
-  authorization: EIP3009Authorization
+  authorization: EIP3009Authorization,
 ): Promise<`0x${string}`> {
   const params = {
     domain,
@@ -149,10 +153,11 @@ export async function createX402Payment(
   nonce: `0x${string}` = `0x${Date.now().toString(16).padStart(64, "0")}` as `0x${string}`,
   validBefore?: number,
   domainName?: string,
-  domainVersion?: string
+  domainVersion?: string,
 ): Promise<PaymentPayloadV2> {
   const chainId = getChainIdFromNetwork(requirements.network);
   const domain = createEIP712Domain(chainId, requirements.asset);
+  const now = Math.floor(Date.now() / 1000);
 
   if (domainName || domainVersion) {
     domain.name = domainName ?? domain.name;
@@ -163,8 +168,8 @@ export async function createX402Payment(
     from,
     to: requirements.payTo,
     value: requirements.amount,
-    validAfter: "0",
-    validBefore: (validBefore ?? Math.floor(Date.now() / 1000 + 3600)).toString(),
+    validAfter: (now - 600).toString(),
+    validBefore: (validBefore ?? now + 3600).toString(),
     nonce,
   };
 

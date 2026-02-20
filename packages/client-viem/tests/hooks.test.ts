@@ -2,14 +2,14 @@
  * Hook System Tests for client-viem
  */
 
-import { describe, test, expect } from "bun:test";
-import { executeHooks, mergeExtensions } from "../src/hooks-engine";
+import { describe, expect, test } from "bun:test";
+import type { PaymentPayloadV2, PaymentRequirementsV2 } from "@armory-sh/base";
 import type {
   HookRegistry,
-  PaymentRequiredContext,
   PaymentPayloadContext,
+  PaymentRequiredContext,
 } from "../src/hooks";
-import type { PaymentRequirementsV2, PaymentPayloadV2 } from "@armory-sh/base";
+import { executeHooks, mergeExtensions } from "../src/hooks-engine";
 
 describe("[unit|client-viem]: Hook Engine", () => {
   const mockRequirements: PaymentRequirementsV2 = {
@@ -196,16 +196,16 @@ describe("[unit|client-viem]: Hook Engine", () => {
 
     test("hook extensions override base extensions", () => {
       const base = {
-        "extension": { version: 1 },
+        extension: { version: 1 },
       };
       const hook = {
-        "extension": { version: 2 },
+        extension: { version: 2 },
       };
 
       const result = mergeExtensions(base, hook);
 
       expect(result).toEqual({
-        "extension": { version: 2 },
+        extension: { version: 2 },
       });
     });
   });

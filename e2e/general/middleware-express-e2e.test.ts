@@ -4,16 +4,16 @@
  * Tests x402 Express middleware directly with mock req/res objects.
  */
 
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { paymentMiddleware } from "@armory-sh/middleware-express";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { encodePayment } from "@armory-sh/base";
+import { paymentMiddleware } from "@armory-sh/middleware-express";
 import { createX402V2Payload } from "./fixtures/payloads";
 import {
-  mockFacilitator,
   createMockExpressRequest,
   createMockExpressResponse,
-  TEST_REQUIREMENTS,
   MOCK_FACILITATOR_URL,
+  mockFacilitator,
+  TEST_REQUIREMENTS,
 } from "./mocks";
 
 describe("[e2e|middleware-express]: Express Middleware", () => {

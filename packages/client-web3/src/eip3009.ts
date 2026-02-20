@@ -1,5 +1,5 @@
 import type { Web3BaseWallet, Web3BaseWalletAccount } from "web3-types";
-import type { Web3TransferWithAuthorization, Web3EIP712Domain } from "./types";
+import type { Web3EIP712Domain, Web3TransferWithAuthorization } from "./types";
 
 export const EIP712_TYPES = {
   EIP712Domain: [
@@ -42,7 +42,7 @@ export const createEIP712Domain = (
   chainId: number | string,
   contractAddress: string,
   domainName?: string,
-  domainVersion?: string
+  domainVersion?: string,
 ): Web3EIP712Domain => ({
   name: domainName ?? USDC_DOMAIN.NAME,
   version: domainVersion ?? USDC_DOMAIN.VERSION,
@@ -51,7 +51,7 @@ export const createEIP712Domain = (
 });
 
 export const createTransferWithAuthorization = (
-  params: Web3TransferWithAuthorization
+  params: Web3TransferWithAuthorization,
 ): Record<string, string> => ({
   from: params.from.toLowerCase(),
   to: params.to.toLowerCase(),
@@ -62,7 +62,7 @@ export const createTransferWithAuthorization = (
 });
 
 export const validateTransferWithAuthorization = (
-  message: Web3TransferWithAuthorization
+  message: Web3TransferWithAuthorization,
 ): boolean => {
   const addressRegex = /^0x[a-fA-F0-9]{40}$/;
   if (!addressRegex.test(message.from)) {
@@ -88,7 +88,7 @@ export const validateTransferWithAuthorization = (
   }
   if (validAfter >= validBefore) {
     throw new Error(
-      `"validAfter" (${validAfter}) must be before "validBefore" (${validBefore})`
+      `"validAfter" (${validAfter}) must be before "validBefore" (${validBefore})`,
     );
   }
 
@@ -100,7 +100,9 @@ export const validateTransferWithAuthorization = (
   return true;
 };
 
-export const parseSignature = (signature: string): {
+export const parseSignature = (
+  signature: string,
+): {
   v: number;
   r: string;
   s: string;
@@ -108,7 +110,9 @@ export const parseSignature = (signature: string): {
   const hexSig = signature.startsWith("0x") ? signature.slice(2) : signature;
 
   if (hexSig.length !== 130) {
-    throw new Error(`Invalid signature length: ${hexSig.length} (expected 130)`);
+    throw new Error(
+      `Invalid signature length: ${hexSig.length} (expected 130)`,
+    );
   }
 
   return {
@@ -121,7 +125,7 @@ export const parseSignature = (signature: string): {
 export const concatenateSignature = (
   v: number,
   r: string,
-  s: string
+  s: string,
 ): string => {
   const rHex = r.startsWith("0x") ? r.slice(2) : r;
   const sHex = s.startsWith("0x") ? s.slice(2) : s;
@@ -139,19 +143,19 @@ export const adjustVForChainId = (v: number, chainId: number): number => {
 export const signTypedData = async (
   _account: Web3BaseWalletAccount | Web3BaseWallet<Web3BaseWalletAccount>,
   _domain: Web3EIP712Domain,
-  _message: Record<string, string>
+  _message: Record<string, string>,
 ): Promise<{ v: number; r: string; s: string }> => {
   throw new Error(
-    "EIP-712 signing requires web3-eth-personal or wallet provider."
+    "EIP-712 signing requires web3-eth-personal or wallet provider.",
   );
 };
 
 export const signWithPrivateKey = async (
   _privateKey: string,
   _domain: Web3EIP712Domain,
-  _message: Record<string, string>
+  _message: Record<string, string>,
 ): Promise<{ v: number; r: string; s: string }> => {
   throw new Error(
-    "Direct private key signing not implemented. Use wallet provider's signTypedData method instead."
+    "Direct private key signing not implemented. Use wallet provider's signTypedData method instead.",
   );
 };

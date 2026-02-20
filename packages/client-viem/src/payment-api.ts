@@ -4,30 +4,25 @@
  */
 
 import type {
-  Account,
-  WalletClient,
-  Address,
-} from "viem";
-import type {
-  NetworkId,
-  TokenId,
   ArmoryPaymentResult,
-  PaymentResult,
-  PaymentError,
-  ValidationError,
+  NetworkId,
   ResolvedNetwork,
+  TokenId,
+  ValidationError,
 } from "@armory-sh/base";
-import type { X402Wallet } from "./types";
 import {
-  resolveNetwork,
-  resolveToken,
-  validatePaymentConfig,
-  isValidationError,
-  createError,
   getAvailableNetworks,
   getAvailableTokens,
+  isValidationError,
+  registerToken,
+  resolveNetwork,
+  resolveToken,
+  TOKENS,
+  validatePaymentConfig,
 } from "@armory-sh/base";
+import type { Account, Address, WalletClient } from "viem";
 import { createX402Client } from "./client";
+import type { X402Wallet } from "./types";
 
 // ═══════════════════════════════════════════════════════════════
 // Simple Wallet Types
@@ -52,7 +47,9 @@ export type NormalizedWallet =
 /**
  * Normalize wallet input to internal format
  */
-export const normalizeWallet = (wallet: SimpleWalletInput): NormalizedWallet => {
+export const normalizeWallet = (
+  wallet: SimpleWalletInput,
+): NormalizedWallet => {
   if (typeof wallet === "object" && wallet !== null) {
     if ("account" in wallet && "type" in wallet) {
       return wallet as NormalizedWallet;
@@ -114,13 +111,23 @@ export const armoryPay = async <T = unknown>(
     amount?: string;
     /** Enable debug logging */
     debug?: boolean;
-  }
+  },
 ): Promise<ArmoryPaymentResult<T>> => {
   try {
+    // Ensure all standard tokens are registered before validation
+    Object.values(TOKENS).forEach((token) => {
+      try {
+        registerToken(token);
+      } catch {
+        // Token already registered, ignore
+      }
+    });
+
     const normalized = normalizeWallet(wallet);
-    const x402Wallet: X402Wallet = normalized.type === "account"
-      ? { type: "account", account: normalized.account }
-      : { type: "walletClient", walletClient: normalized.walletClient };
+    const x402Wallet: X402Wallet =
+      normalized.type === "account"
+        ? { type: "account", account: normalized.account }
+        : { type: "walletClient", walletClient: normalized.walletClient };
 
     const config = validatePaymentConfig(network, token);
     if (isValidationError(config)) {
@@ -179,12 +186,12 @@ export const armoryPay = async <T = unknown>(
       data,
       ...(txHash && { txHash }),
     };
-
   } catch (error) {
     return {
       success: false,
       code: "NETWORK_ERROR",
-      message: error instanceof Error ? error.message : "Unknown error occurred",
+      message:
+        error instanceof Error ? error.message : "Unknown error occurred",
       details: error,
     };
   }
@@ -198,9 +205,12 @@ export const armoryGet = <T = unknown>(
   url: string,
   network: NetworkId,
   token: TokenId,
-  options?: Omit<Parameters<typeof armoryPay>[4], "method">
+  options?: Omit<Parameters<typeof armoryPay>[4], "method">,
 ): Promise<ArmoryPaymentResult<T>> => {
-  return armoryPay<T>(wallet, url, network, token, { ...options, method: "GET" });
+  return armoryPay<T>(wallet, url, network, token, {
+    ...options,
+    method: "GET",
+  });
 };
 
 /**
@@ -212,9 +222,13 @@ export const armoryPost = <T = unknown>(
   network: NetworkId,
   token: TokenId,
   body?: unknown,
-  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">
+  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">,
 ): Promise<ArmoryPaymentResult<T>> => {
-  return armoryPay<T>(wallet, url, network, token, { ...options, method: "POST", body });
+  return armoryPay<T>(wallet, url, network, token, {
+    ...options,
+    method: "POST",
+    body,
+  });
 };
 
 /**
@@ -226,9 +240,13 @@ export const armoryPut = <T = unknown>(
   network: NetworkId,
   token: TokenId,
   body?: unknown,
-  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">
+  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">,
 ): Promise<ArmoryPaymentResult<T>> => {
-  return armoryPay<T>(wallet, url, network, token, { ...options, method: "PUT", body });
+  return armoryPay<T>(wallet, url, network, token, {
+    ...options,
+    method: "PUT",
+    body,
+  });
 };
 
 /**
@@ -239,9 +257,12 @@ export const armoryDelete = <T = unknown>(
   url: string,
   network: NetworkId,
   token: TokenId,
-  options?: Omit<Parameters<typeof armoryPay>[4], "method">
+  options?: Omit<Parameters<typeof armoryPay>[4], "method">,
 ): Promise<ArmoryPaymentResult<T>> => {
-  return armoryPay<T>(wallet, url, network, token, { ...options, method: "DELETE" });
+  return armoryPay<T>(wallet, url, network, token, {
+    ...options,
+    method: "DELETE",
+  });
 };
 
 /**
@@ -253,9 +274,13 @@ export const armoryPatch = <T = unknown>(
   network: NetworkId,
   token: TokenId,
   body?: unknown,
-  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">
+  options?: Omit<Parameters<typeof armoryPay>[4], "method" | "body">,
 ): Promise<ArmoryPaymentResult<T>> => {
-  return armoryPay<T>(wallet, url, network, token, { ...options, method: "PATCH", body });
+  return armoryPay<T>(wallet, url, network, token, {
+    ...options,
+    method: "PATCH",
+    body,
+  });
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -275,7 +300,9 @@ export const getWalletAddress = (wallet: SimpleWalletInput): Address => {
 /**
  * Validate a network identifier without making a request
  */
-export const validateNetwork = (network: NetworkId): ValidationError | { success: true; network: string } => {
+export const validateNetwork = (
+  network: NetworkId,
+): ValidationError | { success: true; network: string } => {
   const resolved = resolveNetwork(network);
   if (isValidationError(resolved)) {
     return resolved;
@@ -288,9 +315,9 @@ export const validateNetwork = (network: NetworkId): ValidationError | { success
  */
 export const validateToken = (
   token: TokenId,
-  network?: NetworkId
+  network?: NetworkId,
 ): ValidationError | { success: true; token: string; network: string } => {
-  let resolvedNetwork: ResolvedNetwork | undefined = undefined;
+  let resolvedNetwork: ResolvedNetwork | undefined;
   if (network) {
     const networkResult = resolveNetwork(network);
     if (isValidationError(networkResult)) {

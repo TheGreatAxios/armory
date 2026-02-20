@@ -3,11 +3,22 @@ description: Payment middleware for Elysia
 title: "@armory-sh/middleware-elysia"
 ---
 
+
 Accept crypto payments in your Elysia API with a single middleware plugin.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-elysia
+
+# yarn
+yarn add @armory-sh/middleware-elysia
+
+# pnpm
+pnpm add @armory-sh/middleware-elysia
+
+# bun
 bun add @armory-sh/middleware-elysia
 ```
 
@@ -25,8 +36,7 @@ const app = new Elysia()
       expiry: Date.now() + 3600 * 1000,
       chainId: 'eip155:8453',
       assetId: 'eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
-    },
-    facilitatorUrl: 'https://facilitator.armory.sh'
+    }
   }))
   .get('/api/protected', ({ store }) => {
     return { message: `Hello ${store.payment.payerAddress}!` };
@@ -63,23 +73,73 @@ The middleware plugin:
 }
 ```
 
-### Facilitator
-
-For production use, specify a facilitator:
-
-```typescript
-{
-  facilitatorUrl: 'https://facilitator.armory.sh'
-}
-```
-
 ### Verification Options
 
+Provide your verification backend configuration in middleware options for production deployments.
+
+### Advanced Mix-and-Match Config (Current API)
+
 ```typescript
-{
-  facilitatorUrl: string  // Required for payment verification
-}
+import { Elysia } from "elysia";
+import { paymentMiddleware } from "@armory-sh/middleware-elysia";
+
+const app = new Elysia().use(
+  paymentMiddleware({
+    payTo: "0x1234567890123456789012345678901234567890",
+    chains: ["base", "skale-base"],
+    tokens: ["usdc", "usdt", "weth", "wbtc"],
+    amount: "1.0",
+    facilitatorUrl: "https://fallback-facilitator.example",
+    facilitatorUrlByChain: {
+      base: "https://payai.example",
+    },
+    facilitatorUrlByToken: {
+      base: { usdc: "https://payai.example" },
+      "skale-base": {
+        usdc: "https://payai.example",
+        usdt: "https://kobaru.example",
+        weth: "https://kobaru.example",
+        wbtc: "https://kobaru.example",
+      },
+    },
+    extensions: {
+      bazaar: { info: { input: { sku: "pro-plan" } }, schema: { type: "object" } },
+      "sign-in-with-x": { info: { domain: "api.example.com" }, schema: { type: "object" } },
+    },
+  }),
+);
 ```
+
+For full custom amount-per-combination control, use explicit `requirements`:
+
+```typescript
+paymentMiddleware({
+  requirements: [
+    {
+      scheme: "exact",
+      network: "eip155:8453",
+      amount: "1000000",
+      asset: "0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913",
+      payTo: "0x1234567890123456789012345678901234567890",
+      maxTimeoutSeconds: 300,
+    },
+    {
+      scheme: "exact",
+      network: "eip155:1187947933",
+      amount: "2500000",
+      asset: "0x5f9beea3f6f22be1f4f8efc120f5095f58dbb8a2",
+      payTo: "0x1234567890123456789012345678901234567890",
+      maxTimeoutSeconds: 300,
+    },
+  ],
+  facilitatorUrlByToken: {
+    base: { usdc: "https://payai.example" },
+    "skale-base": { usdt: "https://kobaru.example" },
+  },
+});
+```
+
+`extensions` are fail-open filtered based on facilitator capability; unsupported keys are omitted from challenge headers automatically.
 
 ---
 
@@ -192,4 +252,3 @@ Payment signature or amount was invalid.
 <Note>
 Elysia's store is shared across all middleware and routes. Payment info will be available in any route handler after the middleware runs.
 </Note>
-

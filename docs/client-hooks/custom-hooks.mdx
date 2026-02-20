@@ -1,0 +1,26 @@
+---
+title: Custom Hooks
+description: Create custom Armory hooks for advanced flow control
+---
+
+Use custom hooks to implement project-specific behavior in payment lifecycle phases.
+
+```typescript
+import type { ClientHook } from '@armory-sh/client-hooks';
+
+const customHook: ClientHook = {
+  name: 'require-premium-route',
+  onPaymentRequired: async (context) => {
+    const url = typeof context.url === 'string' ? context.url : context.url.toString();
+
+    if (!url.includes('/premium')) {
+      return;
+    }
+  },
+  onError: async (context) => {
+    console.error('[hook-error]', context.phase, context.error);
+  }
+};
+```
+
+For custom x402 extension payload fields, use `createCustomHook` from `@armory-sh/extensions`.

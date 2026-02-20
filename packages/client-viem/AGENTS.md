@@ -4,6 +4,22 @@ x402 payment client for viem-based EVM wallets.
 
 ---
 
+## Architecture
+
+**Import from base** for shared types and utilities:
+```ts
+import { TOKENS, PaymentException as PaymentError, V2_HEADERS } from "@armory-sh/base";
+```
+
+**Import from client-viem** for viem-specific integration:
+```ts
+import { createX402Client, createX402Transport } from "@armory-sh/client-viem";
+```
+
+Client-viem only contains viem-specific wallet integration. All shared logic lives in `@armory-sh/base`.
+
+---
+
 ## Code Style
 
 - **TypeScript strict mode** - No `any`, use proper typing
@@ -48,11 +64,11 @@ bun --hot ./src/index.ts
 - `PaymentResult` - Result of payment operation
 - `X402TransportConfig` - Transport configuration options
 
-### Errors
+### Simple API (one-line payments)
 
-- `X402ClientError` - Base error class
-- `SigningError` - Signing operation failures
-- `PaymentError` - Payment operation failures
+- `armoryPay()` - Make a payment-protected API request
+- `armoryGet()`, `armoryPost()`, etc. - HTTP method helpers
+- `createArmory()` - Create configurable payment API instance
 
 ## Usage Patterns
 

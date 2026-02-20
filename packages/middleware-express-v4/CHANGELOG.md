@@ -1,5 +1,21 @@
 # @armory-sh/middleware-express-v4
 
+## 0.1.10
+
+### Patch Changes
+
+- 3ba536a: Streamline Client, Multitoken Middleware
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+
 ## 0.1.6
 
 ### Patch Changes

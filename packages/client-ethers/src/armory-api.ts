@@ -3,24 +3,15 @@
  * Provides a configurable object with method-based payment functions
  */
 
-import type { Signer } from "ethers";
 import type {
-  NetworkId,
-  TokenId,
   ArmoryPaymentResult,
+  NetworkId,
   PaymentRequirementsV2,
+  TokenId,
 } from "@armory-sh/base";
-import type {
-  SimpleWalletInput,
-  NormalizedWallet,
-} from "./payment-api";
+import { resolveNetwork, resolveToken } from "@armory-sh/base";
+import type { NormalizedWallet, SimpleWalletInput } from "./payment-api";
 import { normalizeWallet } from "./payment-api";
-import {
-  resolveNetwork,
-  resolveToken,
-  isValidationError,
-  getNetworkByChainId,
-} from "@armory-sh/base";
 import { createX402Transport } from "./transport";
 
 // ═══════════════════════════════════════════════════════════════
@@ -29,7 +20,13 @@ import { createX402Transport } from "./transport";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
-const ALL_METHODS: Set<HttpMethod> = new Set(["GET", "POST", "PUT", "DELETE", "PATCH"]);
+const ALL_METHODS: Set<HttpMethod> = new Set([
+  "GET",
+  "POST",
+  "PUT",
+  "DELETE",
+  "PATCH",
+]);
 
 export interface ArmoryConfig {
   wallet: SimpleWalletInput;
@@ -58,7 +55,10 @@ export interface ArmoryInstance {
   put<T>(url: string, body?: unknown): Promise<ArmoryPaymentResult<T>>;
   delete<T>(url: string): Promise<ArmoryPaymentResult<T>>;
   patch<T>(url: string, body?: unknown): Promise<ArmoryPaymentResult<T>>;
-  pay<T>(url: string, options?: PaymentOptions): Promise<ArmoryPaymentResult<T>>;
+  pay<T>(
+    url: string,
+    options?: PaymentOptions,
+  ): Promise<ArmoryPaymentResult<T>>;
   call<T>(url: string): Promise<ArmoryPaymentResult<T>>;
 }
 
@@ -84,7 +84,7 @@ const normalizeArmoryConfig = (config: ArmoryConfig): ArmoryInternalConfig => ({
 const scorePaymentOption = (
   option: PaymentRequirementsV2,
   allowedTokens: TokenId[],
-  allowedChains: NetworkId[]
+  allowedChains: NetworkId[],
 ): number => {
   let score = 0;
 
@@ -101,7 +101,10 @@ const scorePaymentOption = (
 
   for (const token of allowedTokens) {
     const resolved = resolveToken(token);
-    if (!("code" in resolved) && resolved.config.contractAddress.toLowerCase() === tokenAddress) {
+    if (
+      !("code" in resolved) &&
+      resolved.config.contractAddress.toLowerCase() === tokenAddress
+    ) {
       score += 5;
       break;
     }
@@ -123,7 +126,7 @@ const selectPaymentOption = (
   accepts: PaymentRequirementsV2[],
   allowedTokens: TokenId[],
   allowedChains: NetworkId[],
-  _allowedMethods: Set<HttpMethod>
+  _allowedMethods: Set<HttpMethod>,
 ): PaymentRequirementsV2 | null => {
   const validOptions = accepts.filter((option) => {
     const chainId = parseInt(option.network.split(":")[1], 10);
@@ -133,7 +136,11 @@ const selectPaymentOption = (
       if (!("code" in resolved) && resolved.config.chainId === chainId) {
         for (const token of allowedTokens) {
           const resolvedToken = resolveToken(token, resolved);
-          if (!("code" in resolvedToken) && resolvedToken.config.contractAddress.toLowerCase() === option.asset.toLowerCase()) {
+          if (
+            !("code" in resolvedToken) &&
+            resolvedToken.config.contractAddress.toLowerCase() ===
+              option.asset.toLowerCase()
+          ) {
             return true;
           }
         }
@@ -151,9 +158,10 @@ const selectPaymentOption = (
 
   if (validOptions.length === 1) return validOptions[0];
 
-  return validOptions.sort((a, b) =>
-    scorePaymentOption(b, allowedTokens, allowedChains) -
-    scorePaymentOption(a, allowedTokens, allowedChains)
+  return validOptions.sort(
+    (a, b) =>
+      scorePaymentOption(b, allowedTokens, allowedChains) -
+      scorePaymentOption(a, allowedTokens, allowedChains),
   )[0];
 };
 
@@ -170,7 +178,7 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
   const makeRequest = async <T>(
     url: string,
     method: HttpMethod,
-    body?: unknown
+    body?: unknown,
   ): Promise<ArmoryPaymentResult<T>> => {
     try {
       let response: Response;
@@ -208,12 +216,12 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
         data,
         ...(txHash && { txHash }),
       };
-
     } catch (error) {
       return {
         success: false,
         code: "NETWORK_ERROR",
-        message: error instanceof Error ? error.message : "Unknown error occurred",
+        message:
+          error instanceof Error ? error.message : "Unknown error occurred",
         details: error,
       };
     }
@@ -224,7 +232,8 @@ export const createArmory = (config: ArmoryConfig): ArmoryInstance => {
     post: <T>(url: string, body?: unknown) => makeRequest<T>(url, "POST", body),
     put: <T>(url: string, body?: unknown) => makeRequest<T>(url, "PUT", body),
     delete: <T>(url: string) => makeRequest<T>(url, "DELETE"),
-    patch: <T>(url: string, body?: unknown) => makeRequest<T>(url, "PATCH", body),
+    patch: <T>(url: string, body?: unknown) =>
+      makeRequest<T>(url, "PATCH", body),
     pay: <T>(url: string, options?: PaymentOptions) =>
       makeRequest<T>(url, options?.method ?? "GET", options?.body),
     call: <T>(url: string) => makeRequest<T>(url, "GET"),

@@ -8,41 +8,62 @@ Armory x402 SDK — Payment client for ethers.js v6. Make payments from any ethe
 
 ```bash
 bun add @armory-sh/client-ethers
+bun add @armory-sh/client-hooks # optional preference/logger hooks
 ```
 
 ## Why Armory?
 
 Armory enables HTTP API payments via EIP-3009 `transferWithAuthorization`. Let your users pay with USDC directly from their wallet—no credit cards, no middlemen, no gas for payers.
 
-## Key Exports
+## API Reference
+
+### Client Creation
 
 ```typescript
 import {
-  // Client Creation
   createX402Client,
   createX402Transport,
-
-  // Protocol
-  detectX402Version,
-  parsePaymentRequired,
-
-  // Signing
-  signPayment,
-  signEIP3009,
-  recoverEIP3009Signer,
 
   // Types
   type X402Client,
   type X402ClientConfig,
   type X402TransportConfig,
-  type SignPaymentOptions,
+} from '@armory-sh/client-ethers';
+```
 
-  // Errors
+### Protocol Detection & Parsing
+
+```typescript
+import {
+  detectX402Version,
+  parsePaymentRequired,
+} from '@armory-sh/client-ethers';
+```
+
+### Signing Functions
+
+```typescript
+import {
+  signPayment,
+  signEIP3009,
+  recoverEIP3009Signer,
+
+  // Types
+  type SignPaymentOptions,
+} from '@armory-sh/client-ethers';
+```
+
+### Error Classes
+
+```typescript
+import {
   X402ClientError,
   SigningError,
   PaymentError,
 } from '@armory-sh/client-ethers';
 ```
+
+---
 
 ## Quick Start
 
@@ -60,9 +81,30 @@ const response = await client.fetch('https://api.example.com/protected')
 const data = await response.json()
 ```
 
+## Hook Pipeline
+
+```typescript
+import { createX402Client } from '@armory-sh/client-ethers'
+import { PaymentPreference, Logger } from '@armory-sh/client-hooks'
+
+const client = createX402Client({
+  signer,
+  hooks: [
+    PaymentPreference.chain(['base', 'ethereum', 'skale-base']),
+    PaymentPreference.token(['USDT', 'USDC', 'WBTC']),
+    PaymentPreference.cheapest(),
+    Logger.console(),
+  ],
+})
+```
+
+`parsePaymentRequired` returns `accepts[]` (x402 v2 challenge options). Clients select from this list.
+`hooks` are lifecycle callbacks. `extensions` are protocol payload fields. Hooks can drive selection and payload behavior, but they are not extensions.
+
 ## Features
 
 - **Auto 402 Handling**: Automatically intercepts and pays for 402 responses
+- **Detailed Verification Errors**: 402 retry failures include server details (for example `insufficient_funds`)
 - **EIP-3009 Signing**: Full support for EIP-3009 TransferWithAuthorization
 - **Multi-Network**: Ethereum, Base, SKALE support
 - **Multi-Token**: USDC, EURC, USDT, WBTC, WETH, SKL
@@ -79,6 +121,7 @@ const data = await response.json()
 | Base Sepolia | 84532 |
 | SKALE Base | 1187947933 |
 | SKALE Base Sepolia | 324705682 |
+| Ethereum Sepolia | 11155111 |
 
 ## License
 

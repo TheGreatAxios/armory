@@ -1,19 +1,25 @@
-import type { Signer } from "ethers";
 import {
   decodeSettlementV2,
+  encodePaymentV2,
   type SettlementResponseV2,
   V2_HEADERS,
-  isSettlementSuccessful,
 } from "@armory-sh/base";
-import type { X402TransportConfig, X402RequestInit } from "./types";
 import {
-  parsePaymentRequired,
+  getRequirementAttemptOrderWithHooks,
+  runAfterPaymentResponseHooks,
+  runBeforeSignPaymentHooks,
+  runOnPaymentRequiredHooks,
+} from "@armory-sh/base/client-hooks-runtime";
+import type { PaymentRequiredContext } from "@armory-sh/base/types/hooks";
+import type { Signer } from "ethers";
+import { SignerRequiredError } from "./errors";
+import {
   createX402Payment,
-  encodeX402Payment,
   getPaymentHeaderName,
   type ParsedPaymentRequirements,
+  parsePaymentRequired,
 } from "./protocol";
-import { SignerRequiredError } from "./errors";
+import type { X402RequestInit, X402TransportConfig } from "./types";
 
 const defaultConfig: Required<X402TransportConfig> = {
   baseURL: "",
@@ -25,6 +31,7 @@ const defaultConfig: Required<X402TransportConfig> = {
   onPaymentRequired: () => true,
   onPaymentSuccess: () => {},
   onPaymentError: () => {},
+  hooks: [],
 };
 
 type TransportState = {
@@ -39,7 +46,7 @@ const createState = (config?: X402TransportConfig): TransportState => ({
 const fetchWithTimeout = async (
   url: string,
   init: RequestInit,
-  timeout: number
+  timeout: number,
 ): Promise<Response> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -60,72 +67,224 @@ const fetchWithTimeout = async (
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+const getRequirementDomainOverrides = (
+  _parsed: ParsedPaymentRequirements,
+  requirement: { extra?: unknown; name?: string; version?: string },
+): { domainName?: string; domainVersion?: string } => {
+  const extra = requirement.extra;
+  const extraRecord =
+    extra && typeof extra === "object"
+      ? (extra as Record<string, unknown>)
+      : undefined;
+  const extraName =
+    extraRecord && typeof extraRecord.name === "string"
+      ? extraRecord.name
+      : undefined;
+  const extraVersion =
+    extraRecord && typeof extraRecord.version === "string"
+      ? extraRecord.version
+      : undefined;
+
+  return {
+    domainName: requirement.name ?? extraName,
+    domainVersion: requirement.version ?? extraVersion,
+  };
+};
+
+const getPaymentFailureDetail = async (
+  response: Response,
+): Promise<string | undefined> => {
+  const text = (await response.clone().text()).trim();
+  if (!text) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    if (typeof parsed.message === "string" && parsed.message.trim()) {
+      return parsed.message.trim();
+    }
+    if (typeof parsed.error === "string" && parsed.error.trim()) {
+      return parsed.error.trim();
+    }
+  } catch {}
+
+  return text;
+};
+
+const createPaymentVerificationError = async (
+  response: Response,
+): Promise<Error> => {
+  const detail = await getPaymentFailureDetail(response);
+  return new Error(
+    detail
+      ? `Payment verification failed: ${detail}`
+      : "Payment verification failed",
+  );
+};
+
 const handlePaymentRequired = async (
   state: TransportState,
-  response: Response
-): Promise<{ success: boolean; settlement?: SettlementResponseV2; error?: Error }> => {
+  response: Response,
+): Promise<{
+  success: boolean;
+  settlement?: SettlementResponseV2;
+  error?: Error;
+}> => {
   if (!state.signer) {
-    throw new SignerRequiredError("Cannot handle payment: no signer configured.");
+    throw new SignerRequiredError(
+      "Cannot handle payment: no signer configured.",
+    );
   }
 
   try {
     const parsed = parsePaymentRequired(response);
+    const initialRequirement = parsed.accepts[0];
+    if (!initialRequirement) {
+      throw new Error("No payment requirements found in accepts array");
+    }
     const from = await state.signer.getAddress();
-
-    const payload = await createX402Payment(state.signer, parsed, from as `0x${string}`);
-    const encoded = encodeX402Payment(payload);
-    const headerName = getPaymentHeaderName(parsed.version);
-
-    const paymentResponse = await fetchWithTimeout(
-      response.url,
-      {
-        method: "GET",
-        headers: { ...state.config.headers, [headerName]: encoded },
-      },
-      state.config.timeout
+    const paymentRequiredContext: PaymentRequiredContext = {
+      url: response.url,
+      requestInit: undefined,
+      accepts: parsed.accepts,
+      requirements: initialRequirement,
+      selectedRequirement: initialRequirement,
+      serverExtensions: undefined,
+      fromAddress: from as `0x${string}`,
+      nonce: `0x${Date.now().toString(16).padStart(64, "0")}`,
+      validBefore:
+        Math.floor(Date.now() / 1000) + initialRequirement.maxTimeoutSeconds,
+    };
+    await runOnPaymentRequiredHooks(
+      state.config.hooks,
+      paymentRequiredContext,
     );
+    const attemptRequirements = await getRequirementAttemptOrderWithHooks(
+      state.config.hooks,
+      paymentRequiredContext,
+    );
+    const headerName = getPaymentHeaderName(parsed.version);
+    let lastError: Error | undefined;
 
-    // Decode settlement response from headers
-    const settlement = decodeSettlementV2(paymentResponse.headers.get(V2_HEADERS.PAYMENT_RESPONSE) || "");
-    return { success: true, settlement };
+    for (const selectedRequirement of attemptRequirements) {
+      try {
+        const validBefore =
+          Math.floor(Date.now() / 1000) + selectedRequirement.maxTimeoutSeconds;
+        const attemptContext: PaymentRequiredContext = {
+          ...paymentRequiredContext,
+          requirements: selectedRequirement,
+          selectedRequirement,
+          validBefore,
+        };
+        const requirementDomain = getRequirementDomainOverrides(
+          parsed,
+          selectedRequirement,
+        );
+
+        const payload = await createX402Payment(
+          state.signer,
+          selectedRequirement,
+          from as `0x${string}`,
+          attemptContext.nonce,
+          attemptContext.validBefore,
+          requirementDomain.domainName,
+          requirementDomain.domainVersion,
+        );
+        await runBeforeSignPaymentHooks(state.config.hooks, {
+          payload,
+          requirements: selectedRequirement,
+          wallet: state.signer,
+          paymentContext: attemptContext,
+        });
+        const encoded = encodePaymentV2(payload);
+
+        const paymentResponse = await fetchWithTimeout(
+          response.url,
+          {
+            method: "GET",
+            headers: { ...state.config.headers, [headerName]: encoded },
+          },
+          state.config.timeout,
+        );
+
+        await runAfterPaymentResponseHooks(state.config.hooks, {
+          payload,
+          requirements: selectedRequirement,
+          wallet: state.signer,
+          paymentContext: attemptContext,
+          response: paymentResponse,
+        });
+
+        if (paymentResponse.status === 402) {
+          lastError = await createPaymentVerificationError(paymentResponse);
+          continue;
+        }
+
+        const settlement = decodeSettlementV2(
+          paymentResponse.headers.get(V2_HEADERS.PAYMENT_RESPONSE) || "",
+        );
+        return { success: true, settlement };
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+      }
+    }
+
+    throw lastError ?? new Error("Payment verification failed");
   } catch (error) {
-    return { success: false, error: error instanceof Error ? error : new Error(String(error)) };
+    return {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error)),
+    };
   }
 };
 
 const shouldRetryPayment = async (
   state: TransportState,
-  response: Response
+  response: Response,
 ): Promise<boolean> => {
   if (!state.config.autoPay) return false;
   const parsed = parsePaymentRequired(response);
-  return await state.config.onPaymentRequired(parsed.requirements);
+  return await state.config.onPaymentRequired(parsed.accepts[0]);
 };
 
 const x402Fetch = async (
   state: TransportState,
   url: string,
-  init: X402RequestInit = {}
+  init: X402RequestInit = {},
 ): Promise<Response> => {
-  const fullUrl = state.config.baseURL ? new URL(url, state.config.baseURL).toString() : url;
+  const fullUrl = state.config.baseURL
+    ? new URL(url, state.config.baseURL).toString()
+    : url;
   const headers = new Headers({ ...state.config.headers, ...init.headers });
 
   for (let attempt = 1; attempt <= state.config.maxRetries; attempt++) {
     try {
-      const response = await fetchWithTimeout(fullUrl, { ...init, headers }, state.config.timeout);
+      const response = await fetchWithTimeout(
+        fullUrl,
+        { ...init, headers },
+        state.config.timeout,
+      );
 
-      if (response.status === 402 && !init.skipAutoPay && await shouldRetryPayment(state, response)) {
+      if (
+        response.status === 402 &&
+        !init.skipAutoPay &&
+        (await shouldRetryPayment(state, response))
+      ) {
         const paymentResult = await handlePaymentRequired(state, response);
         if (paymentResult.success) {
           state.config.onPaymentSuccess(paymentResult.settlement);
           continue;
         }
-        state.config.onPaymentError(paymentResult.error ?? new Error("Payment failed"));
+        state.config.onPaymentError(
+          paymentResult.error ?? new Error("Payment failed"),
+        );
       }
 
       return response;
     } catch (error) {
-      const lastError = error instanceof Error ? error : new Error(String(error));
+      const lastError =
+        error instanceof Error ? error : new Error(String(error));
       if (attempt === state.config.maxRetries) throw lastError;
       await delay(state.config.retryDelay * attempt);
     }
@@ -134,25 +293,34 @@ const x402Fetch = async (
   throw new Error("Max retries exceeded");
 };
 
-const createMethod = (
-  state: TransportState,
-  method: string
-) => async (url: string, bodyOrInit?: unknown | X402RequestInit, init?: X402RequestInit): Promise<Response> => {
-  const bodyInit = typeof bodyOrInit === "object" && bodyOrInit !== null && "headers" in bodyOrInit
-    ? bodyOrInit as X402RequestInit
-    : undefined;
-  const body = typeof bodyOrInit === "object" && bodyOrInit !== null && !("headers" in bodyOrInit)
-    ? bodyOrInit
-    : undefined;
-  const finalInit = bodyInit ?? init;
+const createMethod =
+  (state: TransportState, method: string) =>
+  async (
+    url: string,
+    bodyOrInit?: unknown | X402RequestInit,
+    init?: X402RequestInit,
+  ): Promise<Response> => {
+    const bodyInit =
+      typeof bodyOrInit === "object" &&
+      bodyOrInit !== null &&
+      "headers" in bodyOrInit
+        ? (bodyOrInit as X402RequestInit)
+        : undefined;
+    const body =
+      typeof bodyOrInit === "object" &&
+      bodyOrInit !== null &&
+      !("headers" in bodyOrInit)
+        ? bodyOrInit
+        : undefined;
+    const finalInit = bodyInit ?? init;
 
-  return x402Fetch(state, url, {
-    ...finalInit,
-    method,
-    headers: { ...finalInit?.headers, "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-};
+    return x402Fetch(state, url, {
+      ...finalInit,
+      method,
+      headers: { ...finalInit?.headers, "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  };
 
 export interface X402Transport {
   fetch(url: string, init?: X402RequestInit): Promise<Response>;
@@ -165,8 +333,10 @@ export interface X402Transport {
   getSigner(): Signer | undefined;
 }
 
-export const createX402Transport = (config?: X402TransportConfig): X402Transport => {
-  let state = createState(config);
+export const createX402Transport = (
+  config?: X402TransportConfig,
+): X402Transport => {
+  const state = createState(config);
 
   return {
     fetch: (url, init) => x402Fetch(state, url, init),
@@ -175,7 +345,9 @@ export const createX402Transport = (config?: X402TransportConfig): X402Transport
     put: createMethod(state, "PUT"),
     del: createMethod(state, "DELETE"),
     patch: createMethod(state, "PATCH"),
-    setSigner: (signer: Signer) => { state.signer = signer; },
+    setSigner: (signer: Signer) => {
+      state.signer = signer;
+    },
     getSigner: () => state.signer,
   };
 };

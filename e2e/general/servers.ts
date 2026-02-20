@@ -2,16 +2,12 @@
  * E2E Test Server Factories
  */
 
-import { serve } from "bun";
-import { Hono } from "hono";
-import express from "express";
-import { advancedPaymentMiddleware as honoPaymentMiddleware } from "@armory-sh/middleware-hono";
+import { getNetworkConfig, normalizeNetworkName } from "@armory-sh/base";
 import { paymentMiddleware as expressPaymentMiddleware } from "@armory-sh/middleware-express";
-import {
-  getNetworkConfig,
-  normalizeNetworkName,
-} from "@armory-sh/base";
-import type { X402PaymentRequirements } from "@armory-sh/base";
+import { advancedPaymentMiddleware as honoPaymentMiddleware } from "@armory-sh/middleware-hono";
+import { serve } from "bun";
+import express from "express";
+import { Hono } from "hono";
 
 export interface TestServer {
   port: number;
@@ -66,11 +62,20 @@ const createRequirements = (config: ServerConfig) => {
   };
 };
 
-export const createHonoServer = async (config: ServerConfig): Promise<TestServer> => {
+export const createHonoServer = async (
+  config: ServerConfig,
+): Promise<TestServer> => {
   const app = new Hono();
 
   const requirements = createRequirements(config);
-  app.use("/*", honoPaymentMiddleware({ requirements, facilitatorUrl: config.facilitatorUrl ?? "https://facilitator.payai.network" }));
+  app.use(
+    "/*",
+    honoPaymentMiddleware({
+      requirements,
+      facilitatorUrl:
+        config.facilitatorUrl ?? "https://facilitator.payai.network",
+    }),
+  );
 
   app.get("/api/test", (c) => {
     const payment = c.get("payment");
@@ -78,10 +83,12 @@ export const createHonoServer = async (config: ServerConfig): Promise<TestServer
       success: true,
       message: "Payment verified",
       middleware: "hono",
-      payment: payment ? {
-        payerAddress: payment.payerAddress,
-        version: payment.payload.x402Version,
-      } : null,
+      payment: payment
+        ? {
+            payerAddress: payment.payerAddress,
+            version: payment.payload.x402Version,
+          }
+        : null,
     });
   });
 
@@ -106,11 +113,19 @@ export const createHonoServer = async (config: ServerConfig): Promise<TestServer
   };
 };
 
-export const createExpressServer = async (config: ServerConfig): Promise<TestServer> => {
+export const createExpressServer = async (
+  config: ServerConfig,
+): Promise<TestServer> => {
   const app = express();
 
   const requirements = createRequirements(config);
-  app.use(expressPaymentMiddleware({ requirements, facilitatorUrl: config.facilitatorUrl ?? "https://facilitator.payai.network" }));
+  app.use(
+    expressPaymentMiddleware({
+      requirements,
+      facilitatorUrl:
+        config.facilitatorUrl ?? "https://facilitator.payai.network",
+    }),
+  );
 
   app.get("/api/test", (req: any, res: any) => {
     const payment = (req as any).payment;
@@ -118,10 +133,12 @@ export const createExpressServer = async (config: ServerConfig): Promise<TestSer
       success: true,
       message: "Payment verified",
       middleware: "express",
-      payment: payment ? {
-        payerAddress: payment.payerAddress,
-        version: payment.payload.x402Version,
-      } : null,
+      payment: payment
+        ? {
+            payerAddress: payment.payerAddress,
+            version: payment.payload.x402Version,
+          }
+        : null,
     });
   });
 

@@ -1,15 +1,15 @@
-import { describe, test, expect } from "bun:test";
-import {
-  declareSIWxExtension,
-  parseSIWxHeader,
-  validateSIWxMessage,
-  createSIWxMessage,
-  encodeSIWxHeader,
-  createSIWxPayload,
-  isSIWxExtension,
-  SIGN_IN_WITH_X,
-} from "../src/sign-in-with-x";
+import { describe, expect, test } from "bun:test";
 import type { Address } from "@armory-sh/base";
+import {
+  createSIWxMessage,
+  createSIWxPayload,
+  declareSIWxExtension,
+  encodeSIWxHeader,
+  isSIWxExtension,
+  parseSIWxHeader,
+  SIGN_IN_WITH_X,
+  validateSIWxMessage,
+} from "../src/sign-in-with-x";
 
 describe("[unit|extensions]: Sign-In-With-X Extension", () => {
   describe("[unit|extensions]: declareSIWxExtension", () => {
@@ -18,9 +18,7 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
 
       expect(extension).toBeDefined();
       expect(extension.info).toBeDefined();
-      expect(extension.schema).toBeDefined();
       expect(typeof extension.info).toBe("object");
-      expect(typeof extension.schema).toBe("object");
     });
 
     test("[declareSIWxExtension|success] - creates extension with domain", () => {
@@ -36,7 +34,9 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
         resourceUri: "https://api.example.com/resource",
       });
 
-      expect(extension.info.resourceUri).toBe("https://api.example.com/resource");
+      expect(extension.info.resourceUri).toBe(
+        "https://api.example.com/resource",
+      );
     });
 
     test("[declareSIWxExtension|success] - creates extension with network", () => {
@@ -89,10 +89,15 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
         domain: "example.com",
       };
 
-      const payload = createSIWxPayload(serverInfo, "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as Address);
+      const payload = createSIWxPayload(
+        serverInfo,
+        "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as Address,
+      );
 
       expect(payload.domain).toBe("example.com");
-      expect(payload.address).toBe("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1");
+      expect(payload.address).toBe(
+        "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+      );
       expect(payload.statement).toBeUndefined();
     });
 
@@ -116,7 +121,7 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
           nonce,
           issuedAt: now.toISOString(),
           expirationTime: new Date(now.getTime() + 3600 * 1000).toISOString(),
-        }
+        },
       );
 
       expect(payload.domain).toBe("example.com");
@@ -138,7 +143,9 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
       const message = createSIWxMessage(payload);
 
       expect(message).toContain("example.com wants you to sign in");
-      expect(message).toContain("Address: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1");
+      expect(message).toContain(
+        "Address: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+      );
     });
 
     test("[createSIWxMessage|success] - creates message with statement", () => {
@@ -204,7 +211,9 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
       const decoded = parseSIWxHeader(header);
 
       expect(decoded.domain).toBe("example.com");
-      expect(decoded.address).toBe("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1");
+      expect(decoded.address).toBe(
+        "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+      );
       expect(decoded.statement).toBe("Please sign in");
     });
 
@@ -221,7 +230,10 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
         address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as Address,
       };
 
-      const result = validateSIWxMessage(payload, "https://api.example.com/resource");
+      const result = validateSIWxMessage(
+        payload,
+        "https://api.example.com/resource",
+      );
 
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
@@ -236,7 +248,10 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
         expirationTime: future.toISOString(),
       };
 
-      const result = validateSIWxMessage(payload, "https://api.example.com/resource");
+      const result = validateSIWxMessage(
+        payload,
+        "https://api.example.com/resource",
+      );
 
       expect(result.valid).toBe(true);
     });
@@ -246,7 +261,10 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
         address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1" as Address,
       } as any;
 
-      const result = validateSIWxMessage(payload, "https://api.example.com/resource");
+      const result = validateSIWxMessage(
+        payload,
+        "https://api.example.com/resource",
+      );
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Missing domain");
@@ -258,7 +276,10 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
         address: "not-an-address" as Address,
       };
 
-      const result = validateSIWxMessage(payload, "https://api.example.com/resource");
+      const result = validateSIWxMessage(
+        payload,
+        "https://api.example.com/resource",
+      );
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Invalid or missing address");
@@ -273,7 +294,10 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
         expirationTime: past.toISOString(),
       };
 
-      const result = validateSIWxMessage(payload, "https://api.example.com/resource");
+      const result = validateSIWxMessage(
+        payload,
+        "https://api.example.com/resource",
+      );
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Message has expired");
@@ -286,7 +310,10 @@ describe("[unit|extensions]: Sign-In-With-X Extension", () => {
         resourceUri: "https://different.com/resource",
       };
 
-      const result = validateSIWxMessage(payload, "https://api.example.com/resource");
+      const result = validateSIWxMessage(
+        payload,
+        "https://api.example.com/resource",
+      );
 
       expect(result.valid).toBe(false);
       expect(result.error).toBe("Resource URI mismatch");

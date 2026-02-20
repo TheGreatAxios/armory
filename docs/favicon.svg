@@ -1,6 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Shield shape -->
-  <path d="M32 4C32 4 8 12 8 28C8 44 32 60 32 60C32 60 56 44 56 28C56 12 32 4 32 4Z" fill="#DC2626" stroke="#B91C1C" stroke-width="2"/>
-  <!-- Letter A -->
-  <path d="M20 44L24 32H40L44 44H38L36 38H28L26 44H20ZM29 34H35L32 26L29 34Z" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 40">
+  <defs>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FF8C42"/>
+      <stop offset="100%" style="stop-color:#FF5E00"/>
+    </linearGradient>
+  </defs>
+  <text x="0" y="34" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="800" font-size="36" fill="url(#orangeGrad)" letter-spacing="-1">armory</text>
 </svg>

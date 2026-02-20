@@ -1,6 +1,32 @@
 # @armory-sh/base
 
-Core protocol library for x402. Types, encoding, EIP-712, network configs.
+Core protocol library for x402. Contains all shared types, utilities, and protocol logic used by both client and middleware packages.
+
+---
+
+## Architecture Principle
+
+**Rule**: Any logic that is shared across implementations belongs in `@armory-sh/base`. Client and middleware packages should only contain library-specific integration code.
+
+### What belongs in base:
+- Protocol types (V1, V2)
+- Encoding/decoding functions
+- EIP-712 utilities
+- Network and token configs
+- Base64 utilities
+- Shared error classes (`X402ClientError`, `SigningError`, `PaymentException`)
+- Validation utilities (`resolveNetwork`, `resolveToken`)
+- Protocol utilities (`parseJsonOrBase64`, `generateNonce`)
+
+### What belongs in client packages:
+- Wallet library integration (viem, ethers, web3)
+- Client-specific error classes (e.g., `SignerRequiredError` in ethers)
+- Client factory functions (`createX402Client`)
+- Wallet type definitions and normalization
+
+### What belongs in middleware packages:
+- Framework-specific request/response handling
+- Route matching and integration
 
 ---
 

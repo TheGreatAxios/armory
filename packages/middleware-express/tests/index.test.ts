@@ -2,7 +2,7 @@
  * Express Middleware Tests
  */
 
-import { test, expect, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { extractPayerAddress } from "../src/payment-utils";
 
 describe("[middleware-express]: Express payment-utils", () => {

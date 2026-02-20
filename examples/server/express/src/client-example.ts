@@ -11,8 +11,8 @@ import {
   createTransferWithAuthorization,
   type PaymentPayloadV2,
 } from "@armory/base";
-import { privateKeyToAccount } from "viem/accounts";
 import { toBytes } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 
 // ============================================================================
 // Configuration
@@ -60,7 +60,7 @@ async function createPaymentSignature(requirements: {
     domain: {
       name: "USD Coin",
       version: "2",
-      chainId: parseInt(requirements.chainId.split(":")[1]),
+      chainId: parseInt(requirements.chainId.split(":")[1], 10),
       verifyingContract: requirements.assetId.split(":")[2] as `0x${string}`,
     },
     types: {

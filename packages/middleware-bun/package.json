@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/middleware-bun",
-  "version": "0.3.24",
+  "version": "0.3.31",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "keywords": [
@@ -52,6 +52,8 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsup",
+    "lint": "bun run build",
+    "format": "bun run lint",
     "test": "bun test"
   }
 }

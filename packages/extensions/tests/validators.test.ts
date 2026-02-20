@@ -1,43 +1,33 @@
-import { describe, test, expect } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import { type } from "arktype";
 import {
-  validateExtension,
-  extractExtension,
   createExtension,
-  validateWithSchema,
+  extractExtension,
+  validateExtension,
 } from "../src/validators";
-import type { JSONSchema } from "../src/types";
 
 describe("[unit|extensions]: Validators", () => {
   describe("[unit|extensions]: createExtension", () => {
-    test("[createExtension|success] - creates extension with info and schema", () => {
+    test("[createExtension|success] - creates extension with info", () => {
       const info = { test: "value" };
-      const schema: JSONSchema = {
-        type: "object",
-        properties: {
-          test: { type: "string" },
-        },
-      };
 
-      const extension = createExtension(info, schema);
+      const extension = createExtension(info);
 
       expect(extension.info).toEqual(info);
-      expect(extension.schema).toEqual(schema);
     });
   });
 
   describe("[unit|extensions]: extractExtension", () => {
     test("[extractExtension|success] - extracts existing extension", () => {
       const info = { test: "value" };
-      const schema: JSONSchema = { type: "object" };
       const extensions = {
-        test: { info, schema },
+        test: { info },
       };
 
       const result = extractExtension(extensions, "test");
 
       expect(result).not.toBeNull();
       expect(result?.info).toEqual(info);
-      expect(result?.schema).toEqual(schema);
     });
 
     test("[extractExtension|error] - returns null for undefined extensions", () => {
@@ -53,7 +43,7 @@ describe("[unit|extensions]: Validators", () => {
     });
 
     test("[extractExtension|error] - returns null for missing key", () => {
-      const extensions = { other: { info: {}, schema: {} } };
+      const extensions = { other: { info: {} } };
 
       const result = extractExtension(extensions, "missing");
 
@@ -70,136 +60,46 @@ describe("[unit|extensions]: Validators", () => {
   });
 
   describe("[unit|extensions]: validateExtension", () => {
-    test("[validateExtension|success] - validates data against schema", async () => {
-      const schema: JSONSchema = {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          age: { type: "number" },
-        },
-        required: ["name", "age"],
-      };
+    const PersonType = type({
+      name: "string",
+      age: "number",
+    });
 
-      const extension = createExtension(
-        { name: "Alice", age: 30 },
-        schema
-      );
-
+    test("[validateExtension|success] - validates valid data", () => {
       const validData = { name: "Bob", age: 25 };
-      const result = await validateExtension(extension, validData);
+      const result = validateExtension(PersonType, validData);
 
       expect(result.valid).toBe(true);
       expect(result.errors).toBeUndefined();
     });
 
-    test("[validateExtension|error] - rejects invalid data", async () => {
-      const schema: JSONSchema = {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          age: { type: "number" },
-        },
-        required: ["name", "age"],
-      };
-
-      const extension = createExtension(
-        { name: "Alice", age: 30 },
-        schema
-      );
-
-      const invalidData = { name: 123 as any };
-      const result = await validateExtension(extension, invalidData);
+    test("[validateExtension|error] - rejects invalid data", () => {
+      const invalidData = { name: 123 };
+      const result = validateExtension(PersonType, invalidData);
 
       expect(result.valid).toBe(false);
       expect(result.errors).toBeDefined();
       expect(result.errors?.length).toBeGreaterThan(0);
     });
 
-    test("[validateExtension|success] - handles optional properties", async () => {
-      const schema: JSONSchema = {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          age: { type: "number" },
-        },
-        required: ["name"],
-      };
+    test("[validateExtension|success] - validates with partial types", () => {
+      const OptionalPersonType = type({
+        name: "string",
+        age: "number",
+      }).partial();
 
-      const extension = createExtension({ name: "Alice" }, schema);
-
-      const validData = { name: "Bob" };
-      const result = await validateExtension(extension, validData);
+      const validData = { name: "Alice" };
+      const result = validateExtension(OptionalPersonType, validData);
 
       expect(result.valid).toBe(true);
     });
-  });
 
-  describe("[unit|extensions]: validateWithSchema", () => {
-    test("[validateWithSchema|success] - validates valid data", async () => {
-      const schema: JSONSchema = {
-        type: "object",
-        properties: {
-          email: { type: "string", format: "email" },
-        },
-        required: ["email"],
-      };
-
-      const result = await validateWithSchema(schema, { email: "test@example.com" });
-
-      expect(result.valid).toBe(true);
-      expect(result.errors).toBeUndefined();
-    });
-
-    test("[validateWithSchema|error] - returns errors for invalid data", async () => {
-      const schema: JSONSchema = {
-        type: "object",
-        properties: {
-          count: { type: "number", minimum: 0 },
-        },
-        required: ["count"],
-      };
-
-      const result = await validateWithSchema(schema, { count: -1 });
+    test("[validateExtension|error] - provides helpful error messages", () => {
+      const invalidData = { age: "not a number" };
+      const result = validateExtension(PersonType, invalidData);
 
       expect(result.valid).toBe(false);
       expect(result.errors).toBeDefined();
-      expect(result.errors?.length).toBeGreaterThan(0);
-    });
-
-    test("[validateWithSchema|success] - validates complex schemas", async () => {
-      const schema: JSONSchema = {
-        type: "object",
-        properties: {
-          user: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              address: {
-                type: "object",
-                properties: {
-                  street: { type: "string" },
-                  city: { type: "string" },
-                },
-                required: ["street", "city"],
-              },
-            },
-            required: ["name", "address"],
-          },
-        },
-        required: ["user"],
-      };
-
-      const result = await validateWithSchema(schema, {
-        user: {
-          name: "Alice",
-          address: {
-            street: "123 Main St",
-            city: "San Francisco",
-          },
-        },
-      });
-
-      expect(result.valid).toBe(true);
     });
   });
 });

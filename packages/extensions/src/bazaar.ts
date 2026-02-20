@@ -3,44 +3,28 @@
  * Enables automatic cataloging of x402-enabled resources
  */
 
+import type { PaymentPayloadV2, PaymentRequirementsV2 } from "@armory-sh/base";
+import { type } from "arktype";
 import type {
-  Extension,
-  BazaarExtensionInfo,
   BazaarDiscoveryConfig,
+  BazaarExtensionInfo,
   DiscoveredResource,
-  JSONSchema,
+  Extension,
 } from "./types.js";
-import { createExtension, extractExtension } from "./validators.js";
-import type { PaymentRequirementsV2, PaymentPayloadV2 } from "@armory-sh/base";
 import { BAZAAR } from "./types.js";
+import { createExtension, extractExtension } from "./validators.js";
 
-const BAZAAR_SCHEMA: JSONSchema = {
-  type: "object",
-  properties: {
-    input: {
-      description: "Expected input schema for the resource",
-    },
-    inputSchema: {
-      description: "JSON Schema for input validation",
-      type: "object",
-    },
-    output: {
-      type: "object",
-      properties: {
-        example: {
-          description: "Example output for the resource",
-        },
-        schema: {
-          description: "JSON Schema for output validation",
-          type: "object",
-        },
-      },
-    },
-  },
-};
+const BazaarInfoType = type({
+  input: "unknown",
+  inputSchema: "unknown",
+  output: type({
+    example: "unknown",
+    schema: "unknown",
+  }).optional(),
+});
 
 export function declareDiscoveryExtension(
-  config: BazaarDiscoveryConfig = {}
+  config: BazaarDiscoveryConfig = {},
 ): Extension<BazaarExtensionInfo> {
   const info: BazaarExtensionInfo = {};
 
@@ -56,16 +40,19 @@ export function declareDiscoveryExtension(
     info.output = config.output;
   }
 
-  return createExtension(info, BAZAAR_SCHEMA);
+  return createExtension(info);
 }
 
 export function extractDiscoveryInfo(
   paymentPayload: PaymentPayloadV2,
   paymentRequirements: PaymentRequirementsV2,
-  validate = true
+  _validate = true,
 ): DiscoveredResource | null {
   const extensions = paymentPayload.extensions;
-  const bazaarExtension = extractExtension<BazaarExtensionInfo>(extensions, BAZAAR);
+  const bazaarExtension = extractExtension<BazaarExtensionInfo>(
+    extensions,
+    BAZAAR,
+  );
 
   if (!bazaarExtension) {
     return null;
@@ -82,9 +69,10 @@ export function extractDiscoveryInfo(
   };
 }
 
-export function validateDiscoveryExtension(
-  extension: unknown
-): { valid: boolean; errors?: string[] } {
+export function validateDiscoveryExtension(extension: unknown): {
+  valid: boolean;
+  errors?: string[];
+} {
   if (!extension || typeof extension !== "object") {
     return { valid: false, errors: ["Extension must be an object"] };
   }
@@ -95,28 +83,24 @@ export function validateDiscoveryExtension(
     return { valid: false, errors: ["Extension must have an 'info' field"] };
   }
 
-  if (!("schema" in ext) || typeof ext.schema !== "object") {
-    return { valid: false, errors: ["Extension must have a 'schema' field"] };
-  }
-
   return { valid: true };
 }
 
 export function createDiscoveryConfig(
-  config: BazaarDiscoveryConfig
+  config: BazaarDiscoveryConfig,
 ): BazaarDiscoveryConfig {
   return config;
 }
 
 export function isDiscoveryExtension(
-  extension: unknown
+  extension: unknown,
 ): extension is Extension<BazaarExtensionInfo> {
   if (!extension || typeof extension !== "object") {
     return false;
   }
 
   const ext = extension as Record<string, unknown>;
-  return "info" in ext && "schema" in ext;
+  return "info" in ext;
 }
 
-export { BAZAAR };
+export { BAZAAR, BazaarInfoType };

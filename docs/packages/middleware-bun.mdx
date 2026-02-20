@@ -3,11 +3,22 @@ description: Payment middleware for Bun servers
 title: "@armory-sh/middleware-bun"
 ---
 
+
 Accept crypto payments in your Bun HTTP server with a single function call.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-bun
+
+# yarn
+yarn add @armory-sh/middleware-bun
+
+# pnpm
+pnpm add @armory-sh/middleware-bun
+
+# bun
 bun add @armory-sh/middleware-bun
 ```
 
@@ -77,19 +88,9 @@ const middleware = createBunMiddleware({
 | `settle` | Verify and settle on-chain before responding |
 | `async` | Return immediately, settle in background |
 
-### Facilitator
+### Verification Backend
 
-For production use, specify a facilitator for verification:
-
-```typescript
-const middleware = createBunMiddleware({
-  payTo: '0x...',
-  amount: '1.0',
-  facilitator: {
-    url: 'https://facilitator.armory.sh'
-  }
-});
-```
+Use your deployed verification backend in production.
 
 ---
 
@@ -160,3 +161,65 @@ The `amount` can be specified as a human-readable string like `"1.0"` for 1 toke
 Always validate the `payTo` address matches your wallet. The middleware does not check if the address is valid or belongs to you.
 </Warning>
 
+## Advanced Mix-and-Match Config (Current API)
+
+Use `paymentMiddleware` for per-token/per-network facilitator routing and extension-aware challenge headers:
+
+```typescript
+import { paymentMiddleware } from "@armory-sh/middleware-bun";
+
+const middleware = paymentMiddleware({
+  payTo: "0x1234567890123456789012345678901234567890",
+  chains: ["base", "skale-base"],
+  tokens: ["usdc", "usdt", "weth", "wbtc"],
+  amount: "1.0",
+  facilitatorUrl: "https://fallback-facilitator.example",
+  facilitatorUrlByChain: {
+    base: "https://payai.example",
+  },
+  facilitatorUrlByToken: {
+    base: { usdc: "https://payai.example" },
+    "skale-base": {
+      usdc: "https://payai.example",
+      usdt: "https://kobaru.example",
+      weth: "https://kobaru.example",
+      wbtc: "https://kobaru.example",
+    },
+  },
+  extensions: {
+    bazaar: { info: { input: { sku: "pro-plan" } }, schema: { type: "object" } },
+    "sign-in-with-x": { info: { domain: "api.example.com" }, schema: { type: "object" } },
+  },
+});
+```
+
+For fully custom amount-per-combination behavior, pass explicit `requirements`:
+
+```typescript
+paymentMiddleware({
+  requirements: [
+    {
+      scheme: "exact",
+      network: "eip155:8453",
+      amount: "1000000",
+      asset: "0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913",
+      payTo: "0x1234567890123456789012345678901234567890",
+      maxTimeoutSeconds: 300,
+    },
+    {
+      scheme: "exact",
+      network: "eip155:1187947933",
+      amount: "2500000",
+      asset: "0x5f9beea3f6f22be1f4f8efc120f5095f58dbb8a2",
+      payTo: "0x1234567890123456789012345678901234567890",
+      maxTimeoutSeconds: 300,
+    },
+  ],
+  facilitatorUrlByToken: {
+    base: { usdc: "https://payai.example" },
+    "skale-base": { usdt: "https://kobaru.example" },
+  },
+});
+```
+
+Unsupported extension keys are auto-ignored (fail-open) per facilitator `/supported` capability response.

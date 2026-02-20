@@ -1,8 +1,24 @@
-import type { X402PaymentPayload, X402SettlementResponse, X402Network, RouteValidationError, PaymentRequirements } from "@armory-sh/base";
-import { decodePayloadHeader, extractPayerAddress, verifyPayment, settlePayment, createPaymentRequiredHeaders, createSettlementHeaders, PAYMENT_SIGNATURE_HEADER, matchRoute, validateRouteConfig } from "@armory-sh/base";
-import type { MiddlewareConfig } from "./types";
+import type {
+  PaymentRequirements,
+  RouteValidationError,
+  X402Network,
+  X402PaymentPayload,
+  X402SettlementResponse,
+} from "@armory-sh/base";
+import {
+  createPaymentRequiredHeaders,
+  createSettlementHeaders,
+  decodePayloadHeader,
+  extractPayerAddress,
+  matchRoute,
+  PAYMENT_SIGNATURE_HEADER,
+  settlePayment,
+  validateRouteConfig,
+  verifyPayment,
+} from "@armory-sh/base";
 import { createPaymentRequirements } from "./core";
 import type { BunHandler } from "./index";
+import type { MiddlewareConfig } from "./types";
 
 export type BunMiddleware = (request: Request) => Promise<Response | null>;
 
@@ -24,7 +40,7 @@ interface ResolvedRouteConfig {
 }
 
 const resolveRouteConfig = (
-  config: RouteAwareBunMiddlewareConfig
+  config: RouteAwareBunMiddlewareConfig,
 ): { routes: ResolvedRouteConfig[]; error?: RouteValidationError } => {
   const validationError = validateRouteConfig(config);
   if (validationError) {
@@ -52,14 +68,18 @@ const resolveRouteConfig = (
   return { routes: resolvedRoutes };
 };
 
-const parsePaymentHeader = async (request: Request, requirements: PaymentRequirements): Promise<ParsedPayment | null> => {
+const parsePaymentHeader = async (
+  request: Request,
+  requirements: PaymentRequirements,
+): Promise<ParsedPayment | null> => {
   const paymentSig = request.headers.get(PAYMENT_SIGNATURE_HEADER);
   if (paymentSig) {
     try {
-      const payload = decodePayloadHeader(paymentSig, { accepted: requirements });
+      const payload = decodePayloadHeader(paymentSig, {
+        accepted: requirements,
+      });
       return { payload, payerAddress: extractPayerAddress(payload) };
-    } catch {
-    }
+    } catch {}
   }
 
   return null;
@@ -69,7 +89,7 @@ const errorResponse = (
   error: string,
   status: number,
   headers?: Record<string, string>,
-  accepts?: unknown[]
+  accepts?: unknown[],
 ): Response =>
   new Response(JSON.stringify({ error, accepts }), {
     status,
@@ -78,7 +98,7 @@ const errorResponse = (
 
 const createSettlementResponse = (
   success: boolean,
-  txHash?: string
+  txHash?: string,
 ): X402SettlementResponse => ({
   success,
   transaction: txHash ?? "",
@@ -88,7 +108,7 @@ const createSettlementResponse = (
 
 const successResponse = (
   payerAddress: string,
-  settlement?: X402SettlementResponse
+  settlement?: X402SettlementResponse,
 ): Response => {
   const isSuccess = settlement?.success;
   const txHash = settlement?.transaction;
@@ -113,7 +133,7 @@ const successResponse = (
 
 const appendSettlementHeaders = (
   response: Response,
-  settlement: X402SettlementResponse
+  settlement: X402SettlementResponse,
 ): Response => {
   const headers = new Headers(response.headers);
   const settlementHeaders = createSettlementHeaders(settlement);
@@ -130,47 +150,74 @@ const appendSettlementHeaders = (
 
 export const createRouteAwareBunMiddleware = (
   config: RouteAwareBunMiddlewareConfig,
-  handler?: BunHandler
+  handler?: BunHandler,
 ): BunMiddleware | ((request: Request) => Promise<Response>) => {
-  const { routes: resolvedRoutes, error: configError } = resolveRouteConfig(config);
+  const { routes: resolvedRoutes, error: configError } =
+    resolveRouteConfig(config);
 
   const middleware = async (request: Request): Promise<Response | null> => {
     if (configError) {
-      return errorResponse(`Payment middleware configuration error: ${configError.message}`, 500);
+      return errorResponse(
+        `Payment middleware configuration error: ${configError.message}`,
+        500,
+      );
     }
 
     const path = new URL(request.url).pathname;
-    const matchedRoute = resolvedRoutes.find((r) => matchRoute(r.pattern, path));
+    const matchedRoute = resolvedRoutes.find((r) =>
+      matchRoute(r.pattern, path),
+    );
 
     if (!matchedRoute) {
       return null;
     }
 
     const routeConfig = matchedRoute.config;
-    const { facilitator, settlementMode = "settle", waitForSettlement = false } = routeConfig;
+    const {
+      facilitator,
+      settlementMode = "settle",
+      waitForSettlement = false,
+    } = routeConfig;
     const requirements = createPaymentRequirements(routeConfig);
 
     const paymentResult = await parsePaymentHeader(request, requirements);
 
     if (!paymentResult) {
-      return errorResponse("Payment required", 402, createPaymentRequiredHeaders(requirements), [requirements]);
+      return errorResponse(
+        "Payment required",
+        402,
+        createPaymentRequiredHeaders(requirements),
+        [requirements],
+      );
     }
 
     const { payerAddress, payload } = paymentResult;
 
     if (facilitator) {
-      const verifyResult = await verifyPayment(payload, requirements, { url: facilitator.url });
+      const verifyResult = await verifyPayment(payload, requirements, {
+        url: facilitator.url,
+      });
       if (!verifyResult.isValid) {
-        return errorResponse(`Payment verification failed: ${verifyResult.invalidReason}`, 402, createPaymentRequiredHeaders(requirements), [requirements]);
+        return errorResponse(
+          `Payment verification failed: ${verifyResult.invalidReason}`,
+          402,
+          createPaymentRequiredHeaders(requirements),
+          [requirements],
+        );
       }
     }
 
     if (!handler) {
       if (settlementMode === "settle" && facilitator) {
         const settle = async () => {
-          const result = await settlePayment(payload, requirements, { url: facilitator.url });
+          const result = await settlePayment(payload, requirements, {
+            url: facilitator.url,
+          });
           return result.success
-            ? successResponse(payerAddress, createSettlementResponse(true, result.transaction))
+            ? successResponse(
+                payerAddress,
+                createSettlementResponse(true, result.transaction),
+              )
             : errorResponse(result.errorReason ?? "Settlement failed", 400);
         };
 
@@ -189,9 +236,14 @@ export const createRouteAwareBunMiddleware = (
       return response;
     }
 
-    const settleResult = await settlePayment(payload, requirements, { url: facilitator.url });
+    const settleResult = await settlePayment(payload, requirements, {
+      url: facilitator.url,
+    });
     if (!settleResult.success) {
-      return errorResponse(settleResult.errorReason ?? "Settlement failed", 502);
+      return errorResponse(
+        settleResult.errorReason ?? "Settlement failed",
+        502,
+      );
     }
 
     const settlement = createSettlementResponse(true, settleResult.transaction);

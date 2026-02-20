@@ -2,13 +2,22 @@
 title: "@armory-sh/middleware-next"
 ---
 
-# @armory-sh/middleware-next
 
 x402 payment middleware for Next.js App Router.
 
 ## Installation
 
 ```bash
+# npm
+npm install @armory-sh/middleware-next
+
+# yarn
+yarn add @armory-sh/middleware-next
+
+# pnpm
+pnpm add @armory-sh/middleware-next
+
+# bun
 bun add @armory-sh/middleware-next
 ```
 
@@ -17,7 +26,7 @@ bun add @armory-sh/middleware-next
 - Per-route payment configuration
 - Route pattern matching (exact, wildcard, parameterized)
 - Resource server for payment scheme management
-- Built-in facilitator integration
+- Built-in verification integration
 - Full TypeScript support
 
 ## Quick Start
@@ -26,13 +35,13 @@ bun add @armory-sh/middleware-next
 // middleware.ts
 import { paymentProxy, x402ResourceServer } from "@armory-sh/middleware-next";
 
-const facilitatorClient = {
+const verificationClient = {
   async verify(headers: Headers) {
     return { success: true, payerAddress: "0x..." };
   },
 };
 
-const resourceServer = new x402ResourceServer(facilitatorClient);
+const resourceServer = new x402ResourceServer(verificationClient);
 
 export const proxy = paymentProxy(
   {
@@ -71,12 +80,11 @@ Registers and manages payment schemes.
 - `register(chainId, scheme)`: Register a payment scheme
 - `getRequirements(chainId)`: Get requirements for a chain
 - `getAllRequirements()`: Get all registered requirements
-- `getFacilitator()`: Get the facilitator client
 
 ### Types
 
 ```typescript
-interface HTTPFacilitatorClient {
+interface VerificationClient {
   verify(headers: Headers): Promise<{
     success: boolean;
     payerAddress?: string;
@@ -116,3 +124,66 @@ Supports three types of route patterns:
 ## Examples
 
 See the [Next.js Middleware guide](../../accept-payments/next) for complete examples.
+
+## Advanced Mix-and-Match Config (Current API)
+
+If you are using `paymentMiddleware` directly, you can route by chain/token/facilitator and attach extensions:
+
+```typescript
+import { paymentMiddleware } from "@armory-sh/middleware-next";
+
+const middleware = paymentMiddleware({
+  payTo: "0x1234567890123456789012345678901234567890",
+  chains: ["base", "skale-base"],
+  tokens: ["usdc", "usdt", "weth", "wbtc"],
+  amount: "1.0",
+  facilitatorUrl: "https://fallback-facilitator.example",
+  facilitatorUrlByChain: {
+    base: "https://payai.example",
+  },
+  facilitatorUrlByToken: {
+    base: { usdc: "https://payai.example" },
+    "skale-base": {
+      usdc: "https://payai.example",
+      usdt: "https://kobaru.example",
+      weth: "https://kobaru.example",
+      wbtc: "https://kobaru.example",
+    },
+  },
+  extensions: {
+    bazaar: { info: { input: { sku: "pro-plan" } }, schema: { type: "object" } },
+    "sign-in-with-x": { info: { domain: "api.example.com" }, schema: { type: "object" } },
+  },
+});
+```
+
+For mixed amounts per route/combination, use explicit `requirements` arrays:
+
+```typescript
+paymentMiddleware({
+  requirements: [
+    {
+      scheme: "exact",
+      network: "eip155:8453",
+      amount: "1000000",
+      asset: "0x833589fCD6eDb6E08f4c7C32D4f71B54bdA02913",
+      payTo: "0x1234567890123456789012345678901234567890",
+      maxTimeoutSeconds: 300,
+    },
+    {
+      scheme: "exact",
+      network: "eip155:1187947933",
+      amount: "2500000",
+      asset: "0x5f9beea3f6f22be1f4f8efc120f5095f58dbb8a2",
+      payTo: "0x1234567890123456789012345678901234567890",
+      maxTimeoutSeconds: 300,
+    },
+  ],
+  facilitatorUrlByToken: {
+    base: { usdc: "https://payai.example" },
+    "skale-base": { usdt: "https://kobaru.example" },
+  },
+});
+```
+
+Unsupported extension keys are fail-open filtered out per facilitator capability response.

@@ -1,0 +1,272 @@
+---
+title: "@armory-sh/middleware-hono"
+description: "Release history for @armory-sh/middleware-hono"
+---
+
+# @armory-sh/middleware-hono
+
+Full package changelog.
+
+
+## Unreleased
+
+### Patch Changes
+
+- Added deterministic facilitator routing precedence for mix-and-match network/token/facilitator setups.
+- Fixed per-token facilitator resolution on shared chains to avoid wrong facilitator selection.
+- Added facilitator capability-based extension filtering in payment challenge headers (fail-open: unsupported keys are auto-ignored).
+- Added facilitator-aware pricing selection for middleware config flows (`network + token + facilitator` before fallback).
+
+
+## Version 0.3.28
+
+### Patch Changes
+
+- 3ba536a: Streamline Client, Multitoken Middleware
+- Improve dynamic requirement handling across middleware and clients, and surface detailed payment verification errors.
+
+  - Fix requirement selection/verification to use the accepted requirement dynamically (not first-item assumptions)
+  - Support explicit `requirements` config paths consistently in middleware wrappers
+  - Surface server verification details (for example `insufficient_funds`) in client retry failure errors
+  - Add regression tests for non-primary requirement selection and client selector behavior
+  - Clarify hooks vs extensions semantics in docs/READMEs and normalize docs page titles
+
+- e90cb54: Update Package Dodcs
+- 261eed7: Multichain Validation
+- e03c05c: Add Client Hooks, Fix Test Suite
+- Updated dependencies [993834f]
+- Updated dependencies [3ba536a]
+- Updated dependencies
+- Updated dependencies [e90cb54]
+- Updated dependencies [261eed7]
+- Updated dependencies [e03c05c]
+  - @armory-sh/base@0.2.28
+  - @armory-sh/extensions@0.1.9
+
+## Version 0.3.25
+
+### Patch Changes
+
+- 281eeb8: Fix Versions
+- Updated dependencies [281eeb8]
+  - @armory-sh/extensions@0.1.6
+  - @armory-sh/base@0.2.25
+
+## Version 0.3.24
+
+### Patch Changes
+
+- 4033813: Package Cleanup, Minor Docs
+- Updated dependencies [4033813]
+  - @armory-sh/extensions@0.1.5
+  - @armory-sh/base@0.2.24
+
+## Version 0.3.23
+
+### Patch Changes
+
+- 99b2ede: Fix USDC Names
+- e6a88ff: Fix Dependency Resolution
+- 6697eec: Fix Nonce Type
+- 9ba2f62: Fix
+- a938742: Fixing Amount
+- Updated dependencies [99b2ede]
+- Updated dependencies [e6a88ff]
+- Updated dependencies [6697eec]
+- Updated dependencies [9ba2f62]
+- Updated dependencies [a938742]
+  - @armory-sh/extensions@0.1.4
+  - @armory-sh/base@0.2.23
+
+## Version 0.3.22
+
+### Patch Changes
+
+- Fix Amount
+- Updated dependencies
+  - @armory-sh/extensions@0.1.3
+  - @armory-sh/base@0.2.22
+
+## Version 0.3.21
+
+### Patch Changes
+
+- Clenaup Flows
+- Updated dependencies
+  - @armory-sh/extensions@0.1.2
+  - @armory-sh/base@0.2.21
+
+## Version 0.3.20
+
+### Patch Changes
+
+- Next.js Middleware, Extensiosn Package, Client Robustness, Route Filtering Added
+- Updated dependencies
+  - @armory-sh/extensions@0.1.1
+  - @armory-sh/base@0.2.20
+
+## Version 0.3.19
+
+### Patch Changes
+
+- Add Simple Middleware Back
+- Updated dependencies
+  - @armory-sh/base@0.2.19
+
+## Version 0.3.18
+
+### Patch Changes
+
+- ALpah Test
+- Updated dependencies
+  - @armory-sh/base@0.2.18
+
+## Version 0.3.17
+
+### Patch Changes
+
+- Test Link
+- Updated dependencies
+  - @armory-sh/base@0.2.17
+
+## Version 0.3.16
+
+### Patch Changes
+
+- Completed E2E Flows w/ v2
+- Updated dependencies
+  - @armory-sh/base@0.2.16
+
+## Version 0.3.15
+
+### Patch Changes
+
+- v2 Only, Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.14
+
+## Version 0.3.14
+
+### Patch Changes
+
+- Add Deep Test Suite, Enhance Compatibility
+- Updated dependencies
+  - @armory-sh/base@0.2.13
+
+## Version 0.3.13
+
+### Patch Changes
+
+- Fix Structure
+
+## Version 0.3.12
+
+### Patch Changes
+
+- d5977fa: Fix Compatiblity
+
+## Version 0.3.11
+
+### Patch Changes
+
+- :wq!
+- Updated dependencies
+  - @armory-sh/base@0.2.12
+  - @armory-sh/facilitator@0.2.12
+
+## Version 0.3.11
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.11
+  - @armory-sh/facilitator@0.2.11
+
+## Version 0.3.10
+
+### Patch Changes
+
+- 0b7c70b: Automated release
+- 77ddc6c: Automated release
+- Updated dependencies [0b7c70b]
+- Updated dependencies [77ddc6c]
+- Updated dependencies [0e32676]
+- Updated dependencies
+  - @armory-sh/base@0.2.10
+  - @armory-sh/facilitator@0.2.10
+
+## Version 0.3.9
+
+### Patch Changes
+
+- Automated release
+
+## Version 0.3.8
+
+### Patch Changes
+
+- Automated release
+
+## Version 0.3.7
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.9
+  - @armory-sh/facilitator@0.2.9
+
+## Version 0.3.6
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.8
+  - @armory-sh/facilitator@0.2.8
+
+## Version 0.3.5
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.7
+  - @armory-sh/facilitator@0.2.7
+
+## Version 0.3.4
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.6
+  - @armory-sh/facilitator@0.2.6
+
+## Version 0.3.3
+
+### Patch Changes
+
+- Automated release
+- Updated dependencies
+  - @armory-sh/base@0.2.5
+  - @armory-sh/facilitator@0.2.5
+
+## Version 0.3.2
+
+### Patch Changes
+
+- Cleanup
+- Updated dependencies
+  - @armory-sh/base@0.2.4
+  - @armory-sh/facilitator@0.2.4
+
+## Version 0.3.1
+
+### Patch Changes
+
+- Cleanup Code, Add Bespoke Middleware
+- Updated dependencies
+  - @armory-sh/base@0.2.3
+  - @armory-sh/facilitator@0.2.3

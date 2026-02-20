@@ -17,6 +17,7 @@ TypeScript libraries for the X-402 payment protocol (EIP-3009). Enable server-to
 ```bash
 # For clients (making payments)
 bun add @armory-sh/client-viem
+bun add @armory-sh/client-hooks # optional preference/logger hooks
 
 # For merchants (accepting payments)
 bun add @armory-sh/middleware-hono  # or middleware-express, middleware-bun, etc.
@@ -177,6 +178,7 @@ Pre-configured tokens include USDC, EURC, USDT, WBTC, and WETH across all suppor
 | **@armory-sh/client-viem** | Viem v2 payment client |
 | **@armory-sh/client-ethers** | Ethers.js v6 payment client |
 | **@armory-sh/client-web3** | Web3.js payment client |
+| **@armory-sh/client-hooks** | Optional hook presets: chain/token/cheapest/logger |
 | **@armory-sh/extensions** | Protocol extensions (SIWX, payment ID) |
 | **armory-cli** | Scaffold tool for x402 payment-enabled apps |
 
@@ -206,9 +208,11 @@ await armoryPay(wallet, url, 'ethereum', 'usdc');
 
 ## Protocol Reference
 
-### X-402 Protocol
+### x402 Protocol v2
 
-- **v2**: `PAYMENT-SIGNATURE` header (CAIP-2/CAIP-10 compliant)
+- 402 challenge is delivered via `PAYMENT-REQUIRED`
+- Client payment payload is sent via `PAYMENT-SIGNATURE`
+- Settlement response is returned via `PAYMENT-RESPONSE`
 
 ### EIP-3009 transferWithAuthorization
 
@@ -228,9 +232,9 @@ interface TransferWithAuthorization {
 
 ### Headers
 
-| Payment Header | Response Header |
-|---------------|-----------------|
-| `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
+| Challenge Header | Payment Header | Settlement Header |
+|------------------|----------------|-------------------|
+| `PAYMENT-REQUIRED` | `PAYMENT-SIGNATURE` | `PAYMENT-RESPONSE` |
 
 ## Key Technologies
 

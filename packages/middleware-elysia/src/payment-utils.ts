@@ -3,6 +3,8 @@ import { decodePayloadHeader } from "@armory-sh/base";
 
 export { extractPayerAddress } from "@armory-sh/base";
 
-export function decodePayload(headerValue: string): { payload: X402PaymentPayload } {
+export function decodePayload(headerValue: string): {
+  payload: X402PaymentPayload;
+} {
   return { payload: decodePayloadHeader(headerValue) };
 }
