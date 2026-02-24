@@ -2,10 +2,10 @@ import type { Address, CAIP2ChainId, CAIPAssetId } from "@armory-sh/base";
 
 export interface FacilitatorConfig {
   url: string;
-  createHeaders?: () => Record<string, string>;
+  headers?: Record<string, string>;
 }
 
-export type SettlementMode = "verify" | "settle" | "async";
+export type SettlementMode = "verify" | "settle";
 export type PayToAddress = Address | CAIP2ChainId | CAIPAssetId;
 
 export interface MiddlewareConfig {

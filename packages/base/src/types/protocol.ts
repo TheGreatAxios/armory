@@ -30,7 +30,7 @@ export type PaymentRequired = PaymentRequiredV2;
  */
 export interface FacilitatorConfig {
   url: string;
-  createHeaders?: () => Record<string, string>;
+  headers?: Record<string, string>;
 }
 
 /**
@@ -54,9 +54,9 @@ export interface FacilitatorSettleResult {
 }
 
 /**
- * Settlement mode - verify only, settle only, or both
+ * Settlement mode - verify only or settle
  */
-export type SettlementMode = "verify" | "settle" | "async";
+export type SettlementMode = "verify" | "settle";
 
 /**
  * Payment destination - address, CAIP-2 chain ID, or CAIP asset ID

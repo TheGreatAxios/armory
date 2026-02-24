@@ -1,3 +1,6 @@
+import type { CustomToken } from "./types/networks";
+import { getCustomToken } from "./types/networks";
+
 export type TypedDataDomain = {
   name?: string;
   version?: string;
@@ -42,20 +45,26 @@ export const EIP712_TYPES = {
   ] as const,
 } as const satisfies EIP712Types;
 
-export const USDC_DOMAIN = {
-  NAME: "USD Coin",
-  VERSION: "2",
-} as const;
-
 export const createEIP712Domain = (
   chainId: number,
   contractAddress: `0x${string}`,
-): EIP712Domain => ({
-  name: USDC_DOMAIN.NAME,
-  version: USDC_DOMAIN.VERSION,
-  chainId,
-  verifyingContract: contractAddress,
-});
+): EIP712Domain => {
+  const token = getCustomToken(chainId, contractAddress);
+
+  if (!token) {
+    throw new Error(
+      `Token not found in registry: chainId=${chainId}, contractAddress=${contractAddress}. ` +
+      `Please register the token using registerToken() before use.`
+    );
+  }
+
+  return {
+    name: token.name,
+    version: token.version,
+    chainId,
+    verifyingContract: contractAddress,
+  };
+};
 
 export const createTransferWithAuthorization = (
   params: Omit<

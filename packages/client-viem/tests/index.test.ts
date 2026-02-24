@@ -2,13 +2,24 @@ import { expect, mock, test } from "bun:test";
 import {
   decodePaymentV2,
   PaymentException as PaymentError,
+  registerToken,
   SigningError,
+  TOKENS,
   V2_HEADERS,
 } from "@armory-sh/base";
 import type { ClientHook } from "@armory-sh/base/types/hooks";
 import type { Account } from "viem";
 import { createX402Client, createX402Transport } from "../src/client";
 import type { X402Wallet } from "../src/types";
+
+// Register all standard tokens for tests
+Object.values(TOKENS).forEach((token) => {
+  try {
+    registerToken(token);
+  } catch {
+    // Token already registered, ignore
+  }
+});
 
 const mockAccount: Account = {
   address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
@@ -23,6 +34,7 @@ const mockWallet: X402Wallet = {
 };
 
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 const PAYEE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 function createMockPaymentRequired(
@@ -903,7 +915,7 @@ test("[unit|client-viem] - [fetch|success] - retries accepts options without sel
             payTo: PAYEE,
             amount: "1000000",
             network: "eip155:84532",
-            asset: USDC_BASE,
+            asset: USDC_BASE_SEPOLIA,
             maxTimeoutSeconds: 300,
           },
           {
@@ -988,7 +1000,7 @@ test("[unit|client-viem] - [fetch|error] - selector preference overrides fallbac
             payTo: PAYEE,
             amount: "1000000",
             network: "eip155:84532",
-            asset: USDC_BASE,
+            asset: USDC_BASE_SEPOLIA,
             maxTimeoutSeconds: 300,
           },
           {

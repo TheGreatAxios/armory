@@ -323,7 +323,7 @@ export const TEST_REQUIREMENTS: PaymentRequirements = {
   scheme: "exact",
   network: "eip155:84532",
   amount: "1000000",
-  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  asset: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
   payTo: "0x1234567890123456789012345678901234567890",
   maxTimeoutSeconds: 300,
 };

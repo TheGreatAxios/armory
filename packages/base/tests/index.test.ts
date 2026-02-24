@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   createEIP712Domain,
   createTransferWithAuthorization,
+  decodeX402Response,
   EIP712_TYPES,
+  encodeX402Response,
   getNetworkByChainId,
   getNetworkConfig,
   isAddress,
@@ -10,10 +12,12 @@ import {
   isCAIPAssetId,
   isPaymentPayload,
   isPaymentPayloadV2,
+  registerToken,
   type PaymentPayloadV2,
   type PaymentRequirementsV2,
   V2_HEADERS,
   validateTransferWithAuthorization,
+  type X402Response,
 } from "../src/index";
 
 const DEFAULT_REQUIREMENTS: PaymentRequirementsV2 = {
@@ -175,7 +179,17 @@ describe("[unit|base]: Base Package Tests", () => {
   });
 
   describe("[unit|base]: EIP-712", () => {
-    test("[createEIP712Domain|success] - creates valid domain", () => {
+    test("[createEIP712Domain|success] - creates valid domain from registered token", async () => {
+      // Register mainnet USDC for this test
+      registerToken({
+        symbol: "USDC",
+        name: "USD Coin",
+        version: "2",
+        chainId: 1,
+        contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" as const,
+        decimals: 6,
+      });
+
       const domain = createEIP712Domain(
         1,
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -187,6 +201,15 @@ describe("[unit|base]: Base Package Tests", () => {
       expect(domain.verifyingContract).toBe(
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
       );
+    });
+
+    test("[createEIP712Domain|error] - throws for unregistered token", () => {
+      expect(() => {
+        createEIP712Domain(
+          999,
+          "0x0000000000000000000000000000000000000001" as const,
+        );
+      }).toThrow();
     });
 
     test("[EIP712_TYPES|success] - types constant is correct", () => {
@@ -477,6 +500,48 @@ describe("[unit|base]: Base Package Tests", () => {
       expect(isAddress("0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0 ")).toBe(
         false,
       );
+    });
+  });
+
+  describe("[unit|base]: X402Response Type", () => {
+    test("[encodeX402Response|success] - encodes response with resource and extensions", () => {
+      const response: X402Response = {
+        x402Version: 2,
+        error: "Payment required",
+        accepts: [DEFAULT_REQUIREMENTS],
+        resource: {
+          url: "https://example.com/api/test",
+          description: "Test resource",
+          mimeType: "application/json",
+        },
+        extensions: { customField: "value" },
+      };
+
+      const encoded = encodeX402Response(response);
+      const decoded = decodeX402Response(encoded);
+
+      expect(decoded.x402Version).toBe(2);
+      expect(decoded.error).toBe("Payment required");
+      expect(decoded.accepts).toHaveLength(1);
+      expect(decoded.resource?.url).toBe("https://example.com/api/test");
+      expect(decoded.resource?.description).toBe("Test resource");
+      expect(decoded.resource?.mimeType).toBe("application/json");
+      expect(decoded.extensions?.customField).toBe("value");
+    });
+
+    test("[encodeX402Response|success] - encodes response without optional fields", () => {
+      const response: X402Response = {
+        x402Version: 2,
+        accepts: [DEFAULT_REQUIREMENTS],
+      };
+
+      const encoded = encodeX402Response(response);
+      const decoded = decodeX402Response(encoded);
+
+      expect(decoded.x402Version).toBe(2);
+      expect(decoded.error).toBeUndefined();
+      expect(decoded.resource).toBeUndefined();
+      expect(decoded.extensions).toBeUndefined();
     });
   });
 });

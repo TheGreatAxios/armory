@@ -1,6 +1,6 @@
 {
   "name": "@armory-sh/client-hooks",
-  "version": "0.1.6",
+  "version": "0.1.9",
   "license": "MIT",
   "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
   "type": "module",
