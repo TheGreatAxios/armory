@@ -226,7 +226,6 @@
       "name": "@armory-sh/cdp-auth",
       "version": "0.1.0",
       "dependencies": {
-        "@armory-sh/base": "workspace:*",
         "jose": "^5.10.0",
       },
       "devDependencies": {

@@ -3,43 +3,15 @@ import { generateCdpJwt } from "../src/jwt";
 import {
   CDP_FACILITATOR_HOST,
   CDP_FACILITATOR_URL,
-  cdpSettle,
-  cdpVerify,
-  createCdpFacilitatorConfig,
+  generateCdpHeaders,
 } from "../src/facilitator";
-import type { CdpCredentials } from "../src/facilitator";
-import type { PaymentPayload, PaymentRequirements } from "@armory-sh/base";
+import type { GenerateCdpHeadersOptions } from "../src/facilitator";
 
 const TEST_EC_KEY = `-----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgmxCVwnY5uN6nLq52
 /XwFVRmBnJrqX19RSpiRLruzdumhRANCAAR5/93hawCsGN+zYMulKem7Sw+z7QtJ
 NdvivrgDXHsrKdqNcNVF69n0mpIAbJHSWJMWv4l+df7gqVjc+unqTAiD
 -----END PRIVATE KEY-----`;
-
-const MOCK_PAYMENT_REQUIREMENTS: PaymentRequirements = {
-  scheme: "exact",
-  network: "eip155:8453",
-  amount: "1000000",
-  asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  payTo: "0x1234567890123456789012345678901234567890",
-  maxTimeoutSeconds: 300,
-};
-
-const MOCK_PAYMENT_PAYLOAD: PaymentPayload = {
-  x402Version: 2,
-  accepted: MOCK_PAYMENT_REQUIREMENTS,
-  payload: {
-    signature: `0x${"a".repeat(130)}`,
-    authorization: {
-      from: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
-      to: "0x1234567890123456789012345678901234567890",
-      value: "1000000",
-      validAfter: "0",
-      validBefore: "9999999999",
-      nonce: `0x${"0".repeat(64)}`,
-    },
-  },
-};
 
 describe("[unit|cdp-auth]: CDP Auth Package", () => {
   describe("[unit|cdp-auth]: Constants", () => {
@@ -144,153 +116,53 @@ describe("[unit|cdp-auth]: CDP Auth Package", () => {
     });
   });
 
-  describe("[unit|cdp-auth]: createCdpFacilitatorConfig", () => {
-    test("[createCdpFacilitatorConfig|success] - returns config with correct URL", async () => {
-      const credentials: CdpCredentials = {
+  describe("[unit|cdp-auth]: generateCdpHeaders", () => {
+    test("[generateCdpHeaders|success] - returns Authorization and Content-Type headers", async () => {
+      const options: GenerateCdpHeadersOptions = {
         apiKeyId: "test-key-id",
         apiKeySecret: TEST_EC_KEY,
+        requestMethod: "POST",
+        requestPath: "/verify",
       };
-      const config = await createCdpFacilitatorConfig(credentials);
+      const headers = await generateCdpHeaders(options);
 
-      expect(config.url).toBe(CDP_FACILITATOR_URL);
-      expect(config.headers).toBeDefined();
-      expect(config.headers!["Authorization"]).toMatch(/^Bearer /);
-      expect(config.headers!["Content-Type"]).toBe("application/json");
+      expect(headers["Authorization"]).toMatch(/^Bearer /);
+      expect(headers["Content-Type"]).toBe("application/json");
     });
 
-    test("[createCdpFacilitatorConfig|success] - uses custom path in JWT uris", async () => {
-      const credentials: CdpCredentials = {
+    test("[generateCdpHeaders|success] - JWT uris reflect the given method and path", async () => {
+      const headers = await generateCdpHeaders({
         apiKeyId: "test-key-id",
         apiKeySecret: TEST_EC_KEY,
-      };
-      const config = await createCdpFacilitatorConfig(credentials, "/settle");
-      const token = config.headers!["Authorization"]!.replace("Bearer ", "");
+        requestMethod: "POST",
+        requestPath: "/settle",
+      });
+
+      const token = headers["Authorization"]!.replace("Bearer ", "");
       const parts = token.split(".");
       const payload = JSON.parse(
         Buffer.from(parts[1]!, "base64url").toString(),
       );
-      expect(payload.uris[0]).toContain("/settle");
+      expect(payload.uris[0]).toBe(
+        "POST api.cdp.coinbase.com/settle",
+      );
     });
-  });
 
-  describe("[unit|cdp-auth]: cdpVerify", () => {
-    test("[cdpVerify|success] - calls verify with CDP auth headers", async () => {
-      const credentials: CdpCredentials = {
+    test("[generateCdpHeaders|success] - respects custom expiresIn via credentials", async () => {
+      const headers = await generateCdpHeaders({
         apiKeyId: "test-key-id",
         apiKeySecret: TEST_EC_KEY,
-      };
-
-      let capturedRequest: RequestInit | undefined;
-      global.fetch = mock((url: string, init?: RequestInit) => {
-        capturedRequest = init;
-        return Promise.resolve(
-          new Response(JSON.stringify({ isValid: true, payer: "0x123" }), {
-            status: 200,
-          }),
-        );
+        requestMethod: "POST",
+        requestPath: "/verify",
+        expiresIn: 60,
       });
 
-      const result = await cdpVerify(
-        MOCK_PAYMENT_PAYLOAD,
-        MOCK_PAYMENT_REQUIREMENTS,
-        credentials,
-      );
-
-      expect(result.isValid).toBe(true);
-      const authHeader = new Headers(capturedRequest?.headers).get(
-        "Authorization",
-      );
-      expect(authHeader).toMatch(/^Bearer /);
-    });
-
-    test("[cdpVerify|error] - propagates facilitator error", async () => {
-      const credentials: CdpCredentials = {
-        apiKeyId: "test-key-id",
-        apiKeySecret: TEST_EC_KEY,
-      };
-
-      global.fetch = mock(() =>
-        Promise.resolve(
-          new Response("Unauthorized", { status: 401 }),
-        ),
-      );
-
-      await expect(
-        cdpVerify(MOCK_PAYMENT_PAYLOAD, MOCK_PAYMENT_REQUIREMENTS, credentials),
-      ).rejects.toThrow();
-    });
-  });
-
-  describe("[unit|cdp-auth]: cdpSettle", () => {
-    test("[cdpSettle|success] - calls settle with CDP auth headers", async () => {
-      const credentials: CdpCredentials = {
-        apiKeyId: "test-key-id",
-        apiKeySecret: TEST_EC_KEY,
-      };
-
-      let capturedRequest: RequestInit | undefined;
-      global.fetch = mock((url: string, init?: RequestInit) => {
-        capturedRequest = init;
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              success: true,
-              transaction: "0xabc",
-              network: "eip155:8453",
-              payer: "0x123",
-            }),
-            { status: 200 },
-          ),
-        );
-      });
-
-      const result = await cdpSettle(
-        MOCK_PAYMENT_PAYLOAD,
-        MOCK_PAYMENT_REQUIREMENTS,
-        credentials,
-      );
-
-      expect(result.success).toBe(true);
-      const authHeader = new Headers(capturedRequest?.headers).get(
-        "Authorization",
-      );
-      expect(authHeader).toMatch(/^Bearer /);
-    });
-
-    test("[cdpSettle|success] - uses /settle path in JWT uris", async () => {
-      const credentials: CdpCredentials = {
-        apiKeyId: "test-key-id",
-        apiKeySecret: TEST_EC_KEY,
-      };
-
-      let capturedAuthHeader: string | null = null;
-      global.fetch = mock((_url: string, init?: RequestInit) => {
-        capturedAuthHeader = new Headers(init?.headers).get("Authorization");
-        return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              success: true,
-              transaction: "0xabc",
-              network: "eip155:8453",
-            }),
-            { status: 200 },
-          ),
-        );
-      });
-
-      await cdpSettle(
-        MOCK_PAYMENT_PAYLOAD,
-        MOCK_PAYMENT_REQUIREMENTS,
-        credentials,
-      );
-
-      expect(capturedAuthHeader).toMatch(/^Bearer /);
-      const token = capturedAuthHeader!.replace("Bearer ", "");
+      const token = headers["Authorization"]!.replace("Bearer ", "");
       const parts = token.split(".");
       const payload = JSON.parse(
         Buffer.from(parts[1]!, "base64url").toString(),
       );
-      expect(payload.uris[0]).toContain("/settle");
+      expect(payload.exp - payload.iat).toBeLessThanOrEqual(60);
     });
   });
 });

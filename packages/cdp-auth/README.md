@@ -2,7 +2,7 @@
 
 Coinbase Developer Platform (CDP) JWT authentication for x402 facilitator calls.
 
-Generates Bearer tokens (JWTs) compatible with the [Coinbase CDP API authentication](https://docs.cdp.coinbase.com/api-reference/v2/authentication#generate-bearer-token-jwt-and-export) and provides helpers for calling the Coinbase x402 facilitator `/verify` and `/settle` endpoints.
+Generates Bearer tokens (JWTs) compatible with the [Coinbase CDP API authentication](https://docs.cdp.coinbase.com/api-reference/v2/authentication#generate-bearer-token-jwt-and-export) and provides `generateCdpHeaders` to produce ready-to-use auth headers for any HTTP client or Armory middleware package.
 
 ## Installation
 
@@ -12,7 +12,28 @@ bun add @armory-sh/cdp-auth
 
 ## Usage
 
-### Generate a CDP JWT
+### Generate auth headers (for use with middleware or any HTTP client)
+
+```typescript
+import { generateCdpHeaders, CDP_FACILITATOR_URL } from '@armory-sh/cdp-auth'
+
+const headers = await generateCdpHeaders({
+  apiKeyId: 'your-api-key-id',
+  apiKeySecret: process.env.CDP_API_KEY_SECRET!,
+  requestMethod: 'POST',
+  requestPath: '/verify',
+})
+// headers = { Authorization: 'Bearer <jwt>', 'Content-Type': 'application/json' }
+
+// Pass to fetch or any Armory middleware
+const response = await fetch(`${CDP_FACILITATOR_URL}/verify`, {
+  method: 'POST',
+  headers,
+  body: JSON.stringify({ paymentPayload, paymentRequirements }),
+})
+```
+
+### Generate a raw CDP JWT
 
 ```typescript
 import { generateCdpJwt } from '@armory-sh/cdp-auth'
@@ -24,53 +45,7 @@ const token = await generateCdpJwt({
   requestHost: 'api.cdp.coinbase.com',
   requestPath: '/platform/x402/v2/verify',
 })
-// Returns a JWT Bearer token
-```
-
-### Verify a Payment via CDP Facilitator
-
-```typescript
-import { cdpVerify } from '@armory-sh/cdp-auth'
-
-const credentials = {
-  apiKeyId: 'your-api-key-id',
-  apiKeySecret: process.env.CDP_API_KEY_SECRET!,
-}
-
-const result = await cdpVerify(paymentPayload, paymentRequirements, credentials)
-console.log(result.isValid) // true | false
-```
-
-### Settle a Payment via CDP Facilitator
-
-```typescript
-import { cdpSettle } from '@armory-sh/cdp-auth'
-
-const result = await cdpSettle(paymentPayload, paymentRequirements, credentials)
-console.log(result.success) // true | false
-console.log(result.transaction) // tx hash
-```
-
-### Create a Facilitator Config
-
-For use with `@armory-sh/base` middleware functions that accept a `FacilitatorClientConfig`:
-
-```typescript
-import { createCdpFacilitatorConfig } from '@armory-sh/cdp-auth'
-import { verifyPayment, settlePayment } from '@armory-sh/base'
-
-const credentials = {
-  apiKeyId: 'your-api-key-id',
-  apiKeySecret: process.env.CDP_API_KEY_SECRET!,
-}
-
-// For verify calls
-const verifyConfig = await createCdpFacilitatorConfig(credentials, '/verify')
-const result = await verifyPayment(payload, requirements, verifyConfig)
-
-// For settle calls
-const settleConfig = await createCdpFacilitatorConfig(credentials, '/settle')
-const settlement = await settlePayment(payload, requirements, settleConfig)
+// Returns a raw JWT string
 ```
 
 ## Supported Key Formats
@@ -80,9 +55,25 @@ const settlement = await settlePayment(payload, requirements, settleConfig)
 
 ## API
 
+### `generateCdpHeaders(options: GenerateCdpHeadersOptions): Promise<Record<string, string>>`
+
+Generates a fresh CDP JWT and returns HTTP headers ready to attach to a request.
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `apiKeyId` | string | ✓ | CDP API Key ID |
+| `apiKeySecret` | string | ✓ | PEM EC key or base64 Ed25519 key |
+| `requestMethod` | string | ✓ | HTTP method (e.g. `"POST"`) |
+| `requestPath` | string | ✓ | Request path (e.g. `"/verify"`) |
+| `expiresIn` | number | | Expiry in seconds (default: `120`) |
+
+Returns `{ Authorization: "Bearer <jwt>", "Content-Type": "application/json" }`.
+
+---
+
 ### `generateCdpJwt(options: CdpJwtOptions): Promise<string>`
 
-Generates a CDP JWT Bearer token.
+Signs a raw CDP JWT bearer token.
 
 | Option | Type | Required | Description |
 |--------|------|----------|-------------|
@@ -92,18 +83,6 @@ Generates a CDP JWT Bearer token.
 | `requestHost` | string | ✓ | Host (e.g. `"api.cdp.coinbase.com"`) |
 | `requestPath` | string | ✓ | Request path (e.g. `"/platform/x402/v2/verify"`) |
 | `expiresIn` | number | | Expiry in seconds (default: `120`) |
-
-### `cdpVerify(payload, requirements, credentials): Promise<VerifyResponse>`
-
-Verifies a payment using the Coinbase CDP x402 facilitator.
-
-### `cdpSettle(payload, requirements, credentials): Promise<SettlementResponse>`
-
-Settles a payment using the Coinbase CDP x402 facilitator.
-
-### `createCdpFacilitatorConfig(credentials, path?): Promise<FacilitatorClientConfig>`
-
-Creates a `FacilitatorClientConfig` with pre-generated CDP auth headers. Useful for integrating with Armory middleware.
 
 ### Constants
 
