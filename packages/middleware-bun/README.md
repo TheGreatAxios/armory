@@ -85,7 +85,7 @@ interface BunMiddlewareConfig {
   network: string | number         // Network (name or chain ID)
   amount: string                   // Amount to charge
   facilitator?: FacilitatorConfig
-  settlementMode?: 'verify' | 'settle' | 'async'
+  settlementMode?: 'verify' | 'settle'
   defaultVersion?: 1 | 2
   waitForSettlement?: boolean
 }
@@ -104,7 +104,7 @@ interface RouteAwareBunMiddlewareConfig extends BunMiddlewareConfig {
 - **Multi-Network**: Ethereum, Base, SKALE support
 - **Multi-Token**: USDC, EURC, USDT, WBTC, WETH, SKL
 - **Facilitator Integration**: Optional facilitator support
-- **Settlement Modes**: Verify, settle, or async settlement
+- **Settlement Modes**: Verify or settle payments
 
 ## Supported Networks
 

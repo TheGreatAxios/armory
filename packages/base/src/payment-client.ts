@@ -9,9 +9,7 @@ import { decodeBase64ToUtf8 } from "./utils/base64";
 
 export interface FacilitatorClientConfig {
   url: string;
-  createHeaders?: () =>
-    | Record<string, string>
-    | Promise<Record<string, string>>;
+  headers?: Record<string, string>;
 }
 
 const DEFAULT_FACILITATOR_URL = "https://facilitator.payai.network";
@@ -38,13 +36,12 @@ function resolveUrl(config?: FacilitatorClientConfig): string {
   return config?.url ?? DEFAULT_FACILITATOR_URL;
 }
 
-async function resolveHeaders(
+function resolveHeaders(
   config?: FacilitatorClientConfig,
-): Promise<Record<string, string>> {
+): Record<string, string> {
   const base: Record<string, string> = { "Content-Type": "application/json" };
-  if (!config?.createHeaders) return base;
-  const extra = await config.createHeaders();
-  return { ...base, ...extra };
+  if (!config?.headers) return base;
+  return { ...base, ...config.headers };
 }
 
 export async function verifyPayment(
