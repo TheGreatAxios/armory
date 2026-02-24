@@ -11,9 +11,8 @@ import {
   extractPaymentFromMeta,
   extractPaymentRequiredFromResult,
   extractPaymentResponseFromMeta,
-  META_PAYMENT_KEY,
-  META_PAYMENT_RESPONSE_KEY,
 } from "../src/meta";
+import { META_PAYMENT_KEY, META_PAYMENT_RESPONSE_KEY } from "../src/types";
 import type { McpPaymentRequiredData, McpToolResult } from "../src/types";
 
 const TEST_REQUIREMENT: PaymentRequirementsV2 = {

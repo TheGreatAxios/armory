@@ -130,6 +130,18 @@
         "typescript": "5.9.3",
       },
     },
+    "packages/mcp": {
+      "name": "@armory-sh/mcp",
+      "version": "0.1.0",
+      "dependencies": {
+        "@armory-sh/base": "workspace:*",
+      },
+      "devDependencies": {
+        "bun-types": "latest",
+        "tsup": "^8.5.1",
+        "typescript": "5.9.3",
+      },
+    },
     "packages/middleware-bun": {
       "name": "@armory-sh/middleware-bun",
       "version": "0.3.34",
@@ -241,6 +253,8 @@
     "@armory-sh/client-web3": ["@armory-sh/client-web3@workspace:packages/client-web3"],
 
     "@armory-sh/extensions": ["@armory-sh/extensions@workspace:packages/extensions"],
+
+    "@armory-sh/mcp": ["@armory-sh/mcp@workspace:packages/mcp"],
 
     "@armory-sh/middleware-bun": ["@armory-sh/middleware-bun@workspace:packages/middleware-bun"],
 

@@ -8,6 +8,7 @@ import type { McpMeta, McpPaymentRequiredData, McpToolContent, McpToolResult } f
 import {
   META_PAYMENT_KEY,
   META_PAYMENT_RESPONSE_KEY,
+  META_PAYMENT_REQUIRED_KEY,
 } from "./types";
 
 export function extractPaymentFromMeta(
