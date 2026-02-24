@@ -33,7 +33,7 @@ export interface FacilitatorConfig {
   /** Facilitator URL for verification/settlement */
   url: string;
   /** Optional authentication headers */
-  headers?: () => Record<string, string>;
+  headers?: Record<string, string>;
   /** Networks this facilitator supports (auto-detected if not provided) */
   networks?: NetworkId[];
   /** Tokens this facilitator supports (optional) */
@@ -61,9 +61,9 @@ export interface FacilitatorSettleResult {
 }
 
 /**
- * Settlement mode - verify only, settle only, or both
+ * Settlement mode - verify only or settle
  */
-export type SettlementMode = "verify" | "settle" | "async";
+export type SettlementMode = "verify" | "settle";
 
 /**
  * CAIP-2 chain ID type (e.g., eip155:8453)
