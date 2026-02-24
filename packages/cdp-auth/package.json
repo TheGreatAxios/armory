@@ -1,0 +1,55 @@
+{
+  "name": "@armory-sh/cdp-auth",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": "Sawyer Cutler <sawyer@dirtroad.dev>",
+  "keywords": [
+    "x402",
+    "coinbase",
+    "cdp",
+    "jwt",
+    "auth",
+    "payment",
+    "facilitator"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "bun": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./dist/*": "./dist/*.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheGreatAxios/armory.git",
+    "directory": "packages/cdp-auth"
+  },
+  "dependencies": {
+    "@armory-sh/base": "workspace:*",
+    "jose": "^5.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.1",
+    "bun-types": "latest",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsup && tsc --emitDeclarationOnly",
+    "lint": "bun run build",
+    "format": "bun run lint",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  }
+}
