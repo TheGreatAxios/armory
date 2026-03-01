@@ -46,13 +46,16 @@
     "url": "git+https://github.com/TheGreatAxios/armory.git",
     "directory": "packages/client-ethers"
   },
+  "peerDependencies": {
+    "ethers": ">=6.0.0"
+  },
   "dependencies": {
-    "@armory-sh/base": "workspace:*",
-    "ethers": "6.16.0"
+    "@armory-sh/base": "workspace:*"
   },
   "devDependencies": {
     "typescript": "5.9.3",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "ethers": "6.16.0"
   },
   "scripts": {
     "build": "rm -rf dist && tsup",

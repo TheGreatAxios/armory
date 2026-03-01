@@ -45,14 +45,18 @@
     "url": "git+https://github.com/TheGreatAxios/armory.git",
     "directory": "packages/client-web3"
   },
+  "peerDependencies": {
+    "web3": ">=4.0.0",
+    "web3-types": ">=1.0.0"
+  },
   "dependencies": {
-    "@armory-sh/base": "workspace:*",
-    "web3": "4.16.0",
-    "web3-types": "1.10.0"
+    "@armory-sh/base": "workspace:*"
   },
   "devDependencies": {
     "typescript": "5.9.3",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "web3": "4.16.0",
+    "web3-types": "1.10.0"
   },
   "scripts": {
     "build": "rm -rf dist && tsup",
