@@ -50,15 +50,18 @@
     "url": "git+https://github.com/TheGreatAxios/armory.git",
     "directory": "packages/client-viem"
   },
+  "peerDependencies": {
+    "viem": ">=2.0.0"
+  },
   "dependencies": {
     "@armory-sh/base": "workspace:*",
     "@armory-sh/extensions": "workspace:*",
-    "@types/node": "^25.2.3",
-    "viem": "2.45.0"
+    "@types/node": "^25.2.3"
   },
   "devDependencies": {
     "typescript": "5.9.3",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "viem": "2.45.0"
   },
   "scripts": {
     "build": "rm -rf dist && tsup",
