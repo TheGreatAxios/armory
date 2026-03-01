@@ -69,11 +69,14 @@
       "version": "0.2.36",
       "dependencies": {
         "@armory-sh/base": "workspace:*",
-        "ethers": "6.16.0",
       },
       "devDependencies": {
         "bun-types": "latest",
+        "ethers": "6.16.0",
         "typescript": "5.9.3",
+      },
+      "peerDependencies": {
+        "ethers": ">=6.0.0",
       },
     },
     "packages/client-hooks": {
@@ -96,11 +99,14 @@
         "@armory-sh/base": "workspace:*",
         "@armory-sh/extensions": "workspace:*",
         "@types/node": "^25.2.3",
-        "viem": "2.45.0",
       },
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "5.9.3",
+        "viem": "2.45.0",
+      },
+      "peerDependencies": {
+        "viem": ">=2.0.0",
       },
     },
     "packages/client-web3": {
@@ -108,12 +114,16 @@
       "version": "0.2.33",
       "dependencies": {
         "@armory-sh/base": "workspace:*",
-        "web3": "4.16.0",
-        "web3-types": "1.10.0",
       },
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "5.9.3",
+        "web3": "4.16.0",
+        "web3-types": "1.10.0",
+      },
+      "peerDependencies": {
+        "web3": ">=4.0.0",
+        "web3-types": ">=1.0.0",
       },
     },
     "packages/extensions": {
