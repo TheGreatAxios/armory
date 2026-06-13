@@ -29,14 +29,14 @@
       "default": "./dist/index.js"
     },
     "./types/hooks": {
-      "types": "./src/types/hooks.ts",
-      "bun": "./src/types/hooks.ts",
-      "default": "./src/types/hooks.ts"
+      "types": "./dist/types/hooks.d.ts",
+      "bun": "./dist/types/hooks.js",
+      "default": "./dist/types/hooks.js"
     },
     "./client-hooks-runtime": {
-      "types": "./src/client-hooks-runtime.ts",
-      "bun": "./src/client-hooks-runtime.ts",
-      "default": "./src/client-hooks-runtime.ts"
+      "types": "./dist/client-hooks-runtime.d.ts",
+      "bun": "./dist/client-hooks-runtime.js",
+      "default": "./dist/client-hooks-runtime.js"
     },
     "./dist/*": "./dist/*.js"
   },
