@@ -40,5 +40,8 @@
     "tsup": "^8.5.1",
     "turbo": "^2.8.10"
   },
-  "version": "0.0.4"
+  "version": "0.0.4",
+  "bugs": {
+    "url": "https://github.com/TheGreatAxios/armory/issues"
+  }
 }
